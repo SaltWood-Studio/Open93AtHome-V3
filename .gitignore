@@ -96,4 +96,4 @@ dist
 
 *.pem
 
-database
+database.sqlite
