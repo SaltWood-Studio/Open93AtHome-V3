@@ -24,3 +24,5 @@ export class Config {
         }
     }
 }
+
+dotenv.config()
