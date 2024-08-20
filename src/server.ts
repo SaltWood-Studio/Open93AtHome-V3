@@ -5,15 +5,23 @@ import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import JwtHelper from './jwt-helper';
+import { SQLiteHelper } from './sqlite';
+import { UserEntity } from './database/user';
+import { ClusterEntity } from './database/cluster';
 
 export class Server {
     private app: express.Application;
     private io: SocketIOServer;
     private httpsServer: https.Server;
+    protected db: SQLiteHelper;
 
     public constructor() {
         // 创建 Express 应用
         this.app = express();
+        this.db = new SQLiteHelper("database.sqlite");
+
+        this.db.createTable<UserEntity>(UserEntity);
+        this.db.createTable<ClusterEntity>(ClusterEntity);
 
         // 读取证书和私钥文件
         const keyPath = path.resolve(__dirname, '../key.pem');
@@ -54,12 +62,11 @@ export class Server {
 
     public setupHttps(): void {
         // 设置路由
-        this.app.get('/', (req, res) => {
-            res.send(JwtHelper.getInstance().issueToken({
-                username: 'SaltWood',
-                role: 'admin'
-            }, "user", 60 * 60 * 24 * 7));
-          });
+        this.app.get('/93AtHome/list_clusters', (req, res) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity)));
+        });
     }
 
     public setupSocketIO(): void {
