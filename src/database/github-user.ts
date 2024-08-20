@@ -1,4 +1,5 @@
 import { Table } from "../sqlite";
+import { UserEntity } from "./user";
 
 @Table('github_users', `
     id INTEGER PRIMARY KEY,
@@ -21,6 +22,14 @@ export class GitHubUser {
         user.id = id;
         user.login = login;
         user.avatar_url = avatar_url;
+        return user;
+    }
+
+    public toUserEntity(): UserEntity {
+        const user = new UserEntity();
+        user.id = this.id;
+        user.username = this.login;
+        user.photo = this.avatar_url;
         return user;
     }
 }

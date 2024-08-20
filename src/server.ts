@@ -97,7 +97,7 @@ export class Server {
         
                 let userResponse;
                 try {
-                    userResponse = await axios.get('https://api.github.com/user', {
+                    userResponse = await axios.get(`https://${Config.getInstance().githubApiUrl}/user`, {
                         headers: {
                             'Authorization': `token ${accessToken}`,
                             'Accept': 'application/json',
@@ -116,11 +116,11 @@ export class Server {
                 );
         
                 // 处理数据库操作
-                let dbUser = this.db.getEntity<GitHubUser>(GitHubUser, user.id);
+                let dbUser = this.db.getEntity<UserEntity>(UserEntity, user.id);
                 if (dbUser) {
-                    this.db.update(user);
+                    this.db.update(user.toUserEntity());
                 } else {
-                    this.db.insert<GitHubUser>(user);
+                    this.db.insert<UserEntity>(user.toUserEntity());
                 }
         
                 // 生成JWT并设置cookie
