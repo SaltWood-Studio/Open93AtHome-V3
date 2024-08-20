@@ -76,7 +76,7 @@ export class Server {
             res.end(Config.getInstance().githubOAuthClientId);
         });
         this.app.get('/93AtHome/dashboard/user/oauth', async (req: Request, res: Response) => {
-            res.header['Content-Type'] = 'application/json';
+            res.set("Content-Type", "application/json");
         
             try {
                 const code = req.query.code as string || '';
@@ -103,9 +103,9 @@ export class Server {
                             'Accept': 'application/json',
                             'User-Agent': 'YourAppName' // GitHub API要求设置User-Agent
                         }
-                    }).then(response => response.data);
+                    }).then(response => response.data) as { id: number, login: string, avatar_url: string };
                 } catch (error) {
-                    console.error('Error fetching GitHub user info:', error);
+                    console.error('Error fetching GitHub user info:', error as Error);
                     throw error; // 或者返回一个默认的错误响应
                 }
              
@@ -131,7 +131,6 @@ export class Server {
         
                 res.cookie('token', token, {
                     expires: new Date(Date.now() + 86400000), // 24小时后过期
-                    httpOnly: true,
                     secure: true
                 });
         
@@ -141,8 +140,9 @@ export class Server {
                     id: user.id
                 });
             } catch (error) {
+                const err = error as Error;
                 res.status(500).json({
-                    error: `${error.name}: ${error.message}`
+                    error: `${err.name}: ${err.message}`
                 });
             }
         });
