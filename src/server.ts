@@ -82,7 +82,7 @@ export class Server {
                 const code = req.query.code as string || '';
         
                 // 请求GitHub获取access_token
-                const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
+                const tokenResponse = await axios.post(`https://${Config.getInstance().githubUrl}/login/oauth/access_token`, {
                     code,
                     client_id: Config.getInstance().githubOAuthClientId,
                     client_secret: Config.getInstance().githubOAuthClientSecret
