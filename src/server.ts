@@ -1,23 +1,27 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import JwtHelper from './jwt-helper';
+import axios from 'axios';
 import { SQLiteHelper } from './sqlite';
 import { UserEntity } from './database/user';
 import { ClusterEntity } from './database/cluster';
+import http2Express from 'http2-express-bridge';
+import { Config } from './config';
+import { GitHubUser } from './database/github-user';
 
 export class Server {
-    private app: express.Application;
+    private app;
     private io: SocketIOServer;
     private httpsServer: https.Server;
     protected db: SQLiteHelper;
 
     public constructor() {
         // 创建 Express 应用
-        this.app = express();
+        this.app = http2Express(express);
         this.db = new SQLiteHelper("database.sqlite");
 
         this.db.createTable<UserEntity>(UserEntity);
@@ -66,6 +70,81 @@ export class Server {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity)));
+        });
+        this.app.get('/93AtHome/dashboard/oauth_id', (req, res) => {
+            res.statusCode = 200;
+            res.end(Config.getInstance().githubOAuthClientId);
+        });
+        this.app.get('/93AtHome/dashboard/user/oauth', async (req: Request, res: Response) => {
+            res.header['Content-Type'] = 'application/json';
+        
+            try {
+                const code = req.query.code as string || '';
+        
+                // 请求GitHub获取access_token
+                const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
+                    code,
+                    client_id: Config.getInstance().githubOAuthClientId,
+                    client_secret: Config.getInstance().githubOAuthClientSecret
+                }, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+        
+                const tokenData = tokenResponse.data as { access_token: string };
+                const accessToken = tokenData.access_token;
+        
+                let userResponse;
+                try {
+                    userResponse = await axios.get('https://api.github.com/user', {
+                        headers: {
+                            'Authorization': `token ${accessToken}`,
+                            'Accept': 'application/json',
+                            'User-Agent': 'YourAppName' // GitHub API要求设置User-Agent
+                        }
+                    }).then(response => response.data);
+                } catch (error) {
+                    console.error('Error fetching GitHub user info:', error);
+                    throw error; // 或者返回一个默认的错误响应
+                }
+             
+                const user = GitHubUser.create(
+                    userResponse.id,
+                    userResponse.login,
+                    userResponse.avatar_url
+                );
+        
+                // 处理数据库操作
+                let dbUser = this.db.getEntity<GitHubUser>(GitHubUser, user.id);
+                if (dbUser) {
+                    this.db.update(user);
+                } else {
+                    this.db.insert<GitHubUser>(user);
+                }
+        
+                // 生成JWT并设置cookie
+                const token = JwtHelper.getInstance().issueToken({
+                    userId: user.id,
+                    clientId: Config.getInstance().githubOAuthClientId
+                }, "user", 60 * 60 * 24);
+        
+                res.cookie('token', token, {
+                    expires: new Date(Date.now() + 86400000), // 24小时后过期
+                    httpOnly: true,
+                    secure: true
+                });
+        
+                res.status(200).json({
+                    avatar_url: user.avatar_url,
+                    username: user.login,
+                    id: user.id
+                });
+            } catch (error) {
+                res.status(500).json({
+                    error: `${error.name}: ${error.message}`
+                });
+            }
         });
     }
 
