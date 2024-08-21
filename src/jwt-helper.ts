@@ -34,10 +34,13 @@ class JwtHelper {
     }
 
     // 验证JWT
-    public verifyToken(token: string): object | null {
+    public verifyToken(token: string | undefined, audience: string | null = null): object | null {
         try {
+            if (!token) return null;
+
             const decoded = jwt.verify(token, this.publicKey, {
                 algorithms: ['RS256'],
+                audience: audience
             } as VerifyOptions);
             
             // 确保 decoded 是 object 类型

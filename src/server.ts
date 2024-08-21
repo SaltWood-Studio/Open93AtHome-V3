@@ -39,9 +39,12 @@ export class Server {
     protected db: SQLiteHelper;
     protected files: File[];
     protected isUpdating: boolean = false;
+    protected clusters: ClusterEntity[];
+    protected avroBytes: Uint8Array;
 
     public constructor() {
         this.files = [];
+        this.avroBytes = new Uint8Array();
 
         // 创建 Express 应用
         this.app = http2Express(express);
@@ -49,6 +52,8 @@ export class Server {
 
         this.db.createTable<UserEntity>(UserEntity);
         this.db.createTable<ClusterEntity>(ClusterEntity);
+
+        this.clusters = this.db.getEntities<ClusterEntity>(ClusterEntity);
 
         // 读取证书和私钥文件
         const keyPath = path.resolve(__dirname, '../key.pem');
@@ -74,18 +79,26 @@ export class Server {
         this.setupRoutes();
     }
 
-    public updateFiles(): Promise<void> {
+    public async updateFiles(): Promise<void> {
+        this.isUpdating = true;
         console.log('Updating files...');
-        return new Promise((resolve, reject) => {
+        try {
             const files = Utilities.scanFiles("./files");
             this.files = files.map(file => {
                 const f = File.createInstanceFromPath(`.${file}`);
                 f.path = f.path.substring(1);
                 return f;
             });
-            console.log(`...File list was successfully updated. Found ${this.files.length} files`);
-            resolve();
-        });
+            this.avroBytes = await Utilities.getAvroBytes(this.files);
+            console.log(`...file list was successfully updated. Found ${this.files.length} files`);
+            return;
+        }
+        catch (error) {
+            throw error;
+        }
+        finally {
+            this.isUpdating = false;
+        }
     }
 
     public start(): void {
@@ -109,6 +122,8 @@ export class Server {
     public setupHttps(): void {
         // 设置中间件
         this.app.use(logMiddleware);
+        this.app.use(express.json());
+        this.app.use(express.urlencoded({ extended: true }));
 
         // 设置路由
         this.app.get('/93AtHome/list_clusters', (req, res) => {
@@ -201,12 +216,119 @@ export class Server {
                 return res.status(409).send('Update in progress');
             }
 
-            this.isUpdating = true; // 标记为“使用中”
-            this.updateFiles()
-                .finally(() => {
-                    this.isUpdating = false; // 标记为“空闲”
-                });
+            this.updateFiles();
             return res.status(204).send();
+        });
+        this.app.get('/openbmclapi-agent/challenge', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+        
+            const clusterId = req.query.clusterId as string || '';
+        
+            if (this.clusters.some(c => c.clusterId === clusterId)) {
+                const token = JwtHelper.getInstance().issueToken({
+                    clusterId: clusterId
+                }, "cluster-challenge", 60 * 5);
+        
+                res.status(200).json({ challenge: token });
+            } else {
+                res.status(404).send();
+            }
+        });
+        // 处理 POST 请求
+        this.app.post('/openbmclapi-agent/token', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+        
+            // 从请求体中获取参数
+            const clusterId = req.body.clusterId as string;
+            const signature = req.body.signature as string;
+            const challenge = req.body.challenge as string;
+            const claims = JwtHelper.getInstance().verifyToken(challenge, 'cluster-challenge') as { clusterId: string };
+            const cluster = this.clusters.find(c => c.clusterId === claims.clusterId);
+        
+            if (cluster) {
+
+                if (claims && claims.clusterId === clusterId && Utilities.computeSignature(challenge, signature, cluster.clusterSecret)) {
+                    const token = JwtHelper.getInstance().issueToken(
+                        { clusterId: clusterId },
+                        'cluster',
+                        60 * 60 * 24 // 过期时间：24小时
+                    );
+                
+                    res.status(200).json({
+                        token,
+                        ttl: 1000 * 60 * 60 * 24 // TTL：24小时
+                    });
+                } else {
+                    res.status(403).send(); // 禁止访问
+                }
+            } else {
+                res.status(404).send(); // 未找到
+            }
+        });
+        this.app.get('/openbmclapi/files', (req: Request, res: Response) => {
+            if (!Utilities.verifyClusterRequest(req)) {
+                res.status(403).send(); // 禁止访问
+                return;
+            }
+            res.setHeader('Content-Disposition', 'attachment; filename="files.avro"');
+            
+            let lastModified = Number(req.query.lastModified);
+            lastModified = Number.isNaN(lastModified)? 0 : lastModified;
+
+            if (lastModified === 0) {
+                res.status(200).send(this.avroBytes);
+            }
+            else {
+                const files = this.files.filter(f => f.lastModified > lastModified);
+                if (files.length === 0){
+                    res.status(204).send();
+                    return;
+                }
+                res.send(Utilities.getAvroBytes(files));
+            }
+        });
+        this.app.get('/openbmclapi/files', (req: Request, res: Response) => {
+            if (!Utilities.verifyClusterRequest(req)) {
+                res.status(403).send(); // 禁止访问
+                return;
+            }
+            res.setHeader('Content-Disposition', 'attachment; filename="files.avro"');
+            
+            let lastModified = Number(req.query.lastModified);
+            lastModified = Number.isNaN(lastModified)? 0 : lastModified;
+
+            if (lastModified === 0) {
+                res.status(200).send(this.avroBytes);
+            }
+            else {
+                const files = this.files.filter(f => f.lastModified > lastModified);
+                if (files.length === 0){
+                    res.status(204).send();
+                    return;
+                }
+                res.send(Utilities.getAvroBytes(files));
+            }
+        });
+        this.app.get('/openbmclapi/download/:hash([0-9a-f]{32})', (req: Request, res: Response) => {
+            if (!Utilities.verifyClusterRequest(req)) {
+                res.status(403).send(); // 禁止访问
+                return;
+            }
+            const hash = req.params.hash;
+            const file = this.files.find(f => f.hash === hash);
+            if (file) {
+                res.sendFile(path.join(__dirname, file.path.substring(1)));
+            } else {
+                res.status(404).send();
+            }
+        });
+        this.app.get('/files/*', (req: Request, res: Response) => {
+            const file = this.files.find(f => f.path === req.path);
+            if (file) {
+                res.sendFile(path.join(__dirname, file.path.substring(1)));
+            } else {
+                res.status(404).send();
+            }
         });
 
         this.app.listen(3000, () => {
@@ -221,15 +343,15 @@ export class Server {
                 if (!token) {
                     throw new Error('No token provided');
                 }
-                console.log('token: ', token);
         
                 // 验证 token
-                const payload = JwtHelper.getInstance().verifyToken(token);
+                const payload = JwtHelper.getInstance().verifyToken(token, 'cluster');
         
                 // 检查 payload 是否是对象类型，并且包含 exp 字段
                 if (payload && typeof payload === 'object' && 'exp' in payload) {
                     const exp = (payload as { exp: number }).exp; // 类型断言，确保 exp 存在
                     if (exp > Date.now() / 1000) {
+                        console.log(`SOCKET ${socket.handshake.url} socket.io <ACCEPTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                         return next(); // 验证通过，允许连接
                     } else {
                         throw new Error('Token expired');
@@ -246,15 +368,12 @@ export class Server {
 
         // 监听 Socket.IO 连接事件
         this.io.on('connection', (socket) => {
-            console.log('a user connected');
             socket.on('disconnect', () => {
                 console.log('user disconnected');
             });
 
-            // 监听客户端消息
-            socket.on('message', (message) => {
-                console.log('message: ', message);
-                socket.emit('message', 'hello');
+            socket.on('enable', (data) => {
+                console.log('enable', data);
             });
         });
     }
