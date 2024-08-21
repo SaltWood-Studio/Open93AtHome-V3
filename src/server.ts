@@ -313,9 +313,19 @@ export class Server {
             const p = decodeURI(req.path);
             const file = this.files.find(f => f.path === p);
             if (file) {
-                res.sendFile(file.path.substring(1), {
-                    root: "."
-                });
+                let cluster = Utilities.getRandomElement(this.clusters.filter(c => c.isOnline));
+                if (!cluster) {
+                    res.sendFile(file.path.substring(1), {
+                        root: "."
+                    });
+                    return;
+                }
+
+                res.status(302)
+                .setHeader('Location', `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}`)
+                .send();
+                cluster.pendingHits++;
+                cluster.pendingTraffic += file.size;
             } else {
                 res.status(404).send();
             }
@@ -365,9 +375,7 @@ export class Server {
 
         // 监听 Socket.IO 连接事件
         this.io.on('connection', (socket) => {
-            socket.on('disconnect', () => {
-                console.log('user disconnected');
-            });
+            console.log(`SOCKET ${socket.handshake.url} socket.io <CONNECTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
 
             socket.on('enable', (data, ack: Function) => {
                 const enableData = data as  {
@@ -409,6 +417,49 @@ export class Server {
                     }
                 })
             });
+
+            socket.on('keep-alive', (data, ack: Function) => {
+                const keepAliveData = data as  {
+                    time: string,
+                    hits: number,
+                    bytes: number
+                };
+
+                const cluster = this.sessionToClusterMap.get(socket.id);
+
+                if (!cluster || !cluster.isOnline) {
+                    ack([null, false]);
+                }
+                else {
+                    console.log(`SOCKET ${socket.handshake.url} socket.io <KEEP-ALIVE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
+                    cluster.hits += Math.min(keepAliveData.hits, cluster.pendingHits);
+                    cluster.traffic += Math.min(keepAliveData.bytes, cluster.pendingTraffic);
+                    ack([null, data.time]);
+                }
+            });
+
+            socket.on('disable', (data, ack: Function) => {
+                const cluster = this.sessionToClusterMap.get(socket.id);
+
+                if (!cluster || !cluster.isOnline) {
+                    ack([null, false]);
+                }
+                else {
+                    console.log(`SOCKET ${socket.handshake.url} socket.io <DISABLE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
+                    cluster.isOnline = false;
+                    socket.send('Bye. Have a good day!');
+                    ack([null, true]);
+                }
+            });
+
+            socket.on('disconnect', () => {
+                const cluster = this.sessionToClusterMap.get(socket.id);
+
+                if (cluster) {
+                    console.log(`SOCKET ${socket.handshake.url} socket.io <DISCONNECTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
+                    cluster.isOnline = false;
+                }
+            })
         });
     }
 }
