@@ -32,3 +32,10 @@ export class File {
         return file;
     }
 }
+
+export interface IFileInfo {
+    path: string
+    hash: string
+    size: number
+    lastModified: number
+}

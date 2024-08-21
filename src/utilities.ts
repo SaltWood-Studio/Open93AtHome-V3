@@ -4,9 +4,23 @@ import * as crypto from 'crypto';
 import { dir } from 'console';
 import { Request } from 'express';
 import JwtHelper from './jwt-helper';
-import { File } from './database/file';
+import { File, IFileInfo } from './database/file';
 import { compress } from '@mongodb-js/zstd';
-import { AvroEncoder } from './avro/encoder';
+import avsc from 'avsc'
+
+export const FileListSchema = avsc.Type.forSchema({
+  type: 'array',
+  items: {
+    name: 'files',
+    type: 'record',
+    fields: [
+      {name: 'path', type: 'string'},
+      {name: 'hash', type: 'string'},
+      {name: 'size', type: 'long'},
+      {name: 'lastModified', type: 'long'},
+    ],
+  },
+})
 
 export class Utilities {
     /**
@@ -56,16 +70,7 @@ export class Utilities {
     }
 
     public static async getAvroBytes(files: File[]): Promise<Buffer> {
-        const encoder = new AvroEncoder();
-        encoder.setElements(files.length);
-        files.forEach(element => {
-            encoder.setString(element.path);
-            encoder.setString(element.hash);
-            encoder.setLong(element.size);
-            encoder.setLong(element.lastModified);
-        });
-        encoder.setEnd();
-        return compress(encoder.getBytes());
+        return compress(FileListSchema.toBuffer(files as IFileInfo[]));
     }
 
     public static getFileInfoSync(filePath: string): { hash: string, size: number, lastModified: number } {
