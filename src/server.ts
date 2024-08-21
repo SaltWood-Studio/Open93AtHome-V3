@@ -41,6 +41,7 @@ export class Server {
     protected isUpdating: boolean = false;
     protected clusters: ClusterEntity[];
     protected avroBytes: Uint8Array;
+    protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
 
     public constructor() {
         this.files = [];
@@ -309,9 +310,12 @@ export class Server {
             }
         });
         this.app.get('/files/*', (req: Request, res: Response) => {
-            const file = this.files.find(f => f.path === req.path);
+            const p = decodeURI(req.path);
+            const file = this.files.find(f => f.path === p);
             if (file) {
-                res.sendFile(path.join(__dirname, file.path.substring(1)));
+                res.sendFile(file.path.substring(1), {
+                    root: "."
+                });
             } else {
                 res.status(404).send();
             }
@@ -331,12 +335,18 @@ export class Server {
                 }
         
                 // 验证 token
-                const payload = JwtHelper.getInstance().verifyToken(token, 'cluster');
+                const object = JwtHelper.getInstance().verifyToken(token, 'cluster');
         
                 // 检查 payload 是否是对象类型，并且包含 exp 字段
-                if (payload && typeof payload === 'object' && 'exp' in payload) {
-                    const exp = (payload as { exp: number }).exp; // 类型断言，确保 exp 存在
+                if (object && typeof object === 'object' && 'exp' in object && 'clusterId' in object) {
+                    const payload = object as { exp: number, clusterId: string };
+                    const exp = payload.exp;
+                    const cluster = this.clusters.find(c => c.clusterId === payload.clusterId);
+                    if (!cluster) {
+                        throw new Error('Cluster not found');
+                    }
                     if (exp > Date.now() / 1000) {
+                        this.sessionToClusterMap.set(socket.id, cluster);
                         console.log(`SOCKET ${socket.handshake.url} socket.io <ACCEPTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                         return next(); // 验证通过，允许连接
                     } else {
@@ -347,6 +357,7 @@ export class Server {
                 }
             } catch (err) {
                 console.error('Authentication error');
+                socket.disconnect(true);
                 return next(new Error('Authentication error')); // 验证失败，拒绝连接
             }
         });
@@ -358,8 +369,45 @@ export class Server {
                 console.log('user disconnected');
             });
 
-            socket.on('enable', (data) => {
-                console.log('enable', data);
+            socket.on('enable', (data, ack: Function) => {
+                const enableData = data as  {
+                    host: string,
+                    port: number,
+                    version: string,
+                    byoc: boolean,
+                    noFastEnable: boolean,
+                    flavor: {
+                        runtime: string,
+                        storage: string
+                    }
+                };
+
+                const randomFileCount = 5;
+                const randomFiles = Utilities.getRandomElements(this.files, randomFileCount);
+                const cluster = this.sessionToClusterMap.get(socket.id);
+
+                if (!cluster) {
+                    ack({ message: "Cluster not found"});
+                    return;
+                }
+
+                const urls = randomFiles.map(f => `http://${enableData.host}:${enableData.port}/download/${f.hash}?${Utilities.getSign(f.hash, cluster.clusterSecret)}`);
+
+                Utilities.checkUrls(urls)
+                .then(hashes => {
+                    const realHashes = randomFiles.map(f => f.hash);
+                    if (hashes.every((hash, index) => hash.hash === realHashes[index])) {
+                        cluster.isOnline = true;
+                        ack([null, true]);
+                    }
+                    else {
+                        const differences = [
+                            ...realHashes.filter(hash => !hashes.map(h => h.hash).includes(hash)), // 存在于 objectHashes 中但不存在于 hashArray 中
+                            ...hashes.filter(hash => !realHashes.includes(hash.hash))   // 存在于 hashArray 中但不存在于 objectHashes 中
+                        ];
+                        ack({ message: `Hash mismatch: ${differences.join(', ')}` });
+                    }
+                })
             });
         });
     }

@@ -6,7 +6,8 @@ import { Request } from 'express';
 import JwtHelper from './jwt-helper';
 import { File, IFileInfo } from './database/file';
 import { compress } from '@mongodb-js/zstd';
-import avsc from 'avsc'
+import avsc from 'avsc';
+import axios from 'axios';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -69,8 +70,67 @@ export class Utilities {
         });
     }
 
+    public static async wait(seconds: number): Promise<void> {
+        return new Promise(resolve => {
+            setTimeout(resolve, seconds * 1000);
+        });
+    }
+
     public static async getAvroBytes(files: File[]): Promise<Buffer> {
         return compress(FileListSchema.toBuffer(files as IFileInfo[]));
+    }
+
+    public static getRandomElement<T>(array: T[]): T | undefined {
+        if (array.length === 0) return undefined; // 如果数组为空，返回 undefined
+        const randomIndex = Math.floor(Math.random() * array.length);
+        return array[randomIndex];
+    }
+
+    public static async checkUrls(urls: string[]): Promise<{ url: string; hash: string }[]> {
+        const results: { url: string; hash: string }[] = [];
+    
+        for (const url of urls) {
+            try {
+                const response = await axios.get(url, { responseType: 'arraybuffer' });
+                const responseData = response.data as Buffer;
+    
+                // 计算响应数据的哈希值
+                const hash = crypto.createHash('sha256').update(responseData).digest('hex');
+    
+                results.push({ url, hash });
+
+                await this.wait(2); // 限制请求频率
+            } catch (error) {
+                const err = error as Error;
+                console.error(`Error fetching ${url}:`, err.message);
+                results.push({ url, hash: 'error' });
+            }
+        }
+    
+        return results;
+    }
+    
+    public static getRandomElements<T>(array: T[], count: number, allowDuplicates: boolean = true): T[] {
+        const result: T[] = [];
+
+        if (allowDuplicates) {
+            for (let i = 0; i < count; i++) {
+                const randomIndex = Math.floor(Math.random() * array.length);
+                result.push(array[randomIndex]);
+            }
+        } else {
+            if (count > array.length) {
+                throw new Error("Count cannot be greater than the number of unique elements in the array when duplicates are not allowed.");
+            }
+
+            const tempArray = [...array]; // Create a copy of the array to avoid modifying the original one.
+            for (let i = 0; i < count; i++) {
+                const randomIndex = Math.floor(Math.random() * tempArray.length);
+                result.push(tempArray.splice(randomIndex, 1)[0]);
+            }
+        }
+
+        return result;
     }
 
     public static getFileInfoSync(filePath: string): { hash: string, size: number, lastModified: number } {
@@ -126,6 +186,6 @@ export class Utilities {
         const signBytes = sha1.update(secret + path + e).digest();
         const sign = Utilities.toUrlSafeBase64String(signBytes);
         
-        return `?s=${sign}&e=${e}`;
+        return `s=${sign}&e=${e}`;
     }
 }
