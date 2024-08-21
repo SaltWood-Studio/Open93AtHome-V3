@@ -338,6 +338,22 @@ export class Server {
                 res.status(404).send();
             }
         });
+        this.app.get('/93AtHome/centerStatistics', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+            const data = this.centerStats.getLast30DaysHourlyStats();
+            res.status(200).json({
+                dailyHits: data.map(d => {
+                    let hits = 0;
+                    d.filter(h => h !== null).forEach(h => hits += h.hits);
+                    return hits;
+                }),
+                dailyBytes: data.map(d => {
+                    let bytes = 0;
+                    d.filter(b => b !== null).forEach(b => bytes += b.bytes);
+                    return bytes;
+                })
+            });
+        });
 
         this.app.listen(3000, () => {
             console.log('Server is running on port 3000');

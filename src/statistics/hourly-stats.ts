@@ -3,7 +3,6 @@ import * as path from 'path';
 import { Config } from '../config';
 
 export class HourlyStatsStorage {
-    public readonly id: string;
     private data: { date: string, hourlyStats: { hour: string, hits: number, bytes: number }[] }[];
     private filePath: string;
     private saveInterval: NodeJS.Timeout;
@@ -54,14 +53,44 @@ export class HourlyStatsStorage {
     }
 
     public getLast30DaysHourlyStats(): { date: string, hits: number, bytes: number }[][] {
-        // 将数据转换为二维数组，每天24小时的数据
-        return this.data.map(day => {
-            return day.hourlyStats.map(hourData => ({
-                date: `${day.date}T${hourData.hour}:00:00Z`,  // 合并日期和时间为完整的UTC时间字符串
-                hits: hourData.hits,
-                bytes: hourData.bytes
-            }));
-        });
+        // 构建返回的二维数组
+        const result: { date: string, hits: number, bytes: number }[][] = [];
+
+        // 获取当前日期
+        const now = new Date();
+
+        for (let i = 0; i < 30; i++) {
+            // 获取前第 i 天的日期
+            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const dateString = date.toISOString().split('T')[0];
+
+            // 找到当前日期的数据
+            const dayData = this.data.find(entry => entry.date === dateString);
+            const dayResult: { date: string, hits: number, bytes: number }[] = [];
+
+            for (let hour = 0; hour < 24; hour++) {
+                const hourString = hour.toString().padStart(2, '0');
+                const hourData = dayData?.hourlyStats.find(entry => entry.hour === hourString);
+
+                if (hourData) {
+                    dayResult.push({
+                        date: `${dateString}T${hourString}:00:00Z`,
+                        hits: hourData.hits,
+                        bytes: hourData.bytes
+                    });
+                } else {
+                    dayResult.push({
+                        date: `${dateString}T${hourString}:00:00Z`,
+                        hits: 0,
+                        bytes: 0
+                    });
+                }
+            }
+
+            result.push(dayResult);
+        }
+
+        return result;
     }
 
     private maybeWriteToFile(): void {

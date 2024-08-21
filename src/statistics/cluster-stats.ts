@@ -23,7 +23,7 @@ export class StatsStorage {
         // 每10分钟保存一次数据（如果有更新）
         this.saveInterval = setInterval(() => {
             this.maybeWriteToFile();
-        }, 10 * 60 * 1000); // 10分钟
+        }, 10 * 60 * 1000);
     }
 
     public addData({ hits, bytes }: { hits: number, bytes: number }): void {
@@ -44,8 +44,31 @@ export class StatsStorage {
     }
 
     public getLast30DaysStats(): { date: string, hits: number, bytes: number }[] {
-        // 返回最新的30天数据（本身就是一个30天窗口）
-        return this.data;
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+
+        // 创建一个包含最近30天的日期和默认数据的映射
+        const dateMap: { [key: string]: { hits: number, bytes: number } } = {};
+
+        // 填充最近30天的数据
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            dateMap[date] = { hits: 0, bytes: 0 };
+        }
+
+        // 更新映射中的数据
+        for (const entry of this.data) {
+            dateMap[entry.date] = { hits: entry.hits, bytes: entry.bytes };
+        }
+
+        // 将映射转换为数组，并按日期排序
+        return Object.keys(dateMap)
+            .sort()
+            .map(date => ({
+                date,
+                hits: dateMap[date].hits,
+                bytes: dateMap[date].bytes
+            }));
     }
 
     private maybeWriteToFile(): void {
