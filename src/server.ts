@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
@@ -12,14 +12,37 @@ import { ClusterEntity } from './database/cluster';
 import http2Express from 'http2-express-bridge';
 import { Config } from './config';
 import { GitHubUser } from './database/github-user';
+import { File } from './database/file';
+import { Utilities } from './utilities';
+
+// 创建一个中间件函数
+const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    // 调用下一个中间件
+    next();
+
+    // 在响应完成后记录访问日志
+    res.on('finish', () => {
+        logAccess(req, res);
+    });
+};
+
+const logAccess = (req: Request, res: Response) => {
+    const userAgent = req.headers['user-agent'] || '';
+    const ip = req.headers['x-real-ip'] || req.ip;
+    console.log(`${req.method} ${req.originalUrl} ${req.protocol} <${res.statusCode}> - [${ip}] ${userAgent}`);
+};
 
 export class Server {
     private app;
     private io: SocketIOServer;
     private httpsServer: https.Server;
     protected db: SQLiteHelper;
+    protected files: File[];
+    protected isUpdating: boolean = false;
 
     public constructor() {
+        this.files = [];
+
         // 创建 Express 应用
         this.app = http2Express(express);
         this.db = new SQLiteHelper("database.sqlite");
@@ -46,6 +69,25 @@ export class Server {
         });
     }
 
+    public init(): void {
+        this.updateFiles();
+        this.setupRoutes();
+    }
+
+    public updateFiles(): Promise<void> {
+        console.log('Updating files...');
+        return new Promise((resolve, reject) => {
+            const files = Utilities.scanFiles("./files");
+            this.files = files.map(file => {
+                const f = File.createInstanceFromPath(`.${file}`);
+                f.path = f.path.substring(1);
+                return f;
+            });
+            console.log(`...File list was successfully updated. Found ${this.files.length} files`);
+            resolve();
+        });
+    }
+
     public start(): void {
         // 启动 HTTPS 服务器
         const PORT = 21474;
@@ -65,11 +107,19 @@ export class Server {
     }
 
     public setupHttps(): void {
+        // 设置中间件
+        this.app.use(logMiddleware);
+
         // 设置路由
         this.app.get('/93AtHome/list_clusters', (req, res) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity)));
+        });
+        this.app.get('/93AtHome/list_files', (req, res) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(this.files));
         });
         this.app.get('/93AtHome/dashboard/oauth_id', (req, res) => {
             res.statusCode = 200;
@@ -101,7 +151,7 @@ export class Server {
                         headers: {
                             'Authorization': `token ${accessToken}`,
                             'Accept': 'application/json',
-                            'User-Agent': 'YourAppName' // GitHub API要求设置User-Agent
+                            'User-Agent': 'Open93AtHome-V3/3.0.0' // GitHub API要求设置User-Agent
                         }
                     }).then(response => response.data) as { id: number, login: string, avatar_url: string };
                 } catch (error) {
@@ -145,6 +195,22 @@ export class Server {
                     error: `${err.name}: ${err.message}`
                 });
             }
+        });
+        this.app.get('/93AtHome/update_files', async (req: Request, res: Response) => {
+            if (this.isUpdating) {
+                return res.status(409).send('Update in progress');
+            }
+
+            this.isUpdating = true; // 标记为“使用中”
+            this.updateFiles()
+                .finally(() => {
+                    this.isUpdating = false; // 标记为“空闲”
+                });
+            return res.status(204).send();
+        });
+
+        this.app.listen(3000, () => {
+            console.log('Server is running on port 3000');
         });
     }
 

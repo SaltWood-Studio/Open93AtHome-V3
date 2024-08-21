@@ -5,5 +5,5 @@ Config.init();
 
 // 创建 Server 实例
 const server = new Server();
-server.setupRoutes();
+server.init();
 server.start();
