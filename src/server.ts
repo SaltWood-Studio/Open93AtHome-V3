@@ -14,6 +14,8 @@ import { Config } from './config';
 import { GitHubUser } from './database/github-user';
 import { File } from './database/file';
 import { Utilities } from './utilities';
+import { StatsStorage } from './statistics/cluster-stats';
+import { HourlyStatsStorage } from './statistics/hourly-stats';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -42,6 +44,8 @@ export class Server {
     protected clusters: ClusterEntity[];
     protected avroBytes: Uint8Array;
     protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
+    protected stats: StatsStorage[];
+    protected centerStats: HourlyStatsStorage;
 
     public constructor() {
         this.files = [];
@@ -53,6 +57,8 @@ export class Server {
 
         this.db.createTable<UserEntity>(UserEntity);
         this.db.createTable<ClusterEntity>(ClusterEntity);
+        this.stats = this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => new StatsStorage(c.clusterId));
+        this.centerStats = new HourlyStatsStorage();
 
         this.clusters = this.db.getEntities<ClusterEntity>(ClusterEntity);
 
@@ -314,6 +320,7 @@ export class Server {
             const file = this.files.find(f => f.path === p);
             if (file) {
                 let cluster = Utilities.getRandomElement(this.clusters.filter(c => c.isOnline));
+                this.centerStats.addData({ hits: 1, bytes: file.size });
                 if (!cluster) {
                     res.sendFile(file.path.substring(1), {
                         root: "."
@@ -324,6 +331,7 @@ export class Server {
                 res.status(302)
                 .setHeader('Location', `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}`)
                 .send();
+                this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: 1, bytes: file.size }));
                 cluster.pendingHits++;
                 cluster.pendingTraffic += file.size;
             } else {

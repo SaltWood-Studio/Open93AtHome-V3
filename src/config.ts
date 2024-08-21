@@ -9,6 +9,7 @@ export class Config {
     public readonly githubOAuthCallbackUrl: string = env.get('GITHUB_OAUTH_CALLBACK_URL').required().asString()
     public readonly githubUrl: string = env.get('GITHUB_URL').default("github.com").asString()
     public readonly githubApiUrl: string = env.get('GITHUB_API_URL').default("api.github.com").asString()
+    public readonly statsDir: string = env.get('STATISTICS_DIRECTORY').default("./stats").asString()
 
     private constructor() { }
 

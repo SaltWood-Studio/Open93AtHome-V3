@@ -1,4 +1,5 @@
 import { Table } from '../sqlite';
+import { StatsStorage } from '../statistics/cluster-stats';
 
 @Table('clusters', `
     clusterId TEXT PRIMARY KEY,
