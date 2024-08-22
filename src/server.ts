@@ -463,10 +463,6 @@ export class Server {
             const clusters = this.clusters.filter(c => c.owner === user.id);
             res.status(200).json(clusters);
         });
-
-        this.app.listen(3000, () => {
-            console.log('Server is running on port 3000');
-        });
     }
 
     public setupSocketIO(): void {
