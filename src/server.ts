@@ -16,6 +16,7 @@ import { File } from './database/file';
 import { Utilities } from './utilities';
 import { StatsStorage } from './statistics/cluster-stats';
 import { HourlyStatsStorage } from './statistics/hourly-stats';
+import cookieParser from 'cookie-parser';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -131,6 +132,7 @@ export class Server {
         this.app.use(logMiddleware);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
+        this.app.use(cookieParser());
 
         // 设置路由
         this.app.get('/93AtHome/list_clusters', (req, res) => {
@@ -353,6 +355,113 @@ export class Server {
                     return bytes;
                 })
             });
+        });
+        
+        this.app.get('/93AtHome/rank', async (req: Request, res: Response) => {
+            // 先把节点按照在线和离线分成两部分，然后各自按照 traffic 从大到小排序，最后返回 JSON 字符串
+            const onlineClusters = this.clusters.filter(c => c.isOnline);
+            const offlineClusters = this.clusters.filter(c => !c.isOnline);
+        
+            // 使用对象解构来移除敏感信息
+            const removeSensitiveInfo = ({ clusterSecret, endpoint, port, ...rest }: ClusterEntity) => rest;
+        
+            const onlineClustersSorted = onlineClusters
+                .sort((a, b) => b.traffic - a.traffic)
+                .map(removeSensitiveInfo);
+        
+            const offlineClustersSorted = offlineClusters
+                .sort((a, b) => b.traffic - a.traffic)
+                .map(removeSensitiveInfo);
+        
+            // 添加 ownerName 并返回 JSON 响应
+            const result = [
+                ...onlineClustersSorted,
+                ...offlineClustersSorted
+            ].map(c => ({
+                ...c,
+                ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || ''
+            }));
+        
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(result);
+        });
+        
+        this.app.get('/93AtHome/dashboard/user/profile', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json({
+                id: user.id,
+                login: user.username,
+                avatar_url: user.photo
+            });
+        });
+        this.app.get('/93AtHome/dashboard/user/bindCluster', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number, exp: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            const c = req.body as { clusterId: string, cluterSecret: string };
+            res.setHeader('Content-Type', 'application/json');
+            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && c.clusterSecret === c.clusterSecret && c.owner === 0);
+            if (cluster.length === 0) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            cluster.forEach(c => {
+                c.owner = user.id;
+                this.db.update(c);
+            });
+            res.status(200).json(cluster);
+        });
+        this.app.get('/93AtHome/dashboard/user/unbindCluster', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            const c = req.body as { clusterId: string };
+            res.setHeader('Content-Type', 'application/json');
+            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && c.owner === user.id);
+            cluster.forEach(c => {
+                c.owner = 0;
+                this.db.update(c);
+            });
+            res.status(200).json(cluster);
+        });
+        this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            const clusters = this.clusters.filter(c => c.owner === user.id);
+            res.status(200).json(clusters);
         });
 
         this.app.listen(3000, () => {
