@@ -10,6 +10,7 @@ export class Config {
     public readonly githubUrl: string = env.get('GITHUB_URL').default("github.com").asString()
     public readonly githubApiUrl: string = env.get('GITHUB_API_URL').default("api.github.com").asString()
     public readonly statsDir: string = env.get('STATISTICS_DIRECTORY').default("./stats").asString()
+    public readonly certificateDir: string = env.get('CERTIFICATE_DIRECTORY').default("./certificates").asString()
 
     private constructor() { }
 
