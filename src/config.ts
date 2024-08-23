@@ -11,6 +11,7 @@ export class Config {
     public readonly githubApiUrl: string = env.get('GITHUB_API_URL').default("api.github.com").asString()
     public readonly statsDir: string = env.get('STATISTICS_DIRECTORY').default("./stats").asString()
     public readonly certificateDir: string = env.get('CERTIFICATE_DIRECTORY').default("./certificates").asString()
+    public readonly port: number = env.get('PORT').default(9388).asPortNumber()
 
     private constructor() { }
 

@@ -111,8 +111,7 @@ export class Server {
 
     public start(): void {
         // 启动 HTTPS 服务器
-        const PORT = 21474;
-        this.httpsServer.listen(PORT, () => {
+        this.httpsServer.listen(Config.getInstance().port, () => {
           console.log(`HTTPS Server running on https://localhost:${PORT}`);
         });
     
