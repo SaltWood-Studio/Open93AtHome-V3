@@ -1,16 +1,30 @@
 import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
-import { generateKeyPairSync, KeyObject } from 'crypto';
+import { generateKeyPairSync, KeyObject, createPrivateKey, createPublicKey } from 'crypto';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
+import path from 'path';
 
 class JwtHelper {
     private static instance: JwtHelper;
     private readonly privateKey: KeyObject;
     private readonly publicKey: KeyObject;
+    private static readonly privateKeyPath = path.resolve('private.key');
+    private static readonly publicKeyPath = path.resolve('public.key');
 
     private constructor() {
-        // 自动生成 RSA 密钥对
-        const { privateKey, publicKey } = this.generateKeys();
-        this.privateKey = privateKey;
-        this.publicKey = publicKey;
+        if (existsSync(JwtHelper.privateKeyPath) && existsSync(JwtHelper.publicKeyPath)) {
+            // 如果密钥文件存在，读取它们
+            this.privateKey = createPrivateKey(readFileSync(JwtHelper.privateKeyPath));
+            this.publicKey = createPublicKey(readFileSync(JwtHelper.publicKeyPath));
+        } else {
+            // 如果密钥文件不存在，生成新的密钥对并保存
+            const { privateKey, publicKey } = this.generateKeys();
+            this.privateKey = privateKey;
+            this.publicKey = publicKey;
+            
+            // 保存密钥到本地文件
+            writeFileSync(JwtHelper.privateKeyPath, privateKey.export({ type: 'pkcs8', format: 'pem' }));
+            writeFileSync(JwtHelper.publicKeyPath, publicKey.export({ type: 'spki', format: 'pem' }));
+        }
     }
 
     // 获取单例实例
@@ -23,12 +37,11 @@ class JwtHelper {
 
     // 颁发JWT
     public issueToken(payload: object, audience: string, expiresInSeconds: number): string {
-        // 自定义签名选项，允许覆盖默认的 expiresIn 和设置 audience
         const signOptions: SignOptions = {
-            expiresIn: expiresInSeconds, // Token有效期，以秒为单位
-            algorithm: 'RS256', // 使用 RSA 算法 (RS256)
-            issuer: '93@Home-Center-Server', // 默认 issuer
-            audience // 设置 audience
+            expiresIn: expiresInSeconds,
+            algorithm: 'RS256',
+            issuer: '93@Home-Center-Server',
+            audience,
         };
         return jwt.sign(payload, this.privateKey, signOptions);
     }
@@ -40,10 +53,9 @@ class JwtHelper {
 
             const decoded = jwt.verify(token, this.publicKey, {
                 algorithms: ['RS256'],
-                audience: audience
+                audience,
             } as VerifyOptions);
             
-            // 确保 decoded 是 object 类型
             if (typeof decoded === 'object' && decoded !== null) {
                 return decoded;
             }
@@ -58,7 +70,7 @@ class JwtHelper {
     // 生成 RSA 公钥和私钥对
     private generateKeys(): { privateKey: KeyObject, publicKey: KeyObject } {
         const { privateKey, publicKey } = generateKeyPairSync('rsa', {
-            modulusLength: 2048, // 密钥长度
+            modulusLength: 2048,
         });
         return { privateKey, publicKey };
     }
