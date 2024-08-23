@@ -70,6 +70,9 @@ export class Server {
         const certificate = fs.readFileSync(certPath, 'utf8');
         const credentials = { key: privateKey, cert: certificate };
 
+        // 通过访问唯一 instance 来触发单例模式的创建
+        JwtHelper.getInstance();
+
         // 创建 HTTPS 服务器
         this.httpsServer = https.createServer(credentials, this.app);
 
