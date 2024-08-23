@@ -333,7 +333,6 @@ export class Server {
                 res.status(302)
                 .setHeader('Location', `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}`)
                 .send();
-                this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: 1, bytes: file.size }));
                 cluster.pendingHits++;
                 cluster.pendingTraffic += file.size;
             } else {
@@ -561,9 +560,15 @@ export class Server {
                 }
                 else {
                     console.log(`SOCKET ${socket.handshake.url} socket.io <KEEP-ALIVE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
-                    cluster.hits += Math.min(keepAliveData.hits, cluster.pendingHits);
-                    cluster.traffic += Math.min(keepAliveData.bytes, cluster.pendingTraffic);
+                    const hits = Math.min(keepAliveData.hits, cluster.pendingHits);
+                    const traffic = Math.min(keepAliveData.bytes, cluster.pendingTraffic);
+                    cluster.pendingHits += hits;
+                    cluster.pendingTraffic += traffic;
+                    cluster.pendingHits = 0;
+                    cluster.pendingTraffic = 0;
                     ack([null, data.time]);
+                    this.db.update(cluster);
+                    this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: hits, bytes: traffic }));
                 }
             });
 
@@ -578,6 +583,7 @@ export class Server {
                     cluster.isOnline = false;
                     socket.send('Bye. Have a good day!');
                     ack([null, true]);
+                    this.db.update(cluster);
                 }
             });
 
