@@ -425,7 +425,14 @@ export class Server {
             }
             cluster.forEach(c => {
                 c.owner = user.id;
-                this.db.update(c);
+                this.db.update({
+                    clusterId: c.clusterId,
+                    owner: c.owner,
+                    clusterSecret: c.clusterSecret,
+                    endpoint: c.endpoint,
+                    port: c.port,
+                    
+                });
             });
             res.status(200).json(cluster);
         });

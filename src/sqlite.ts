@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { ClusterEntity } from './database/cluster';
 
 // 表的定义映射
 const tableSchemaMap = new Map<Function, string>();
@@ -10,7 +11,17 @@ function Table(tableName: string, schema: string) {
     };
 }
 
-export { Table };
+function Ignore(und: undefined, {name}: {name: string}) {
+    return function (this: any, value: any) {
+        if (!this.constructor.ignoredFields) {
+            this.constructor.ignoredFields = [];
+        }
+        this.constructor.ignoredFields.push(name);
+        return value;
+    };
+}
+
+export { Table, Ignore };
 
 export class SQLiteHelper {
     private db: Database.Database;
@@ -83,16 +94,24 @@ export class SQLiteHelper {
     public update<T extends object>(obj: T): void {
         const tableName = this.getTableName(obj);
         const data = obj as Record<string, any>;
+        const ignoredFields = (obj.constructor as any).ignoredFields || [];
+    
+        // Construct the update columns, ignoring fields marked with @ignore
         const columns = Object.keys(data)
-            .filter(key => key !== 'id')
+            .filter(key => key !== 'id' && !ignoredFields.includes(key))
             .map(key => `${key} = ?`).join(', ');
-        const values = Object.values(data).filter((_, index) => Object.keys(data)[index] !== 'id');
-        values.push((data as any).id);
+    
+        const values = Object.keys(data)
+            .filter(key => key !== 'id' && !ignoredFields.includes(key))
+            .map(key => data[key]);
+    
+        // Ensure `id` is at the end of the values array
+        values.push(data.id);
     
         const updateSQL = `UPDATE ${tableName} SET ${columns} WHERE id = ?`;
         const stmt = this.db.prepare(updateSQL);
         stmt.run(values);
-    }
+    }    
 
     public remove<T extends object>(type: { new (): T }, primaryKey: number | string): void {
         const tableName = this.getTableNameByConstructor(type);

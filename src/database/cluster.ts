@@ -1,4 +1,4 @@
-import { Table } from '../sqlite';
+import { Ignore, Table } from '../sqlite';
 import { StatsStorage } from '../statistics/cluster-stats';
 
 @Table('clusters', `
@@ -31,16 +31,20 @@ export class ClusterEntity {
 
     public bandwidth: number = 30;
 
+    @Ignore
     public measureBandwidth: number = -1;
 
     public traffic: number = 0;
 
+    @Ignore
     public pendingTraffic: number = 0;
 
     public hits: number = 0;
 
+    @Ignore
     public pendingHits: number = 0;
 
+    @Ignore
     public isOnline: boolean = false;
 
     public isBanned: boolean = false;
