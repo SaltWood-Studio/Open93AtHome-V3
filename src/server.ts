@@ -418,7 +418,7 @@ export class Server {
             }
             const c = req.body as { clusterId: string, cluterSecret: string };
             res.setHeader('Content-Type', 'application/json');
-            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && c.clusterSecret === c.clusterSecret && c.owner === 0);
+            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && c.clusterSecret === c.clusterSecret && Number(c.owner) === 0);
             if (cluster.length === 0) {
                 res.status(404).send(); // 集群不存在
                 return;
@@ -442,7 +442,7 @@ export class Server {
             }
             const c = req.body as { clusterId: string };
             res.setHeader('Content-Type', 'application/json');
-            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && c.owner === user.id);
+            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && Number(c.owner) === user.id);
             cluster.forEach(c => {
                 c.owner = 0;
                 this.db.update(c);
