@@ -1,4 +1,4 @@
-import { Table } from "../sqlite";
+import { PrimaryKey, Table } from "../sqlite";
 
 // TypeScript 等效的 UserEntity 类
 @Table('users', `
@@ -6,6 +6,7 @@ import { Table } from "../sqlite";
     username TEXT NOT NULL, 
     photo TEXT
 `)
+@PrimaryKey('id')
 export class UserEntity {
     public id: number;
     public username: string;

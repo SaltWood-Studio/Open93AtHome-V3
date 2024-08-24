@@ -104,7 +104,7 @@ export class SQLiteHelper {
         const data = obj as Record<string, any>;
         const ignoredFields = (obj.constructor as any).ignoredFields || [];
 
-        const pk = primaryKeyMap.get(obj.constructor as { new (): T });
+        const pk = primaryKeyMap.get(obj.constructor as { new (): T }) || 'id';
         if (!pk) {
             throw new Error(`Primary key for table ${tableName} not defined`);
         }
