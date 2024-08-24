@@ -418,16 +418,16 @@ export class Server {
             }
             const c = req.body as { clusterId: string, cluterSecret: string };
             res.setHeader('Content-Type', 'application/json');
-            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && c.clusterSecret === c.clusterSecret && Number(c.owner) === 0);
-            if (cluster.length === 0) {
+            const matches = this.clusters.filter(c => c.clusterId === c.clusterId && c.clusterSecret === c.clusterSecret && Number(c.owner) === 0);
+            if (matches.length === 0) {
                 res.status(404).send(); // 集群不存在
                 return;
             }
-            cluster.forEach(c => {
+            matches.forEach(c => {
                 c.owner = user.id;
                 this.db.update(c);
             });
-            res.status(200).json(cluster);
+            res.status(200).json(matches);
         });
         this.app.get('/93AtHome/dashboard/user/unbindCluster', (req: Request, res: Response) => {
             const token = req.cookies.token;
@@ -442,12 +442,12 @@ export class Server {
             }
             const c = req.body as { clusterId: string };
             res.setHeader('Content-Type', 'application/json');
-            const cluster = this.clusters.filter(c => c.clusterId === c.clusterId && Number(c.owner) === user.id);
-            cluster.forEach(c => {
+            const matches = this.clusters.filter(c => c.clusterId === c.clusterId && Number(c.owner) === user.id);
+            matches.forEach(c => {
                 c.owner = 0;
                 this.db.update(c);
             });
-            res.status(200).json(cluster);
+            res.status(200).json(matches);
         });
         this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
             const token = req.cookies.token;
