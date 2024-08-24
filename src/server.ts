@@ -535,6 +535,8 @@ export class Server {
                 .then(hashes => {
                     const realHashes = randomFiles.map(f => f.hash);
                     if (hashes.every((hash, index) => hash.hash === realHashes[index])) {
+                        cluster.endpoint = enableData.host;
+                        cluster.port = enableData.port;
                         cluster.isOnline = true;
                         ack([null, true]);
                     }
