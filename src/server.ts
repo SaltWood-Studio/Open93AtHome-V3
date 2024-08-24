@@ -416,9 +416,9 @@ export class Server {
                 res.status(404).send(); // 用户不存在
                 return;
             }
-            const c = req.body as { clusterId: string, cluterSecret: string };
+            const body = req.body as { clusterId: string, clusterSecret: string };
             res.setHeader('Content-Type', 'application/json');
-            const matches = this.clusters.filter(c => c.clusterId === c.clusterId && c.clusterSecret === c.clusterSecret && Number(c.owner) === 0);
+            const matches = this.clusters.filter(c => c.clusterId === body.clusterId && c.clusterSecret === body.clusterSecret && Number(c.owner) === 0);
             if (matches.length === 0) {
                 res.status(404).send(); // 集群不存在
                 return;
@@ -440,9 +440,9 @@ export class Server {
                 res.status(404).send(); // 用户不存在
                 return;
             }
-            const c = req.body as { clusterId: string };
+            const body = req.body as { clusterId: string };
             res.setHeader('Content-Type', 'application/json');
-            const matches = this.clusters.filter(c => c.clusterId === c.clusterId && Number(c.owner) === user.id);
+            const matches = this.clusters.filter(c => c.clusterId === body.clusterId && Number(c.owner) === user.id);
             matches.forEach(c => {
                 c.owner = 0;
                 this.db.update(c);
