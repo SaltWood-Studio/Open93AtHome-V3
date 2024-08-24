@@ -1,4 +1,4 @@
-import { Ignore, Table } from '../sqlite';
+import { Ignore, Table, PrimaryKey } from '../sqlite';
 import { StatsStorage } from '../statistics/cluster-stats';
 
 @Table('clusters', `
@@ -14,6 +14,7 @@ import { StatsStorage } from '../statistics/cluster-stats';
     hits INTEGER,
     isBanned BOOLEAN
 `)
+@PrimaryKey('clusterId')
 export class ClusterEntity {
     public clusterId: string = '';
 

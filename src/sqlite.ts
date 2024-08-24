@@ -11,6 +11,14 @@ function Table(tableName: string, schema: string) {
     };
 }
 
+const primaryKeyMap = new Map<Function, string>();
+
+function PrimaryKey(tableName: string) {
+    return function (constructor: Function) {
+        primaryKeyMap.set(constructor, tableName);
+    };
+}
+
 function Ignore(und: undefined, {name}: {name: string}) {
     return function (this: any, value: any) {
         if (!this.constructor.ignoredFields) {
@@ -21,7 +29,7 @@ function Ignore(und: undefined, {name}: {name: string}) {
     };
 }
 
-export { Table, Ignore };
+export { Table, Ignore, PrimaryKey };
 
 export class SQLiteHelper {
     private db: Database.Database;
@@ -95,20 +103,25 @@ export class SQLiteHelper {
         const tableName = this.getTableName(obj);
         const data = obj as Record<string, any>;
         const ignoredFields = (obj.constructor as any).ignoredFields || [];
+
+        const pk = primaryKeyMap.get(obj.constructor as { new (): T });
+        if (!pk) {
+            throw new Error(`Primary key for table ${tableName} not defined`);
+        }
     
         // Construct the update columns, ignoring fields marked with @ignore
         const columns = Object.keys(data)
-            .filter(key => key !== 'id' && !ignoredFields.includes(key))
+            .filter(key => key !== pk && !ignoredFields.includes(key))
             .map(key => `${key} = ?`).join(', ');
     
         const values = Object.keys(data)
-            .filter(key => key !== 'id' && !ignoredFields.includes(key))
+            .filter(key => key !== pk && !ignoredFields.includes(key))
             .map(key => data[key]);
     
         // Ensure `id` is at the end of the values array
-        values.push(data.id);
+        values.push(data[pk]);
     
-        const updateSQL = `UPDATE ${tableName} SET ${columns} WHERE id = ?`;
+        const updateSQL = `UPDATE ${tableName} SET ${columns} WHERE ${pk} = ?`;
         const stmt = this.db.prepare(updateSQL);
         stmt.run(values);
     }    
