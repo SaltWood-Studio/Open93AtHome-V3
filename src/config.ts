@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import env from 'env-var'
+import { Utilities } from './utilities'
 
 export class Config {
     public static instance: Config
@@ -12,6 +13,7 @@ export class Config {
     public readonly statsDir: string = env.get('STATISTICS_DIRECTORY').default("./stats").asString()
     public readonly certificateDir: string = env.get('CERTIFICATE_DIRECTORY').default("./certificates").asString()
     public readonly port: number = env.get('PORT').default(9388).asPortNumber()
+    public readonly adminToken: string = env.get('ADMIN_TOKEN').default(Utilities.generateRandomString(24)).asString()
 
     private constructor() { }
 

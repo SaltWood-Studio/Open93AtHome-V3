@@ -8,6 +8,7 @@ import { File, IFileInfo } from './database/file';
 import { compress } from '@mongodb-js/zstd';
 import avsc from 'avsc';
 import axios from 'axios';
+import { exec } from 'child_process';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -24,8 +25,63 @@ export const FileListSchema = avsc.Type.forSchema({
 })
 
 export class Utilities {
-    static generateRandomString(length: number): string {
+    public static generateRandomString(length: number): string {
         return crypto.randomBytes(length).toString('hex').slice(0, length);
+    }
+
+    // 将 exec 封装为 Promise
+    public static execCommand(command: string, cwd: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            exec(command, { cwd }, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`Error updating repository ${cwd}: ${error.message}`);
+                    reject(error);
+                    return;
+                }
+                if (stderr) {
+                    console.error(`Stderr for repository ${cwd}: ${stderr}`);
+                    reject(new Error(stderr));
+                    return;
+                }
+                console.log(`Repository ${cwd} updated successfully.`);
+                console.log(stdout);
+                resolve();
+            });
+        });
+    }
+
+    // 并行处理所有仓库
+    public static async updateGitRepositories(rootDir: string): Promise<void> {
+        // 读取根目录下的所有子目录
+        const directories = fs.readdirSync(rootDir, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory()) // 只保留文件夹
+            .map(dirent => dirent.name);
+
+        // 存储所有 Promise
+        const updatePromises: Promise<void>[] = [];
+
+        // 遍历所有子文件夹，并检查是否是一个 Git 仓库
+        directories.forEach(dir => {
+            const repoPath = path.join(rootDir, dir);
+            const gitPath = path.join(repoPath, '.git');
+
+            // 如果是 Git 仓库，创建更新 Promise
+            if (fs.existsSync(gitPath)) {
+                console.log(`Updating repository: ${repoPath}`);
+                const updatePromise = Utilities.execCommand('git pull', repoPath);
+                updatePromises.push(updatePromise);
+            } else {
+                console.log(`${repoPath} is not a Git repository.`);
+            }
+        });
+
+        // 等待所有仓库更新完成
+        try {
+            await Promise.all(updatePromises);
+            console.log('All repositories have been updated successfully.');
+        } catch (error) {
+            console.error('One or more repositories failed to update:', error);
+        }
     }
 
     /**

@@ -226,6 +226,10 @@ export class Server {
             }
         });
         this.app.get('/93AtHome/update_files', async (req: Request, res: Response) => {
+            const token = req.query.token as string || '';
+            if (token !== Config.getInstance().adminToken) {
+                return res.status(403).send(); // 禁止访问
+            }
             if (this.isUpdating) {
                 return res.status(409).send('Update in progress');
             }
