@@ -2,7 +2,7 @@ import { Ignore, Table, PrimaryKey } from '../sqlite';
 import { StatsStorage } from '../statistics/cluster-stats';
 
 @Table('clusters', `
-    clusterId TEXT PRIMARY KEY,
+    clusterId TEXT PRIMARY KEY UNIQUE,
     clusterSecret TEXT,
     endpoint TEXT,
     port INTEGER,
@@ -12,7 +12,8 @@ import { StatsStorage } from '../statistics/cluster-stats';
     bandwidth INTEGER,
     traffic INTEGER,
     hits INTEGER,
-    isBanned BOOLEAN
+    isBanned BOOLEAN,
+    createdAt INTEGER
 `)
 @PrimaryKey('clusterId')
 export class ClusterEntity {
@@ -49,4 +50,6 @@ export class ClusterEntity {
     public isOnline: boolean = false;
 
     public isBanned: boolean = false;
+
+    public createdAt: number = 0;
 }
