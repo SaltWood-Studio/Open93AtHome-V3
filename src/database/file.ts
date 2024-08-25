@@ -22,14 +22,16 @@ export class File {
         return file;
     }
 
-    public static createInstanceFromPath(path: string): File {
-        const file = new File();
-        const information = Utilities.getFileInfoSync(path);
-        file.path = path;
-        file.hash = information.hash;
-        file.size = information.size;
-        file.lastModified = information.lastModified;
-        return file;
+    public static async createInstanceFromPath(path: string): Promise<File> {
+        return new Promise<File>(async (resolve, reject) => {
+            const file = new File();
+            const information = await Utilities.getFileInfoAsync(path);
+            file.path = path;
+            file.hash = information.hash;
+            file.size = information.size;
+            file.lastModified = information.lastModified;
+            resolve(file);
+        });
     }
 }
 

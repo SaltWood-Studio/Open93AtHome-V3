@@ -25,6 +25,7 @@
     "env-var": "^7.5.0",
     "express": "^4.19.2",
     "http2-express-bridge": "^1.0.7",
+    "js-sha1": "^0.7.0",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.7.5",
     "ts-node": "^10.9.2",

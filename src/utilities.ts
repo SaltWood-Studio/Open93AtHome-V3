@@ -193,29 +193,44 @@ export class Utilities {
         return result;
     }
 
-    public static getFileInfoSync(filePath: string): { hash: string, size: number, lastModified: number } {
-        try {
-            // 获取文件的元数据，包括大小和最后修改时间
-            const stats = fs.statSync(filePath);
-            const hash = crypto.createHash('sha1');
-            
-            // 使用流式读取文件，避免将整个文件加载到内存
-            const fileStream = fs.createReadStream(filePath);
-            fileStream.on('data', (chunk) => hash.update(chunk));
-            
-            // 同步结束流
-            fileStream.on('end', () => {});
-    
-            // 返回文件的哈希值、大小和最后修改时间
-            return {
-                hash: hash.digest('hex'),
-                size: stats.size,
-                lastModified: stats.mtime.getTime()
-            };
-            
-        } catch (err) {
-            return { hash: '0000000000000000000000000000000000000000', size: 0, lastModified: 0 };
-        }
+    /**
+    * 计算文件的 SHA-1 哈希值，并返回文件的字节数和最后的修改时间
+    * @param filePath 文件路径
+    * @returns Promise<FileInfo> 包含文件SHA-1哈希值、文件字节数和最后修改时间
+    */
+    public static async getFileInfoAsync(filePath: string): Promise<{ hash: string, size: number, lastModified: number }> {
+        return new Promise((resolve, reject) => {
+            // 使用 fs.stat 获取文件的元信息
+            fs.stat(filePath, (err, stats) => {
+                if (err) {
+                    return reject(`无法获取文件信息: ${err.message}`);
+                }
+
+                // 创建 SHA-1 哈希
+                const hash = crypto.createHash('sha1');
+                const stream = fs.createReadStream(filePath);
+
+                // 逐块更新哈希
+                stream.on('data', (data) => {
+                    hash.update(data);
+                });
+
+                // 文件读取完毕，返回 SHA-1 哈希及文件信息
+                stream.on('end', () => {
+                    const sha1 = hash.digest('hex');
+                    resolve({
+                        hash: sha1,
+                        size: stats.size,                 // 文件的字节数
+                        lastModified: stats.mtime.getTime()         // 文件最后的修改时间
+                    });
+                });
+
+                // 文件读取或哈希计算出错时处理
+                stream.on('error', (err) => {
+                    reject(`文件读取出错: ${err.message}`);
+                });
+            });
+        });
     }
 
     public static computeSignature(challenge: string, signature: string, key: string): boolean {

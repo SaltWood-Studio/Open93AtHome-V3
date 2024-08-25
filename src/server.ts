@@ -99,11 +99,12 @@ export class Server {
         try {
             await Utilities.updateGitRepositories("./files");
             const files = Utilities.scanFiles("./files");
-            this.files = files.map(file => {
-                const f = File.createInstanceFromPath(`.${file}`);
+            const fileTasks = files.map(async file => {
+                const f = await File.createInstanceFromPath(`.${file}`);
                 f.path = f.path.substring(1);
                 return f;
             });
+            this.files = await Promise.all(fileTasks);
             this.avroBytes = await Utilities.getAvroBytes(this.files);
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
             return;
