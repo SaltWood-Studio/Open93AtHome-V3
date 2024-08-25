@@ -97,6 +97,7 @@ export class Server {
         this.isUpdating = true;
         console.log('Updating files...');
         try {
+            await Utilities.updateGitRepositories("./files");
             const files = Utilities.scanFiles("./files");
             this.files = files.map(file => {
                 const f = File.createInstanceFromPath(`.${file}`);
