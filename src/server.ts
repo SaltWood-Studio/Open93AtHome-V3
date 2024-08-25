@@ -672,6 +672,8 @@ export class Server {
                     cluster.pendingTraffic += traffic;
                     cluster.pendingHits = 0;
                     cluster.pendingTraffic = 0;
+                    cluster.traffic += traffic;
+                    cluster.hits += hits;
                     ack([null, new Date(Date.now()).toISOString()]);
                     this.db.update(cluster);
                     this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: hits, bytes: traffic }));
