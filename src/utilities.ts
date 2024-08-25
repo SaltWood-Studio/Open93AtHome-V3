@@ -195,20 +195,24 @@ export class Utilities {
 
     public static getFileInfoSync(filePath: string): { hash: string, size: number, lastModified: number } {
         try {
+            // 获取文件的元数据，包括大小和最后修改时间
             const stats = fs.statSync(filePath);
             const hash = crypto.createHash('sha1');
-            let fileSize = 0;
+            
+            // 使用流式读取文件，避免将整个文件加载到内存
+            const fileStream = fs.createReadStream(filePath);
+            fileStream.on('data', (chunk) => hash.update(chunk));
+            
+            // 同步结束流
+            fileStream.on('end', () => {});
     
-            const data = fs.readFileSync(filePath);
-            hash.update(data);
-            fileSize = data.length;
-    
+            // 返回文件的哈希值、大小和最后修改时间
             return {
                 hash: hash.digest('hex'),
-                size: fileSize,
+                size: stats.size,
                 lastModified: stats.mtime.getTime()
             };
-    
+            
         } catch (err) {
             return { hash: '0000000000000000000000000000000000000000', size: 0, lastModified: 0 };
         }
