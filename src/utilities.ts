@@ -234,7 +234,7 @@ export class Utilities {
     }
 
     public static computeSignature(challenge: string, signature: string, key: string): boolean {
-        const hmac = crypto.createHmac('sha1', key);
+        const hmac = crypto.createHmac('sha256', key);
         hmac.update(challenge);
         const calculatedSignature = hmac.digest('hex').toLowerCase();
         return calculatedSignature === signature.toLowerCase();
