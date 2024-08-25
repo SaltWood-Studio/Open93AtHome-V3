@@ -36,7 +36,7 @@
 | 位置                      | 目的    | 做法                                                                      |
 |-------------------------|-------|-------------------------------------------------------------------------|
 | **dist/cluster.js** L38 | 修改白名单 | 修改 `const whiteListDomain = ['localhost', 'bangbang93.com'];`，添加上你上线的域名 |
-| **cluster.js** L46      | 修改白名单 | 修改 `const whiteListDomain = ['localhost', 'bangbang93.com'];`，添加上你上线的域名 |
+| **cluster.ts** L46      | 修改白名单 | 修改 `const whiteListDomain = ['localhost', 'bangbang93.com'];`，添加上你上线的域名 |
 
 #### 域名欺骗法
 
