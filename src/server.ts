@@ -35,6 +35,9 @@ const logAccess = (req: Request, res: Response) => {
     console.log(`${req.method} ${req.originalUrl} ${req.protocol} <${res.statusCode}> - [${ip}] ${userAgent}`);
 };
 
+// 使用对象解构来移除敏感信息
+const removeSensitiveInfo = ({ clusterSecret, ...rest }: ClusterEntity) => rest;
+
 export class Server {
     private app;
     private io: SocketIOServer;
@@ -363,9 +366,6 @@ export class Server {
             const onlineClusters = this.clusters.filter(c => c.isOnline);
             const offlineClusters = this.clusters.filter(c => !c.isOnline);
         
-            // 使用对象解构来移除敏感信息
-            const removeSensitiveInfo = ({ clusterSecret, endpoint, port, ...rest }: ClusterEntity) => rest;
-        
             const onlineClustersSorted = onlineClusters
                 .sort((a, b) => b.traffic - a.traffic)
                 .map(removeSensitiveInfo);
@@ -427,7 +427,7 @@ export class Server {
                 c.owner = user.id;
                 this.db.update(c);
             });
-            res.status(200).json(matches);
+            res.status(200).json(matches.map(c => removeSensitiveInfo(c)));
         });
         this.app.post('/93AtHome/dashboard/user/unbindCluster', (req: Request, res: Response) => {
             const token = req.cookies.token;
@@ -443,11 +443,15 @@ export class Server {
             const body = req.body as { clusterId: string };
             res.setHeader('Content-Type', 'application/json');
             const matches = this.clusters.filter(c => c.clusterId === body.clusterId && Number(c.owner) === user.id);
+            if (matches.length === 0) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
             matches.forEach(c => {
                 c.owner = 0;
                 this.db.update(c);
             });
-            res.status(200).json(matches);
+            res.status(200).json(matches.map(c => removeSensitiveInfo(c)));
         });
         this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
             const token = req.cookies.token;
@@ -462,7 +466,75 @@ export class Server {
             }
             res.setHeader('Content-Type', 'application/json');
             const clusters = this.clusters.filter(c => c.owner === user.id);
-            res.status(200).json(clusters);
+            res.status(200).json(clusters.map(c => removeSensitiveInfo(c)));
+        });
+        this.app.post('/93AtHome/dashboard/user/cluster/profile', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            const clusterId = req.query.clusterId as string;
+            const cluster = this.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            const clusterName = req.body.clusterName as string || null;
+            const bandwidth = req.body.bandwidth as number || null;
+            const sponsor = req.body.sponsor as string || null;
+            const sponsorUrl = req.body.sponsorUrl as string || null;
+
+            // 将以上四个可选项目更新到集群，如果为null说明不进行更改
+            if (clusterName) {
+                cluster.clusterName = clusterName;
+            }
+
+            if (bandwidth) {
+                cluster.bandwidth = bandwidth;
+            }
+
+            if (sponsor) {
+                cluster.sponsor = sponsor;
+            }
+
+            if (sponsorUrl) {
+                cluster.sponsorUrl = sponsorUrl;
+            }
+
+            this.db.update(cluster);
+            res.status(200).json(removeSensitiveInfo(cluster));
+        });
+        
+        this.app.get('/93AtHome/dashboard/user/cluster/reset_secret', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            const cluster = this.clusters.find(c => c.clusterId === req.query.clusterId && c.owner === user.id);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            const secret = Utilities.generateRandomString(32);
+            cluster.clusterSecret = secret;
+            this.db.update(cluster);
+            res.status(200).json({
+                clusterSecret: secret
+            });
         });
     }
 

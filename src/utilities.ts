@@ -24,6 +24,10 @@ export const FileListSchema = avsc.Type.forSchema({
 })
 
 export class Utilities {
+    static generateRandomString(length: number): string {
+        return crypto.randomBytes(length).toString('hex').slice(0, length);
+    }
+
     /**
      * 扫描指定目录，返回该目录下所有文件的路径集合
      *
