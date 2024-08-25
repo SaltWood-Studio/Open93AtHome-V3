@@ -13,7 +13,9 @@ import { StatsStorage } from '../statistics/cluster-stats';
     traffic INTEGER,
     hits INTEGER,
     isBanned BOOLEAN,
-    createdAt INTEGER
+    createdAt INTEGER,
+    sponsor TEXT,
+    sponsorUrl TEXT
 `)
 @PrimaryKey('clusterId')
 export class ClusterEntity {
@@ -52,4 +54,8 @@ export class ClusterEntity {
     public isBanned: boolean = false;
 
     public createdAt: number = 0;
+
+    public sponsor: string = '';
+
+    public sponsorUrl: string = '';
 }
