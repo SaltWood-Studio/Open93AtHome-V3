@@ -155,7 +155,7 @@ export class Utilities {
                 const responseData = response.data as Buffer;
     
                 // 计算响应数据的哈希值
-                const hash = crypto.createHash('sha256').update(responseData).digest('hex');
+                const hash = crypto.createHash('sha1').update(responseData).digest('hex');
     
                 results.push({ url, hash });
 
@@ -196,7 +196,7 @@ export class Utilities {
     public static getFileInfoSync(filePath: string): { hash: string, size: number, lastModified: number } {
         try {
             const stats = fs.statSync(filePath);
-            const hash = crypto.createHash('sha256');
+            const hash = crypto.createHash('sha1');
             let fileSize = 0;
     
             const data = fs.readFileSync(filePath);
@@ -215,7 +215,7 @@ export class Utilities {
     }
 
     public static computeSignature(challenge: string, signature: string, key: string): boolean {
-        const hmac = crypto.createHmac('sha256', key);
+        const hmac = crypto.createHmac('sha1', key);
         hmac.update(challenge);
         const calculatedSignature = hmac.digest('hex').toLowerCase();
         return calculatedSignature === signature.toLowerCase();

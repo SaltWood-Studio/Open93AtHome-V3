@@ -344,7 +344,8 @@ export class Server {
                 this.centerStats.addData({ hits: 1, bytes: file.size });
                 if (!cluster) {
                     res.sendFile(file.path.substring(1), {
-                        root: "."
+                        root: ".",
+                        maxAge: "30d"
                     });
                     return;
                 }
