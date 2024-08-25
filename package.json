@@ -18,7 +18,7 @@
     "@types/socket.io": "^3.0.2",
     "avsc": "^5.7.7",
     "axios": "^1.7.5",
-    "better-sqlite3": "^11.1.2",
+    "better-sqlite3": "^11.2.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
