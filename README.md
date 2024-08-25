@@ -2,7 +2,7 @@
 
 ## 简介
 
-这是一个类似于 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) **主控端**的分发文件项目，经过三次重构，现已可以完美兼容 **node** **Python** **C#** **PHP** 端
+这是一个类似于 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) **主控端**的分发文件项目，经过三次重构，现已可以完美兼容 **Node、Python、C#、PHP** 端
 > [!TIP]
 > 本项目实际可被用于分发任何有效 Git 仓库内的文件，因此并不与 bangbang93HUB 有任何关联
 
@@ -72,12 +72,12 @@
 ## 调试
 
 1. 将此项目 `git clone` 到本地
-2. 使用 **IntelliJ IDEA** 打开项目
+2. 使用**支持 Type Script 的 IDE** 打开项目
 3. 愉快的开发吧🎉
 
 ``` shell
-git clone https://github.com/SaltWood-Studio/Open93AtHome.git
-cd Open93AtHome
+git clone https://github.com/SaltWood-Studio/Open93AtHome-V3.git
+cd Open93AtHome-V3
 ```
 
 ### 贡献
