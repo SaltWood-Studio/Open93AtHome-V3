@@ -43,6 +43,16 @@ export class StatsStorage {
         this.dataUpdated = true;  // 数据已更新
     }
 
+    public getTodayStats(): { hits: number, bytes: number } {
+        const today = new Date().toISOString().split('T')[0];
+        const todayData = this.data.find(entry => entry.date === today);
+        if (todayData) {
+            return { hits: todayData.hits, bytes: todayData.bytes };
+        } else {
+            return { hits: 0, bytes: 0 };
+        }
+    }
+
     public getLast30DaysStats(): { date: string, hits: number, bytes: number }[] {
         const now = new Date();
         const today = now.toISOString().split('T')[0];

@@ -374,7 +374,21 @@ export class Server {
                 })
             });
         });
-        
+        this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+            const clusterId = req.query.clusterId as string;
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (cluster) {
+                const stats = this.stats.find(s => s.id === clusterId);
+                if (stats) {
+                    res.status(200).json(stats.getLast30DaysStats());
+                } else {
+                    res.status(404).send(); // 未找到统计数据
+                }
+            } else {
+                res.status(404).send(); // 未找到集群
+            }
+        });
         this.app.get('/93AtHome/rank', async (req: Request, res: Response) => {
             // 先把节点按照在线和离线分成两部分，然后各自按照 traffic 从大到小排序，最后返回 JSON 字符串
             const onlineClusters = this.clusters.filter(c => c.isOnline);
