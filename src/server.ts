@@ -405,7 +405,7 @@ export class Server {
                 avatar_url: user.photo
             });
         });
-        this.app.get('/93AtHome/dashboard/user/bindCluster', (req: Request, res: Response) => {
+        this.app.post('/93AtHome/dashboard/user/bindCluster', (req: Request, res: Response) => {
             const token = req.cookies.token;
             if (!token) {
                 res.status(401).send(); // 未登录
@@ -429,7 +429,7 @@ export class Server {
             });
             res.status(200).json(matches);
         });
-        this.app.get('/93AtHome/dashboard/user/unbindCluster', (req: Request, res: Response) => {
+        this.app.post('/93AtHome/dashboard/user/unbindCluster', (req: Request, res: Response) => {
             const token = req.cookies.token;
             if (!token) {
                 res.status(401).send(); // 未登录
