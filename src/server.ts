@@ -244,6 +244,15 @@ export class Server {
             const clusterId = req.query.clusterId as string || '';
         
             if (this.clusters.some(c => c.clusterId === clusterId)) {
+                const cluster = this.clusters.find(c => c.clusterId === clusterId);
+                if (!cluster) {
+                    res.status(404).send();
+                    return;
+                }
+                if (cluster.isBanned) {
+                    res.status(403).send();
+                    return;
+                }
                 const token = JwtHelper.getInstance().issueToken({
                     clusterId: clusterId
                 }, "cluster-challenge", 60 * 5);
