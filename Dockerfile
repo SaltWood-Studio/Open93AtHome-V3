@@ -6,7 +6,8 @@ RUN apt-get update && \
     apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_21.x | bash - && \
     apt-get install -y nodejs && \
-    apt-get install -y build-essential python3 python3-pip
+    apt-get install -y build-essential python3 python3-pip && \
+    apt-get update && apt-get install -y git
 
 # 设置工作目录
 WORKDIR /app

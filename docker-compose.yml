@@ -4,6 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - ./certificates:/app/certificates
+      - ./files:/app/files
     env_file:
       - .env
     network_mode: host
+    restart: unless-stopped
