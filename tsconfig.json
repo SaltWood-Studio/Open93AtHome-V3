@@ -1,40 +1,17 @@
 {
+  "extends": ["@tsconfig/node21"],
   "compilerOptions": {
-    /* 项目设置 */
-    "incremental": true,                                /* 启用增量编译以加快后续编译速度。 */
-    "tsBuildInfoFile": "./.tsbuildinfo",                /* 设置增量编译信息的存储路径。 */
-
-    /* 语言和环境 */
-    "target": "ESNext",                                  /* 设置生成的JavaScript语言版本。 */
-    "lib": ["ESNext"],                                   /* 指定要包含的库。 */
-    "module": "commonjs",                                /* 指定生成的模块代码格式。 */
-    "esModuleInterop": true,                             /* 使CommonJS模块与ES模块更好地互操作。 */
-    "forceConsistentCasingInFileNames": true,            /* 确保在导入时文件名的大小写一致。 */
-
-    /* 模块解析 */
-    "moduleResolution": "node",                          /* 指定模块解析策略。 */
-    "baseUrl": "./",                                     /* 基准目录，用于解析非相对模块名。 */
-    "paths": {                                           /* 路径映射，用于指定模块的查找路径。 */
-      "*": ["node_modules/*", "src/types/*"]
-    },
-    "outDir": "./dist",                                  /* 指定输出目录为dist。 */
-
-    /* 严格类型检查 */
-    "strict": true,                                      /* 启用所有严格的类型检查选项。 */
-    "skipLibCheck": true,                                /* 跳过对声明文件（.d.ts）的类型检查。 */
-
-    /* JavaScript 支持 */
-    "allowJs": true,                                     /* 允许JavaScript文件参与编译。 */
-
-    /* 编译输出 */
-    "sourceMap": true,                                   /* 生成源映射文件以支持调试。 */
-    "removeComments": true,                              /* 删除输出文件中的注释。 */
-    "noEmitOnError": true,                               /* 当有错误时，不生成输出文件。 */
-
-    /* Decorators 支持 */
-    "experimentalDecorators": true,                      /* 启用实验性的装饰器特性。 */
-    "emitDecoratorMetadata": true                        /* 发射装饰器所需的设计类型元数据。 */
+    "esModuleInterop": true,  // Enable this option
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "noUnusedLocals": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "outDir": "dist"
   },
-  "include": ["src/**/*"],                               /* 包含src目录中的所有TypeScript和JavaScript文件。 */
-  "exclude": ["node_modules", "dist"]                    /* 排除node_modules和dist目录。 */
+  "exclude": [
+    "node_modules",
+    "public/**/*"
+  ]
 }

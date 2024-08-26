@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@mongodb-js/zstd": "^1.2.0",
+    "@tsconfig/node21": "^21.0.3",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^22.5.0",
