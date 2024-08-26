@@ -25,6 +25,10 @@ export const FileListSchema = avsc.Type.forSchema({
 })
 
 export class Utilities {
+    public static isRunningInDocker(): boolean {
+        return process.env.IS_IN_DOCKER === 'true';
+    }
+
     public static generateRandomString(length: number): string {
         return crypto.randomBytes(length).toString('hex').slice(0, length);
     }
@@ -68,7 +72,6 @@ export class Utilities {
             // 如果是 Git 仓库，创建更新 Promise
             if (fs.existsSync(gitPath)) {
                 console.log(`Updating repository: ${repoPath}`);
-                Utilities.execCommand(`git config --global --add safe.directory \"${repoPath}\"`, repoPath);
                 const updatePromise = Utilities.execCommand('git pull', repoPath);
                 updatePromises.push(updatePromise);
             } else {

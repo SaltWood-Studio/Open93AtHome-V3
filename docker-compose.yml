@@ -10,5 +10,7 @@ services:
       - ./data:/app/data
     env_file:
       - .env
+    environment:
+      - IS_IN_DOCKER=true
     network_mode: host
     restart: unless-stopped
