@@ -100,4 +100,6 @@ database.sqlite
 
 *.key
 
+stats/
+data/
 files/
