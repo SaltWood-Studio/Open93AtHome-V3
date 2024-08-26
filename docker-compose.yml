@@ -1,0 +1,9 @@
+version: '3'
+services:
+  93athome:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    network_mode: host
