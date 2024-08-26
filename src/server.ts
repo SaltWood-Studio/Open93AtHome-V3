@@ -57,7 +57,11 @@ export class Server {
 
         // 创建 Express 应用
         this.app = http2Express(express);
-        this.db = new SQLiteHelper("database.sqlite");
+
+        // 创建文件夹
+        fs.mkdirSync('./data');
+        fs.mkdirSync('./files');
+        this.db = new SQLiteHelper("./data/database.sqlite");
 
         this.db.createTable<UserEntity>(UserEntity);
         this.db.createTable<ClusterEntity>(ClusterEntity);

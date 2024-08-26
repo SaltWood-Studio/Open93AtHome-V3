@@ -1,34 +1,28 @@
-# 使用 Ubuntu 24.04 作为基础镜像
-FROM ubuntu:24.04
+# 使用Alpine Linux作为基础镜像
+FROM alpine:latest
 
-# 安装 Node.js 和 npm
-RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_21.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get install -y build-essential python3 python3-pip && \
-    apt-get update && apt-get install -y git
+# 更改apk软件源为清华大学镜像并更新软件包
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
+    apk update && \
+    apk add --no-cache \
+        build-base \
+        python3 \
+        git \
+        npm \
+        nodejs
 
-# 设置工作目录
-WORKDIR /app
-
-# 配置 NPM 使用 npmmirror 镜像加速
+# 设置镜像源
 RUN npm config set registry https://registry.npmmirror.com
 
-# 复制 package.json 和 package-lock.json（或 yarn.lock）到工作目录
-COPY package*.json ./
-
-# 安装项目依赖
-RUN npm install
-
-# 复制整个项目到工作目录
+# 复制项目文件到容器中
+WORKDIR /app
 COPY . .
 
-# 安装 TypeScript 编译器
-RUN npm install -g typescript
+RUN rm -rf node_modules && \
+    npm install
 
-# 编译 TypeScript 代码
-# RUN tsc
+# 安装TypeScript以及其他依赖包
+RUN npm install -g typescript && npm install
 
-# 设置启动命令
+# 启动应用程序
 CMD ["npm", "run", "start"]
