@@ -489,6 +489,7 @@ export class Server {
         });
         this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
             const token = req.cookies.token;
+            const clusterId = req.query.clusterId as string;
             if (!token) {
                 res.status(401).send(); // 未登录
                 return;
@@ -499,8 +500,17 @@ export class Server {
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            const clusters = this.clusters.filter(c => c.owner === user.id);
-            res.status(200).json(clusters.map(c => removeSensitiveInfo(c)));
+            if (!clusterId) {
+                const clusters = this.clusters.filter(c => c.owner === user.id);
+                res.status(200).json(clusters.map(c => removeSensitiveInfo(c)));
+            } else {
+                const cluster = this.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
+                if (!cluster) {
+                    res.status(404).send(); // 集群不存在
+                    return;
+                }
+                res.status(200).json(removeSensitiveInfo(cluster));
+            }
         });
         this.app.post('/93AtHome/dashboard/user/cluster/profile', (req: Request, res: Response) => {
             const token = req.cookies.token;
