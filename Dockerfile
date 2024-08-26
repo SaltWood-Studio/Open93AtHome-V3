@@ -1,5 +1,11 @@
-# 使用 Node.js 21 官方镜像作为基础镜像
-FROM node:21
+# 使用 Ubuntu 22.04 作为基础镜像
+FROM ubuntu:22.04
+
+# 安装 Node.js 和 npm
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_21.x | bash - && \
+    apt-get install -y nodejs
 
 # 设置工作目录
 WORKDIR /app
@@ -21,9 +27,6 @@ RUN npm install -g typescript
 
 # 编译 TypeScript 代码
 # RUN tsc
-
-# 暴露应用的端口（如果有的话）
-# EXPOSE 3000
 
 # 设置启动命令
 CMD ["npm", "run", "start"]
