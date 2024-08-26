@@ -68,6 +68,7 @@ export class Utilities {
             // 如果是 Git 仓库，创建更新 Promise
             if (fs.existsSync(gitPath)) {
                 console.log(`Updating repository: ${repoPath}`);
+                Utilities.execCommand(`git config --global --add safe.directory \"${repoPath}\"`, repoPath);
                 const updatePromise = Utilities.execCommand('git pull', repoPath);
                 updatePromises.push(updatePromise);
             } else {
