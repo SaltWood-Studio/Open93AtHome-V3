@@ -9,6 +9,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/re
         python3 \
         git \
         npm \
+        openssh \
         nodejs
 
 # 设置镜像源
