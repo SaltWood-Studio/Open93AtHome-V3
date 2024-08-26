@@ -59,8 +59,8 @@ export class Server {
         this.app = http2Express(express);
 
         // 创建文件夹
-        fs.mkdirSync('./data');
-        fs.mkdirSync('./files');
+        if (!fs.existsSync('./data')) fs.mkdirSync('./data');
+        if (!fs.existsSync('./files')) fs.mkdirSync('./files');
         this.db = new SQLiteHelper("./data/database.sqlite");
 
         this.db.createTable<UserEntity>(UserEntity);
