@@ -1,5 +1,5 @@
-# 使用 Ubuntu 22.04 作为基础镜像
-FROM ubuntu:22.04
+# 使用 Ubuntu 24.04 作为基础镜像
+FROM ubuntu:24.04
 
 # 安装 Node.js 和 npm
 RUN apt-get update && \
