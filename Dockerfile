@@ -20,10 +20,10 @@ COPY . .
 RUN npm install -g typescript
 
 # 编译 TypeScript 代码
-RUN tsc
+# RUN tsc
 
 # 暴露应用的端口（如果有的话）
 # EXPOSE 3000
 
 # 设置启动命令
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "start"]
