@@ -150,28 +150,20 @@ export class Utilities {
         return array[randomIndex];
     }
 
-    public static async checkUrls(urls: string[]): Promise<{ url: string; hash: string }[]> {
-        const results: { url: string; hash: string }[] = [];
-    
-        for (const url of urls) {
-            try {
-                const response = await axios.get(url, { responseType: 'arraybuffer' });
-                const responseData = response.data as Buffer;
-    
-                // 计算响应数据的哈希值
-                const hash = crypto.createHash('sha1').update(responseData).digest('hex');
-    
-                results.push({ url, hash });
+    public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {
+        try {
+            const response = await axios.get(url, { responseType: 'arraybuffer' });
+            const responseData = response.data as Buffer;
 
-                await this.wait(2); // 限制请求频率
-            } catch (error) {
-                const err = error as Error;
-                console.error(`Error fetching ${url}:`, err.message);
-                results.push({ url, hash: 'error' });
-            }
+            // 计算响应数据的哈希值
+            const hash = crypto.createHash('sha1').update(responseData).digest('hex');
+
+            return { url, hash };
+        } catch (error) {
+            const err = error as Error;
+            console.error(`Error fetching ${url}:`, err.message);
+            return { url, hash: 'error' };
         }
-    
-        return results;
     }
 
     public static findDifferences(
@@ -186,32 +178,50 @@ export class Utilities {
             ...onlyRight ? [] : fileArray1.filter(f =>!hashSet2.has(f.hash)), // 存在于 fileArray1 但不存在于 fileArray2
            ...fileArray2.filter(f =>!hashSet1.has(f.hash)) // 存在于 fileArray2 但不存在于 fileArray1
         ]
-      }
+    }
 
-      public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity, attempt: number = -3): Promise<string | null> {
+    public static zip<T, U>(arr1: T[], arr2: U[]): [T, U][] {
+        const length = Math.min(arr1.length, arr2.length); // 选择两个数组中较短的一个的长度
+        const result: [T, U][] = []; // 初始化结果数组
+      
+        for (let i = 0; i < length; i++) {
+          result.push([arr1[i], arr2[i]]);
+        }
+      
+        return result;
+    }
+
+    public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity, attempt: number = -3): Promise<string | null> {
         let result: string | null = "Error: This value should never be returned. if you see this message, please contact to the administrator.";
     
         try {
             const urls = files.map(f => `http://${cluster.endpoint}:${cluster.port}/download/${f.hash}?${Utilities.getSign(f.hash, cluster.clusterSecret)}`);
-            const hashes = await Utilities.checkUrls(urls);
-            const realHashes = files.map(f => f.hash);
-    
-            if (hashes.every((hash, index) => hash.hash === realHashes[index])) {
-                cluster.isOnline = true;
-                return null; // 如果哈希匹配，则直接返回 null
-            } else {
-                if (attempt < 0) {
-                    return await Utilities.checkSpecfiedFiles(files, cluster, attempt + 1); // 递归重试
+            for (const [url, file] of Utilities.zip(urls, files)) {
+                const realHash = file.hash;
+                const remote = await Utilities.checkUrl(url);
+                
+                if (remote.hash !== realHash) {
+                    if (attempt < 0) {
+                        const message = await Utilities.checkSpecfiedFiles([file], cluster, attempt + 1); // 递归重试
+                        if (message) {
+                            return message;
+                        } else {
+                            continue;
+                        }
+                    }
+                    
+                    const remoteHash = remote.hash;
+                    const differences = [
+                        realHash,
+                        remoteHash
+                    ];
+                    
+                    result = `Error: Hash mismatch: ${differences.join(', ')}`;
+                    return result;
                 }
-    
-                const remoteHashes = hashes.map(h => h.hash);
-                const differences = [
-                    ...realHashes.filter(hash => !remoteHashes.includes(hash)), // 仅在 realHashes 中存在的哈希
-                    ...remoteHashes.filter(hash => !realHashes.includes(hash))  // 仅在 remoteHashes 中存在的哈希
-                ];
-    
-                result = `Error: Hash mismatch: ${differences.join(', ')}`;
             }
+
+            result = null;
         } catch (error) {
             result = `Error: ${(error as Error)?.message}`;
         }
