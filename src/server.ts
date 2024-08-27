@@ -353,7 +353,10 @@ export class Server {
             const hash = req.params.hash.toLowerCase();
             const file = this.files.find(f => f.hash === hash);
             if (file) {
-                res.sendFile(path.join(__dirname, file.path.substring(1)));
+                res.sendFile(file.path.substring(1), {
+                    root: ".",
+                    maxAge: "30d"
+                });
             } else {
                 res.status(404).send();
             }
