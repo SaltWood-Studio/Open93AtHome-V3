@@ -97,11 +97,12 @@ export class Server {
         this.setupRoutes();
     }
 
-    public async updateFiles(): Promise<void> {
+    public async updateFiles(checkClusters: boolean = false): Promise<void> {
         this.isUpdating = true;
         console.log('Updating files...');
         try {
             await Utilities.updateGitRepositories("./files");
+            const oldFiles = this.files;
             const files = Utilities.scanFiles("./files");
             const fileTasks = files.map(async file => {
                 const f = await File.createInstanceFromPath(`.${file}`);
@@ -111,6 +112,17 @@ export class Server {
             this.files = await Promise.all(fileTasks);
             this.avroBytes = await Utilities.getAvroBytes(this.files);
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
+            if (checkClusters) {
+                for (const cluster of this.clusters.filter(c => c.isOnline)) {
+                    const message = await Utilities.checkSpecfiedFiles(Utilities.findDifferences(oldFiles, this.files), cluster);
+                    if (message) {
+                        cluster.downReason = message;
+                        cluster.isOnline = false;
+                        this.db.update(cluster);
+                        console.log(`Cluster ${cluster.clusterId} is down because of ${message}`);
+                    }
+                }
+            }
             return;
         }
         catch (error) {
@@ -240,7 +252,7 @@ export class Server {
                 return res.status(409).send('Update in progress');
             }
 
-            this.updateFiles();
+            this.updateFiles(true);
             return res.status(204).send();
         });
         this.app.get('/openbmclapi-agent/challenge', (req: Request, res: Response) => {
@@ -328,12 +340,16 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json({ sync: { concurrency: 10, source: "center" }});
         });
-        this.app.get('/openbmclapi/download/:hash([0-9a-f]{32})', (req: Request, res: Response) => {
+        this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]{32})', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
                 res.status(403).send(); // 禁止访问
                 return;
             }
-            const hash = req.params.hash;
+            if (this.isUpdating) {
+                res.status(503).send('File list update in progress');
+                return;
+            }
+            const hash = req.params.hash.toLowerCase();
             const file = this.files.find(f => f.hash === hash);
             if (file) {
                 res.sendFile(path.join(__dirname, file.path.substring(1)));
@@ -342,6 +358,10 @@ export class Server {
             }
         });
         this.app.get('/files/*', (req: Request, res: Response) => {
+            if (this.isUpdating) {
+                res.status(503).send('File list update in progress');
+                return;
+            }
             const p = decodeURI(req.path);
             const file = this.files.find(f => f.path === p);
             if (file) {
@@ -642,34 +662,33 @@ export class Server {
                     }
                 };
 
+                if (this.isUpdating) {
+                    ack({ message: "File list is updating, please try again later."});
+                    return;
+                }
+
                 const randomFileCount = 5;
                 const randomFiles = Utilities.getRandomElements(this.files, randomFileCount);
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (!cluster) {
-                    ack({ message: "Cluster not found"});
+                    ack({ message: "Cluster not found."});
                     return;
                 }
 
-                const urls = randomFiles.map(f => `http://${enableData.host}:${enableData.port}/download/${f.hash}?${Utilities.getSign(f.hash, cluster.clusterSecret)}`);
+                cluster.endpoint = enableData.host;
+                cluster.port = enableData.port;
 
-                Utilities.checkUrls(urls)
-                .then(hashes => {
-                    const realHashes = randomFiles.map(f => f.hash);
-                    if (hashes.every((hash, index) => hash.hash === realHashes[index])) {
-                        cluster.endpoint = enableData.host;
-                        cluster.port = enableData.port;
-                        cluster.isOnline = true;
+                Utilities.checkSpecfiedFiles(randomFiles, cluster)
+                .then(message => {
+                    if (message) {
+                        ack({ message: message });
+                        return;
+                    } else {
+                        this.db.update(cluster);
                         ack([null, true]);
                     }
-                    else {
-                        const differences = [
-                            ...realHashes.filter(hash => !hashes.map(h => h.hash).includes(hash)), // 存在于 objectHashes 中但不存在于 hashArray 中
-                            ...hashes.filter(hash => !realHashes.includes(hash.hash))   // 存在于 hashArray 中但不存在于 objectHashes 中
-                        ];
-                        ack({ message: `Hash mismatch: ${differences.join(', ')}` });
-                    }
-                })
+                });
             });
 
             socket.on('keep-alive', (data, ack: Function) => {
@@ -681,7 +700,10 @@ export class Server {
 
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
-                if (!cluster || !cluster.isOnline) {
+                if (!cluster || !cluster?.isOnline) {
+                    if (!cluster?.isOnline) {
+                        socket.send(`Your cluster was kicked by server because: ${cluster?.downReason}`);
+                    }
                     ack([null, false]);
                 }
                 else {

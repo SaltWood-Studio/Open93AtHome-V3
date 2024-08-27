@@ -9,6 +9,7 @@ import { compress } from '@mongodb-js/zstd';
 import avsc from 'avsc';
 import axios from 'axios';
 import { exec } from 'child_process';
+import { ClusterEntity } from './database/cluster';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -172,6 +173,43 @@ export class Utilities {
         }
     
         return results;
+    }
+
+    public static findDifferences<T>(array1: T[], array2: T[]): T[] {
+        const set1 = new Set(array1);
+        const set2 = new Set(array2);
+        const result: T[] = [];
+        for (const item of set1) {
+            if (!set2.has(item)) {
+                result.push(item);
+            }
+        }
+        return result;
+    }
+
+    public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity): Promise<string | null> {
+        let result: string | null = "Error: This value should never be returned. if you see this message, please contact to the administrator.";
+
+        const urls = files.map(f => `http://${cluster.endpoint}:${cluster.port}/download/${f.hash}?${Utilities.getSign(f.hash, cluster.clusterSecret)}`);
+        await Utilities.checkUrls(urls)
+        .then(hashes => {
+            const realHashes = files.map(f => f.hash);
+            if (hashes.every((hash, index) => hash.hash === realHashes[index])) {
+                cluster.isOnline = true;
+                result = null;
+            }
+            else {
+                const differences = [
+                    ...realHashes.filter(hash => !hashes.map(h => h.hash).includes(hash)), // 存在于 objectHashes 中但不存在于 hashArray 中
+                    ...hashes.filter(hash => !realHashes.includes(hash.hash))   // 存在于 hashArray 中但不存在于 objectHashes 中
+                ];
+                result = `Error: Hash mismatch: ${differences.join(', ')}`;
+            }
+        })
+        .catch(error => {
+            result = `Error: ${error.message}`;
+        });
+        return result;
     }
     
     public static getRandomElements<T>(array: T[], count: number, allowDuplicates: boolean = true): T[] {
