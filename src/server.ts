@@ -340,7 +340,7 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json({ sync: { concurrency: 10, source: "center" }});
         });
-        this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]{32})', (req: Request, res: Response) => {
+        this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
                 res.status(403).send(); // 禁止访问
                 return;

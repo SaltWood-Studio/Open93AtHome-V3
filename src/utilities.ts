@@ -188,30 +188,37 @@ export class Utilities {
         ]
       }
 
-    public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity): Promise<string | null> {
+      public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity, attempt: number = -3): Promise<string | null> {
         let result: string | null = "Error: This value should never be returned. if you see this message, please contact to the administrator.";
-
-        const urls = files.map(f => `http://${cluster.endpoint}:${cluster.port}/download/${f.hash}?${Utilities.getSign(f.hash, cluster.clusterSecret)}`);
-        await Utilities.checkUrls(urls)
-        .then(hashes => {
+    
+        try {
+            const urls = files.map(f => `http://${cluster.endpoint}:${cluster.port}/download/${f.hash}?${Utilities.getSign(f.hash, cluster.clusterSecret)}`);
+            const hashes = await Utilities.checkUrls(urls);
             const realHashes = files.map(f => f.hash);
+    
             if (hashes.every((hash, index) => hash.hash === realHashes[index])) {
                 cluster.isOnline = true;
-                result = null;
-            }
-            else {
+                return null; // 如果哈希匹配，则直接返回 null
+            } else {
+                if (attempt < 0) {
+                    return await Utilities.checkSpecfiedFiles(files, cluster, attempt + 1); // 递归重试
+                }
+    
+                const remoteHashes = hashes.map(h => h.hash);
                 const differences = [
-                    ...realHashes.filter(hash => !hashes.map(h => h.hash).includes(hash)), // 存在于 objectHashes 中但不存在于 hashArray 中
-                    ...hashes.filter(hash => !realHashes.includes(hash.hash))   // 存在于 hashArray 中但不存在于 objectHashes 中
+                    ...realHashes.filter(hash => !remoteHashes.includes(hash)), // 仅在 realHashes 中存在的哈希
+                    ...remoteHashes.filter(hash => !realHashes.includes(hash))  // 仅在 remoteHashes 中存在的哈希
                 ];
+    
                 result = `Error: Hash mismatch: ${differences.join(', ')}`;
             }
-        })
-        .catch(error => {
-            result = `Error: ${error.message}`;
-        });
+        } catch (error) {
+            result = `Error: ${(error as Error)?.message}`;
+        }
+    
         return result;
     }
+    
     
     public static getRandomElements<T>(array: T[], count: number, allowDuplicates: boolean = true): T[] {
         const result: T[] = [];
