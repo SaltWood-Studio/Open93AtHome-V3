@@ -162,7 +162,7 @@ export class Utilities {
         } catch (error) {
             const err = error as Error;
             console.error(`Error fetching ${url}:`, err.message);
-            return { url, hash: 'error' };
+            return { url, hash: `error: ${err.message}` };
         }
     }
 
