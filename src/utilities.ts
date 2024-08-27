@@ -202,6 +202,7 @@ export class Utilities {
                 
                 if (remote.hash !== realHash) {
                     if (attempt < 0) {
+                        await Utilities.wait(3); // 等待 3 秒
                         const message = await Utilities.checkSpecfiedFiles([file], cluster, attempt + 1); // 递归重试
                         if (message) {
                             return message;
