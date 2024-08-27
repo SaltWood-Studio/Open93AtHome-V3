@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { dir } from 'console';
 import { Request } from 'express';
 import JwtHelper from './jwt-helper';
 import { File, IFileInfo } from './database/file';

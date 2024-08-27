@@ -55,7 +55,7 @@ export class StatsStorage {
 
     public getLast30DaysStats(): { date: string, hits: number, bytes: number }[] {
         const now = new Date();
-        const today = now.toISOString().split('T')[0];
+        // const today = now.toISOString().split('T')[0];
 
         // 创建一个包含最近30天的日期和默认数据的映射
         const dateMap: { [key: string]: { hits: number, bytes: number } } = {};

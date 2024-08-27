@@ -3,7 +3,7 @@ import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
-import cors from 'cors';
+// import cors from 'cors';
 import JwtHelper from './jwt-helper';
 import axios from 'axios';
 import { SQLiteHelper } from './sqlite';

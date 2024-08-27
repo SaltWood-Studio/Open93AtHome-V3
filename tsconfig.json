@@ -1,0 +1,16 @@
+{
+    "extends": ["@tsconfig/node21"],
+    "compilerOptions": {
+      "sourceMap": true,
+      "noUnusedLocals": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
+      "resolveJsonModule": true,
+      "outDir": "dist",
+      "skipLibCheck": true
+    },
+    "exclude": [
+      "node_modules",
+      "public/**/*"
+    ]
+  }

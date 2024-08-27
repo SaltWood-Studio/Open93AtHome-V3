@@ -1,0 +1,42 @@
+name: Push image on tag
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      
+      - name: Set environment
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.5.1
+        with:
+          images: saltwood233/open93athome
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6.7.0
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: saltwood233/open93athome:${{env.RELEASE_VERSION}}
