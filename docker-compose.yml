@@ -1,7 +1,7 @@
 version: '3'
 services:
   93athome:
-    image: saltwood233/ooen93athome
+    image: saltwood233/open93athome
     volumes:
       - ./certificates:/app/certificates
       - ./files:/app/files
