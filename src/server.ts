@@ -696,6 +696,7 @@ export class Server {
                         ack({ message: message });
                         return;
                     } else {
+                        cluster.isOnline = true;
                         this.db.update(cluster);
                         ack([null, true]);
                     }
