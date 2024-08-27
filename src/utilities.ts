@@ -174,17 +174,19 @@ export class Utilities {
         return results;
     }
 
-    public static findDifferences<T>(array1: T[], array2: T[]): T[] {
-        const set1 = new Set(array1);
-        const set2 = new Set(array2);
-        const result: T[] = [];
-        for (const item of set1) {
-            if (!set2.has(item)) {
-                result.push(item);
-            }
-        }
-        return result;
-    }
+    public static findDifferences(
+        fileArray1: File[],
+        fileArray2: File[],
+        onlyRight: boolean = false
+      ): File[] {
+        const hashSet1 = new Set<string>(fileArray1.map(f => f.hash));
+        const hashSet2 = new Set<string>(fileArray2.map(f => f.hash));
+      
+        return [
+            ...onlyRight ? [] : fileArray1.filter(f =>!hashSet2.has(f.hash)), // 存在于 fileArray1 但不存在于 fileArray2
+           ...fileArray2.filter(f =>!hashSet1.has(f.hash)) // 存在于 fileArray2 但不存在于 fileArray1
+        ]
+      }
 
     public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity): Promise<string | null> {
         let result: string | null = "Error: This value should never be returned. if you see this message, please contact to the administrator.";

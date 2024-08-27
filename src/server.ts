@@ -114,7 +114,7 @@ export class Server {
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
             if (checkClusters) {
                 for (const cluster of this.clusters.filter(c => c.isOnline)) {
-                    const message = await Utilities.checkSpecfiedFiles(Utilities.findDifferences(this.files, oldFiles), cluster);
+                    const message = await Utilities.checkSpecfiedFiles(Utilities.findDifferences(oldFiles, this.files, true), cluster); // 只查找新增的文件，不然删文件会把全部节点踢了
                     if (message) {
                         cluster.downReason = message;
                         cluster.isOnline = false;
