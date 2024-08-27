@@ -377,7 +377,8 @@ export class Server {
                     let bytes = 0;
                     d.filter(b => b !== null).forEach(b => bytes += b.bytes);
                     return bytes;
-                })
+                }),
+                today: this.centerStats.today()
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {

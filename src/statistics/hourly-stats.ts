@@ -8,6 +8,17 @@ export class HourlyStatsStorage {
     private saveInterval: NodeJS.Timeout;
     private dataUpdated: boolean;  // 标志是否有数据更新
 
+    public today(): { hits: number, bytes: number } {
+        const now = new Date();
+        const date = now.toISOString().split('T')[0];
+        let today = { hits: 0, bytes: 0 };
+        this.data.find(entry => entry.date === date)?.hourlyStats.forEach(hourData => {
+            today.hits += hourData.hits;
+            today.bytes += hourData.bytes;
+        });
+        return today;
+    }
+
     constructor() {
         this.filePath = path.join(Config.getInstance().statsDir, `center.stats`);
         this.data = [];
