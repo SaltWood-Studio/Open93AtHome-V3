@@ -35,20 +35,20 @@ export class ClusterEntity {
 
     public bandwidth: number = 30;
 
-    @Ignore
+    @Ignore()
     public measureBandwidth: number = -1;
 
     public traffic: number = 0;
 
-    @Ignore
+    @Ignore()
     public pendingTraffic: number = 0;
 
     public hits: number = 0;
 
-    @Ignore
+    @Ignore()
     public pendingHits: number = 0;
 
-    @Ignore
+    @Ignore()
     public isOnline: boolean = false;
 
     public isBanned: boolean = false;

@@ -19,13 +19,14 @@ function PrimaryKey(tableName: string) {
     };
 }
 
-function Ignore(und: undefined, {name}: {name: string}) {
-    return function (this: any, value: any) {
-        if (!this.constructor.ignoredFields) {
-            this.constructor.ignoredFields = [];
+function Ignore() {
+    return function (target: any, propertyName: string) {
+        console.log(target, propertyName);
+        const constructor = target.constructor;
+        if (!constructor.ignoredFields) {
+            constructor.ignoredFields = [];
         }
-        this.constructor.ignoredFields.push(name);
-        return value;
+        constructor.ignoredFields.push(propertyName);
     };
 }
 
