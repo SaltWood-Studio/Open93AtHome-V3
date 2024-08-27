@@ -114,7 +114,7 @@ export class Server {
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
             if (checkClusters) {
                 for (const cluster of this.clusters.filter(c => c.isOnline)) {
-                    const message = await Utilities.checkSpecfiedFiles(Utilities.findDifferences(oldFiles, this.files), cluster);
+                    const message = await Utilities.checkSpecfiedFiles(Utilities.findDifferences(this.files, oldFiles), cluster);
                     if (message) {
                         cluster.downReason = message;
                         cluster.isOnline = false;
@@ -605,6 +605,13 @@ export class Server {
             res.status(302);
             res.setHeader('Location', Utilities.getRandomElement(this.files)?.path || '');
             res.send();
+        });
+        this.app.post('/openbmclapi/report', (req: Request, res: Response) => {
+            const body = req.body as {
+                urls: string[],
+                error: string
+            };
+            res.status(200).send();
         });
     }
 
