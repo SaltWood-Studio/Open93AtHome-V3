@@ -580,6 +580,11 @@ export class Server {
                 clusterSecret: secret
             });
         });
+        this.app.post('/93AtHome/random', (req: Request, res: Response) => {
+            res.status(302);
+            res.setHeader('Location', Utilities.getRandomElement(this.files)?.path || '');
+            res.send();
+        });
     }
 
     public setupSocketIO(): void {
