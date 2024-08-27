@@ -112,6 +112,7 @@ export class Server {
             this.files = await Promise.all(fileTasks);
             this.avroBytes = await Utilities.getAvroBytes(this.files);
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
+            this.isUpdating = false;
             if (checkClusters) {
                 for (const cluster of this.clusters.filter(c => c.isOnline)) {
                     const message = await Utilities.checkSpecfiedFiles(Utilities.findDifferences(oldFiles, this.files, true), cluster); // 只查找新增的文件，不然删文件会把全部节点踢了
