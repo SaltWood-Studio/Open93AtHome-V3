@@ -697,6 +697,7 @@ export class Server {
                         return;
                     } else {
                         cluster.isOnline = true;
+                        cluster.downReason = "null";
                         this.db.update(cluster);
                         ack([null, true]);
                     }
