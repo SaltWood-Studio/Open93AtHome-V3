@@ -6,6 +6,7 @@ services:
       - ./certificates:/app/certificates
       - ./files:/app/files
       - ./data:/app/data
+      - ./stats:/app/stats
     env_file:
       - .env
     environment:
