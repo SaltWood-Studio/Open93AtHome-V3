@@ -206,6 +206,7 @@ export class Utilities {
                         if (message) {
                             return message;
                         } else {
+                            await Utilities.wait(3); // 等待 3 秒
                             continue;
                         }
                     }
@@ -219,6 +220,9 @@ export class Utilities {
                     result = `Error: Hash mismatch: ${differences.join(', ')}`;
                     return result;
                 }
+
+                // 等待 3 秒
+                await Utilities.wait(3);
             }
 
             result = null;
