@@ -2,8 +2,8 @@
 FROM alpine:latest
 
 # 更改apk软件源为清华大学镜像并更新软件包
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
-    apk update && \
+# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
+RUN apk update && \
     apk add --no-cache \
         build-base \
         python3 \
@@ -13,7 +13,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/re
         nodejs
 
 # 设置镜像源
-RUN npm config set registry https://registry.npmmirror.com
+# RUN npm config set registry https://registry.npmmirror.com
 
 # 复制项目文件到容器中
 WORKDIR /app
