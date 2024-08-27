@@ -7,8 +7,8 @@ class JwtHelper {
     private static instance: JwtHelper;
     private readonly privateKey: KeyObject;
     private readonly publicKey: KeyObject;
-    private static readonly privateKeyPath = path.resolve('private.key');
-    private static readonly publicKeyPath = path.resolve('public.key');
+    private static readonly privateKeyPath = path.resolve('./data', 'private.key');
+    private static readonly publicKeyPath = path.resolve('./data', 'public.key');
 
     private constructor() {
         if (existsSync(JwtHelper.privateKeyPath) && existsSync(JwtHelper.publicKeyPath)) {
