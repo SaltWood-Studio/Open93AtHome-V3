@@ -1,7 +1,9 @@
 version: '3'
 services:
   93athome:
-    image: saltwood233/ooen93athome
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - ./certificates:/app/certificates
       - ./files:/app/files
