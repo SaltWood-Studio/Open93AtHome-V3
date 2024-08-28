@@ -30,6 +30,16 @@ export class GitHubUser {
         user.id = this.id;
         user.username = this.login;
         user.photo = this.avatar_url;
+        user.isSuperUser = 0;
+        return user;
+    }
+
+    public toUserWithDbEntity(u: UserEntity): UserEntity {
+        const user = new UserEntity();
+        user.id = this.id;
+        user.username = this.login;
+        user.photo = this.avatar_url;
+        user.isSuperUser = Number(Boolean(u.isSuperUser));
         return user;
     }
 }

@@ -338,7 +338,7 @@ export class Utilities {
     /**
      * verifyUser
      */
-    public static verifyUser(req: Request, res: Response, db: SQLiteHelper, needAdmin: boolean = false): boolean {
+    public static verifyUser(req: Request, res: Response, db: SQLiteHelper): boolean {
         const id = (JwtHelper.getInstance().verifyToken(req.cookies.token, 'user') as { userId: number })?.userId;
         if (!id) {
             res.status(401).send('Unauthorized');
@@ -349,7 +349,21 @@ export class Utilities {
             res.status(401).send('Unauthorized');
             return false;
         }
-        if (needAdmin && !user.isSuperUser) {
+        return true;
+    }
+
+    public static verifyAdmin(req: Request, res: Response, db: SQLiteHelper): boolean {
+        const id = (JwtHelper.getInstance().verifyToken(req.cookies.adminToken, 'admin') as { userId: number })?.userId;
+        if (!id) {
+            res.status(401).send('Unauthorized');
+            return false;
+        }
+        const user = db.getEntity<UserEntity>(UserEntity, id);
+        if (!user) {
+            res.status(401).send('Unauthorized');
+            return false;
+        }
+        if (!user.isSuperUser) {
             res.status(403).send('Forbidden');
             return false;
         }

@@ -95,6 +95,15 @@ export class Server {
     public init(): void {
         this.updateFiles();
         this.setupRoutes();
+
+        const users = new Set(this.clusters.map(c => Number(c.owner)));
+        for (const user of users) {
+            try {
+                const url = `https://${Config.getInstance().githubApiUrl}/user/${user}`;
+            } catch (error) {
+                console.error(error);
+            }
+        }
     }
 
     public async updateFiles(checkClusters: boolean = false): Promise<void> {
@@ -216,7 +225,7 @@ export class Server {
                 // 处理数据库操作
                 let dbUser = this.db.getEntity<UserEntity>(UserEntity, user.id);
                 if (dbUser) {
-                    this.db.update(user.toUserEntity());
+                    this.db.update(user.toUserWithDbEntity(dbUser));
                 } else {
                     this.db.insert<UserEntity>(user.toUserEntity());
                 }
@@ -231,6 +240,18 @@ export class Server {
                     expires: new Date(Date.now() + 86400000), // 24小时后过期
                     secure: true
                 });
+
+                if (this.db.getEntity<UserEntity>(UserEntity, user.id)?.isSuperUser) {
+                    const adminToken = JwtHelper.getInstance().issueToken({
+                        userId: user.id,
+                        clientId: Config.getInstance().githubOAuthClientId
+                    }, "admin", 60 * 60 * 24);
+                    res.cookie('adminToken', adminToken, {
+                        expires: new Date(Date.now() + 86400000), // 24小时后过期
+                        secure: true,
+                        path: '/93AtHome/super'
+                    });
+                }
         
                 res.status(200).json({
                     avatar_url: user.avatar_url,
@@ -620,11 +641,15 @@ export class Server {
             res.status(200).send();
         });
         this.app.post('/93AtHome/super/cluster/create', (req: Request, res: Response) => {
-            if (!Utilities.verifyUser(req, res, this.db, true)) return;
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const clusterName = req.body.clusterName as string;
+            const bandwidth = req.body.bandwidth as number;
+
             let cluster = new ClusterEntity();
             cluster.clusterId = Utilities.generateRandomString(24);
             cluster.clusterSecret = Utilities.generateRandomString(32);
-            cluster.bandwidth = 50;
+            cluster.clusterName = clusterName;
+            cluster.bandwidth = bandwidth;
             cluster.port = 0;
             cluster.owner = 0;
             cluster.traffic = 0;
@@ -638,7 +663,7 @@ export class Server {
             res.status(200).json(removeSensitiveInfo(cluster));
         });
         this.app.post('/93AtHome/super/cluster/ban', (req: Request, res: Response) => {
-            if (!Utilities.verifyUser(req, res, this.db, true)) return;
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
             const data = req.body as {
                 clusterId: string,
                 ban: boolean
@@ -654,7 +679,7 @@ export class Server {
             res.status(200).json(removeSensitiveInfo(cluster));
         });
         this.app.post('/93AtHome/super/cluster/profile', (req: Request, res: Response) => {
-            if (!Utilities.verifyUser(req, res, this.db, true)) return;
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
             const userId = JwtHelper.getInstance().verifyToken(req.cookies.token, 'user') as { userId: number };
             const clusterId = req.query.clusterId as string;
             const clusterName = req.body.clusterName as string || null;
