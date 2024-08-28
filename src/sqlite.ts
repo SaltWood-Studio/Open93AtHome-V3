@@ -77,7 +77,7 @@ export class SQLiteHelper {
         const selectSQL = `SELECT * FROM ${tableName} WHERE id = ?`;
         const stmt = this.db.prepare(selectSQL);
         const row = stmt.get(primaryKey);
-    
+
         if (row) {
             const entity = new type();
             Object.assign(entity, row);

@@ -3,6 +3,12 @@ import { Config } from "./config";
 import { Server } from "./server";
 import { Utilities } from "./utilities";
 
+function onStop(signal: string) {
+    server.db.close();
+    console.log(`Received ${signal}. Shutting down...`);
+    process.exit(0);
+}
+
 Config.init();
 
 if (Utilities.isRunningInDocker()) {
@@ -11,6 +17,9 @@ if (Utilities.isRunningInDocker()) {
 } else {
     console.debug("Not running in Docker container");
 }
+
+process.on("SIGINT", onStop);
+process.on("SIGTERM", onStop);
 
 // 创建 Server 实例
 const server = new Server();

@@ -42,7 +42,7 @@ export class Server {
     private app;
     private io: SocketIOServer;
     private httpsServer: https.Server;
-    protected db: SQLiteHelper;
+    public db: SQLiteHelper;
     protected files: File[];
     protected isUpdating: boolean = false;
     protected clusters: ClusterEntity[];
