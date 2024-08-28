@@ -162,7 +162,7 @@ export class Server {
         this.app.get('/93AtHome/list_clusters', (req, res) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity)));
+            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(removeSensitiveInfo)));
         });
         this.app.get('/93AtHome/list_files', (req, res) => {
             res.statusCode = 200;
@@ -461,7 +461,8 @@ export class Server {
             res.status(200).json({
                 id: user.id,
                 login: user.username,
-                avatar_url: user.photo
+                avatar_url: user.photo,
+                is_super_user: user.isSuperUser
             });
         });
         this.app.post('/93AtHome/dashboard/user/bindCluster', (req: Request, res: Response) => {
@@ -616,6 +617,64 @@ export class Server {
                 error: string
             };
             res.status(200).send();
+        });
+        this.app.post('/93AtHome/super/cluster/create', (req: Request, res: Response) => {
+            if (!Utilities.verifyUser(req, res, this.db, true)) return;
+            let cluster = new ClusterEntity();
+            cluster.clusterId = Utilities.generateRandomString(24);
+            cluster.clusterSecret = Utilities.generateRandomString(32);
+            cluster.bandwidth = 50;
+            cluster.port = 0;
+            cluster.owner = 0;
+            cluster.traffic = 0;
+            cluster.hits = 0;
+            cluster.isOnline = false;
+            cluster.downReason = "null";
+            cluster.createdAt = Math.floor(Date.now() / 1000);
+            this.db.insert(cluster);
+            this.clusters.push(cluster);
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(removeSensitiveInfo(cluster));
+        });
+        this.app.post('/93AtHome/super/cluster/ban', (req: Request, res: Response) => {
+            if (!Utilities.verifyUser(req, res, this.db, true)) return;
+            const data = req.body as {
+                clusterId: string,
+                ban: boolean
+            };
+            const cluster = this.clusters.find(c => c.clusterId === data.clusterId);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            cluster.isBanned = Boolean(data.ban);
+            this.db.update(cluster);
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(removeSensitiveInfo(cluster));
+        });
+        this.app.post('/93AtHome/super/cluster/profile', (req: Request, res: Response) => {
+            if (!Utilities.verifyUser(req, res, this.db, true)) return;
+            const userId = JwtHelper.getInstance().verifyToken(req.cookies.token, 'user') as { userId: number };
+            const clusterId = req.query.clusterId as string;
+            const clusterName = req.body.clusterName as string || null;
+            const bandwidth = req.body.bandwidth as number || null;
+            const sponsor = req.body.sponsor as string || null;
+            const sponsorUrl = req.body.sponsorUrl as string || null;
+
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+
+            if (clusterName) cluster.clusterName = clusterName;
+            if (bandwidth) cluster.bandwidth = bandwidth;
+            if (sponsor) cluster.sponsor = sponsor;
+            if (sponsorUrl) cluster.sponsorUrl = sponsorUrl;
+
+            this.db.update(cluster);
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(removeSensitiveInfo(cluster));
         });
     }
 

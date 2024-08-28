@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import JwtHelper from './jwt-helper';
 import { File, IFileInfo } from './database/file';
 import { compress } from '@mongodb-js/zstd';
@@ -9,6 +9,8 @@ import avsc from 'avsc';
 import axios from 'axios';
 import { exec } from 'child_process';
 import { ClusterEntity } from './database/cluster';
+import { SQLiteHelper } from './sqlite';
+import { UserEntity } from './database/user';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -331,5 +333,26 @@ export class Utilities {
         const sign = Utilities.toUrlSafeBase64String(signBytes);
         
         return `s=${sign}&e=${e}`;
+    }
+
+    /**
+     * verifyUser
+     */
+    public static verifyUser(req: Request, res: Response, db: SQLiteHelper, needAdmin: boolean = false): boolean {
+        const id = (JwtHelper.getInstance().verifyToken(req.cookies.token, 'user') as { userId: number })?.userId;
+        if (!id) {
+            res.status(401).send('Unauthorized');
+            return false;
+        }
+        const user = db.getEntity<UserEntity>(UserEntity, id);
+        if (!user) {
+            res.status(401).send('Unauthorized');
+            return false;
+        }
+        if (needAdmin && !user.isSuperUser) {
+            res.status(403).send('Forbidden');
+            return false;
+        }
+        return true;
     }
 }
