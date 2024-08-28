@@ -5,7 +5,7 @@ import { PrimaryKey, Table } from "../sqlite";
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     username TEXT NOT NULL, 
     photo TEXT,
-    isSuperUser BOOLEAN DEFAULT 0
+    isSuperUser INTEGER DEFAULT 0
 `)
 @PrimaryKey('id')
 export class UserEntity {

@@ -12,7 +12,7 @@ import { StatsStorage } from '../statistics/cluster-stats';
     bandwidth INTEGER,
     traffic INTEGER,
     hits INTEGER,
-    isBanned BOOLEAN,
+    isBanned INTEGER,
     createdAt INTEGER,
     sponsor TEXT,
     sponsorUrl TEXT
