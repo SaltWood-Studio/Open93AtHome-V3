@@ -749,6 +749,7 @@ export class Server {
 
                 cluster.endpoint = enableData.host;
                 cluster.port = enableData.port;
+                cluster.version = enableData.version;
 
                 Utilities.checkSpecfiedFiles(randomFiles, cluster)
                 .then(message => {
@@ -805,6 +806,8 @@ export class Server {
                     console.log(`SOCKET ${socket.handshake.url} socket.io <DISABLE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                     cluster.isOnline = false;
                     socket.send('Bye. Have a good day!');
+                    cluster.downReason = "Client disabled";
+                    cluster.downTime = Math.floor(Date.now() / 1000);
                     ack([null, true]);
                     this.db.update(cluster);
                 }
@@ -815,7 +818,12 @@ export class Server {
 
                 if (cluster) {
                     console.log(`SOCKET ${socket.handshake.url} socket.io <DISCONNECTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
-                    cluster.isOnline = false;
+                    if (cluster.isOnline) {
+                        cluster.downReason = "Client disconnected";
+                        cluster.downTime = Math.floor(Date.now() / 1000);
+                        cluster.isOnline = false;
+                        this.db.update(cluster);
+                    }
                 }
             })
         });

@@ -15,7 +15,9 @@ import { StatsStorage } from '../statistics/cluster-stats';
     isBanned INTEGER,
     createdAt INTEGER,
     sponsor TEXT,
-    sponsorUrl TEXT
+    sponsorUrl TEXT,
+    version TEXT,
+    downTime INTEGER
 `)
 @PrimaryKey('clusterId')
 export class ClusterEntity {
@@ -58,4 +60,8 @@ export class ClusterEntity {
     public sponsor: string = '';
 
     public sponsorUrl: string = '';
+
+    public version: string = '';
+
+    public downTime: number = 0;
 }
