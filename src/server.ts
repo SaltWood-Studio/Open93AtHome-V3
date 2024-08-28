@@ -95,15 +95,6 @@ export class Server {
     public init(): void {
         this.updateFiles();
         this.setupRoutes();
-
-        const users = new Set(this.clusters.map(c => Number(c.owner)));
-        for (const user of users) {
-            try {
-                const url = `https://${Config.getInstance().githubApiUrl}/user/${user}`;
-            } catch (error) {
-                console.error(error);
-            }
-        }
     }
 
     public async updateFiles(checkClusters: boolean = false): Promise<void> {
