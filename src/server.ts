@@ -484,7 +484,7 @@ export class Server {
                 id: user.id,
                 login: user.username,
                 avatar_url: user.photo,
-                is_super_user: user.isSuperUser
+                is_super_user: Boolean(user.isSuperUser)
             });
         });
         this.app.post('/93AtHome/dashboard/user/bindCluster', (req: Request, res: Response) => {
