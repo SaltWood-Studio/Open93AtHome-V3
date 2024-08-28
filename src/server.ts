@@ -159,6 +159,7 @@ export class Server {
         this.app.use(cookieParser());
 
         // 设置路由
+        this.app.get('/', (req: Request, res: Response) => res.status(302).header('Location', '/dashboard').send());
         this.app.get('/93AtHome/list_clusters', (req, res) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -619,7 +620,7 @@ export class Server {
                 clusterSecret: secret
             });
         });
-        this.app.post('/93AtHome/random', (req: Request, res: Response) => {
+        this.app.get('/93AtHome/random', (req: Request, res: Response) => {
             res.status(302);
             res.setHeader('Location', Utilities.getRandomElement(this.files)?.path || '');
             res.send();
