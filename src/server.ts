@@ -201,7 +201,7 @@ export class Server {
                             'Accept': 'application/json',
                             'User-Agent': 'Open93AtHome-V3/3.0.0' // GitHub API要求设置User-Agent
                         }
-                    }).then(response => response.data) as { id: number, login: string, avatar_url: string };
+                    }).then(response => response.data) as { id: number, login: string, avatar_url: string, name: string };
                 } catch (error) {
                     console.error('Error fetching GitHub user info: ', error as Error);
                     throw error; // 或者返回一个默认的错误响应
@@ -209,7 +209,7 @@ export class Server {
              
                 const user = GitHubUser.create(
                     userResponse.id,
-                    userResponse.login,
+                    userResponse.name || userResponse.login || '',
                     userResponse.avatar_url
                 );
         
