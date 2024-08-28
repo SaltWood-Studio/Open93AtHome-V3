@@ -651,7 +651,7 @@ export class Server {
             this.db.insert(cluster);
             this.clusters.push(cluster);
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json(removeSensitiveInfo(cluster));
+            res.status(200).json(cluster);
         });
         this.app.post('/93AtHome/super/cluster/ban', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
