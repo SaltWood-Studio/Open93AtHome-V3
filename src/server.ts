@@ -203,7 +203,7 @@ export class Server {
                         }
                     }).then(response => response.data) as { id: number, login: string, avatar_url: string };
                 } catch (error) {
-                    console.error('Error fetching GitHub user info:', error as Error);
+                    console.error('Error fetching GitHub user info: ', error as Error);
                     throw error; // 或者返回一个默认的错误响应
                 }
              
@@ -239,6 +239,7 @@ export class Server {
                 });
             } catch (error) {
                 const err = error as Error;
+                console.error('Error processing GitHub OAuth:', err);
                 res.status(500).json({
                     error: `${err.name}: ${err.message}`
                 });
@@ -647,7 +648,7 @@ export class Server {
                 res.status(404).send(); // 集群不存在
                 return;
             }
-            cluster.isBanned = Boolean(data.ban);
+            cluster.isBanned = Number(data.ban);
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(removeSensitiveInfo(cluster));

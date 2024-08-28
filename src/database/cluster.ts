@@ -51,7 +51,7 @@ export class ClusterEntity {
     @Ignore()
     public isOnline: boolean = false;
 
-    public isBanned: boolean = false;
+    public isBanned: number = 0;
 
     public createdAt: number = 0;
 
