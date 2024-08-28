@@ -21,7 +21,6 @@ function PrimaryKey(tableName: string) {
 
 function Ignore() {
     return function (target: any, propertyName: string) {
-        console.log(target, propertyName);
         const constructor = target.constructor;
         if (!constructor.ignoredFields) {
             constructor.ignoredFields = [];
@@ -52,11 +51,14 @@ export class SQLiteHelper {
     }
 
     // 插入数据
-    public insert<T>(obj: T): void {
+    public insert<T extends object>(obj: T): void {
         const tableName = this.getTableName(obj);
         const data = obj as Record<string, any>;
-        const columns = Object.keys(data).join(', ');
-        const placeholders = Object.keys(data).map(() => '?').join(', ');
+        const ignoredFields = (obj.constructor as any).ignoredFields || [];
+        const kvp = Object.keys(data).filter(key => !ignoredFields.includes(key));
+
+        const columns = kvp.join(', ');
+        const placeholders = kvp.map(() => '?').join(', ');
         const values = Object.values(data);
 
         const insertSQL = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
@@ -109,15 +111,12 @@ export class SQLiteHelper {
         if (!pk) {
             throw new Error(`Primary key for table ${tableName} not defined`);
         }
+        const kvp = Object.keys(data).filter(key => key !== pk && !ignoredFields.includes(key));
     
         // Construct the update columns, ignoring fields marked with @ignore
-        const columns = Object.keys(data)
-            .filter(key => key !== pk && !ignoredFields.includes(key))
-            .map(key => `${key} = ?`).join(', ');
+        const columns = kvp.map(key => `${key} = ?`).join(', ');
     
-        const values = Object.keys(data)
-            .filter(key => key !== pk && !ignoredFields.includes(key))
-            .map(key => data[key]);
+        const values = kvp.map(key => data[key]);
     
         // Ensure `id` is at the end of the values array
         values.push(data[pk]);
