@@ -50,21 +50,20 @@ export class SQLiteHelper {
         this.db.exec(createTableSQL);
     }
 
-    // 插入数据
     public insert<T extends object>(obj: T): void {
         const tableName = this.getTableName(obj);
         const data = obj as Record<string, any>;
         const ignoredFields = (obj.constructor as any).ignoredFields || [];
         const kvp = Object.keys(data).filter(key => !ignoredFields.includes(key));
-
+    
         const columns = kvp.join(', ');
-        const placeholders = kvp.map(() => '?').join(', ');
-        const values = Object.values(data);
-
+        const placeholders = kvp.map(() => '?').join(', '); // 添加占位符
+        const values = kvp.map(key => data[key]); // 取得对应的值
+    
         const insertSQL = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
         const stmt = this.db.prepare(insertSQL);
-        stmt.run(values);
-    }
+        stmt.run(...values); // 使用展开运算符传递值
+    }    
 
     // 查询数据
     public select<T>(type: { new (): T }, columns: string[], whereClause?: string, params?: any[]): T[] {
