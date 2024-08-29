@@ -21,7 +21,7 @@ export class File {
         file.hash = hash;
         file.size = size;
         file.lastModified = lastModified;
-        file.encodedPath = encodeURI(path);
+        file.encodedPath = encodeURI(file.path);
         return file;
     }
 
@@ -33,7 +33,7 @@ export class File {
             file.hash = information.hash;
             file.size = information.size;
             file.lastModified = information.lastModified;
-            file.encodedPath = encodeURI(path);
+            file.encodedPath = encodeURI(file.path);
             resolve(file);
         });
     }
