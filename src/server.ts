@@ -106,7 +106,6 @@ export class Server {
             const files = Utilities.scanFiles("./files");
             const fileTasks = files.map(async file => {
                 const f = await File.createInstanceFromPath(`.${file}`);
-                f.path = f.path.substring(1);
                 return f;
             });
             this.files = await Promise.all(fileTasks);

@@ -15,13 +15,9 @@ export class File {
         this.encodedPath = encodeURI(this.path);
     }
 
-    public getEncodedPath(): string {
-        return encodeURI(this.path.substring(1));
-    }
-
     public static createInstance(path: string, hash: string, size: number, lastModified: number): File {
         const file = new File();
-        file.path = path;
+        file.path = path.substring(1);
         file.hash = hash;
         file.size = size;
         file.lastModified = lastModified;
@@ -33,7 +29,7 @@ export class File {
         return new Promise<File>(async (resolve, reject) => {
             const file = new File();
             const information = await Utilities.getFileInfoAsync(path);
-            file.path = path;
+            file.path = path.substring(1);
             file.hash = information.hash;
             file.size = information.size;
             file.lastModified = information.lastModified;
