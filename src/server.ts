@@ -416,7 +416,8 @@ export class Server {
                     d.filter(b => b !== null).forEach(b => bytes += b.bytes);
                     return bytes;
                 }),
-                today: this.centerStats.today()
+                today: this.centerStats.today(),
+                onlines: this.clusters.filter(c => c.isOnline).length,
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
@@ -694,7 +695,6 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(removeSensitiveInfo(cluster));
         });
-        this.app.get('/93AtHome/onlines', (req: Request, res: Response) => res.status(200).send(this.clusters.filter(c => c.isOnline).length));
     }
 
     public setupSocketIO(): void {
