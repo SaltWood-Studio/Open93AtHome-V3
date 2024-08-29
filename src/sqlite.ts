@@ -75,7 +75,8 @@ export class SQLiteHelper {
 
     public getEntity<T extends object>(type: { new (): T }, primaryKey: number | string): T | null {
         const tableName = this.getTableNameByConstructor(type);
-        const selectSQL = `SELECT * FROM ${tableName} WHERE id = ?`;
+        const pk = primaryKeyMap.get(type.constructor as { new (): T }) || 'id';
+        const selectSQL = `SELECT * FROM ${tableName} WHERE ${pk} = ?`;
         const stmt = this.db.prepare(selectSQL);
         const row = stmt.get(primaryKey);
 
@@ -127,7 +128,8 @@ export class SQLiteHelper {
 
     public remove<T extends object>(type: { new (): T }, primaryKey: number | string): void {
         const tableName = this.getTableNameByConstructor(type);
-        const deleteSQL = `DELETE FROM ${tableName} WHERE id = ?`;
+        const pk = primaryKeyMap.get(type.constructor as { new (): T }) || 'id';
+        const deleteSQL = `DELETE FROM ${tableName} WHERE ${pk} = ?`;
         const stmt = this.db.prepare(deleteSQL);
         stmt.run(primaryKey);
     }    

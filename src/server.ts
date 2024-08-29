@@ -655,6 +655,24 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(cluster);
         });
+        this.app.post('/93AtHome/super/cluster/remove', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const clusterId = req.body.clusterId as string;
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (!cluster) {
+                res.status(404).send({
+                    success: false,
+                    message: "Cluster not found"
+                }); // 集群不存在
+                return;
+            }
+            this.db.remove<ClusterEntity>(ClusterEntity, cluster.clusterId);
+            this.clusters = this.clusters.filter(c => c.clusterId !== clusterId);
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json({
+                success: true
+            });
+        });
         this.app.post('/93AtHome/super/cluster/ban', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
             const data = req.body as {
