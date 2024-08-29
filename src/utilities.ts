@@ -18,7 +18,7 @@ export const FileListSchema = avsc.Type.forSchema({
     name: 'files',
     type: 'record',
     fields: [
-      {name: 'path', type: 'string'},
+      {name: 'encodedPath', type: 'string'},
       {name: 'hash', type: 'string'},
       {name: 'size', type: 'long'},
       {name: 'lastModified', type: 'long'},

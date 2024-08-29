@@ -5,12 +5,18 @@ export class File {
     public hash: string;
     public size: number;
     public lastModified: number;
+    public encodedPath: string;
 
     public constructor() {
         this.path = "/path/to/file";
         this.hash = "0000000000000000000000000000000000000000";
         this.size = 0;
         this.lastModified = 0;
+        this.encodedPath = encodeURI(this.path);
+    }
+
+    public getEncodedPath(): string {
+        return encodeURI(this.path);
     }
 
     public static createInstance(path: string, hash: string, size: number, lastModified: number): File {
@@ -19,6 +25,7 @@ export class File {
         file.hash = hash;
         file.size = size;
         file.lastModified = lastModified;
+        file.encodedPath = encodeURI(path);
         return file;
     }
 
@@ -30,13 +37,14 @@ export class File {
             file.hash = information.hash;
             file.size = information.size;
             file.lastModified = information.lastModified;
+            file.encodedPath = encodeURI(path);
             resolve(file);
         });
     }
 }
 
 export interface IFileInfo {
-    path: string
+    encodedPath: string
     hash: string
     size: number
     lastModified: number
