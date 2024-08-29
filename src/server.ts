@@ -229,7 +229,8 @@ export class Server {
         
                 res.cookie('token', token, {
                     expires: new Date(Date.now() + 86400000), // 24小时后过期
-                    secure: true
+                    secure: true,
+                    path: '/93AtHome'
                 });
 
                 if (this.db.getEntity<UserEntity>(UserEntity, user.id)?.isSuperUser) {
@@ -693,6 +694,7 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(removeSensitiveInfo(cluster));
         });
+        this.app.get('/93AtHome/onlines', (req: Request, res: Response) => res.status(200).send(this.clusters.filter(c => c.isOnline).length));
     }
 
     public setupSocketIO(): void {
