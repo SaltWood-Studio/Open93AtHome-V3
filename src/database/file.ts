@@ -16,7 +16,7 @@ export class File {
     }
 
     public getEncodedPath(): string {
-        return encodeURI(this.path);
+        return encodeURI(this.path.substring(1));
     }
 
     public static createInstance(path: string, hash: string, size: number, lastModified: number): File {
