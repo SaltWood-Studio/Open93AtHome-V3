@@ -325,7 +325,7 @@ export class Server {
                 res.status(404).send(); // 未找到
             }
         });
-        this.app.get('/openbmclapi/files', (req: Request, res: Response) => {
+        this.app.get('/openbmclapi/files', async (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
                 res.status(403).send(); // 禁止访问
                 return;
@@ -344,7 +344,7 @@ export class Server {
                     res.status(204).send();
                     return;
                 }
-                res.send(Utilities.getAvroBytes(files));
+                res.send(await Utilities.getAvroBytes(files));
             }
         });
         this.app.get('/openbmclapi/configuration', (req: Request, res: Response) => {
