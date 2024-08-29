@@ -230,7 +230,7 @@ export class Server {
                 res.cookie('token', token, {
                     expires: new Date(Date.now() + 86400000), // 24小时后过期
                     secure: true,
-                    path: '/93AtHome'
+                    path: '/'
                 });
 
                 if (this.db.getEntity<UserEntity>(UserEntity, user.id)?.isSuperUser) {
@@ -241,7 +241,7 @@ export class Server {
                     res.cookie('adminToken', adminToken, {
                         expires: new Date(Date.now() + 86400000), // 24小时后过期
                         secure: true,
-                        path: '/93AtHome/super'
+                        path: '/'
                     });
                 }
         
