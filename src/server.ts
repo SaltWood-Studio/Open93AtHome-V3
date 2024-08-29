@@ -393,7 +393,7 @@ export class Server {
                 }
 
                 res.status(302)
-                .setHeader('Location', `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}`)
+                .setHeader('Location', `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret, file.path.split('/').at(-1))}`)
                 .send();
                 cluster.pendingHits++;
                 cluster.pendingTraffic += file.size;

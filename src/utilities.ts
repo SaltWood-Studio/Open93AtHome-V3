@@ -318,7 +318,7 @@ export class Utilities {
             .replace(/=+$/, '');  // Remove trailing '='
     }    
 
-    public static getSign(path: string, secret: string): string | null {
+    public static getSign(path: string, secret: string, name: string | null = null): string | null {
         let sha1: crypto.Hash;
         try {
             sha1 = crypto.createHash('sha1');
@@ -332,7 +332,7 @@ export class Utilities {
         const signBytes = sha1.update(secret + path + e).digest();
         const sign = Utilities.toUrlSafeBase64String(signBytes);
         
-        return `s=${sign}&e=${e}&name=${path.split('/').at(-1)}`;
+        return `s=${sign}&e=${e}${name ? `&name=${name}` : ''}`;
     }
 
     /**
