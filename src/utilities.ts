@@ -332,7 +332,7 @@ export class Utilities {
         const signBytes = sha1.update(secret + path + e).digest();
         const sign = Utilities.toUrlSafeBase64String(signBytes);
         
-        return `s=${sign}&e=${e}`;
+        return `s=${sign}&e=${e}&name=${path.split('/').at(-1)}`;
     }
 
     /**
