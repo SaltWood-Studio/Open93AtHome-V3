@@ -130,7 +130,7 @@ export class Server {
             });
             this.files = [
                 ...(await Promise.all(fileTasks)),
-                ...this.plugins.map(p => p.getFiles()).flat()
+                ...(await Promise.all(this.plugins.map(p => p.getFiles()))).flat()
             ];
             this.avroBytes = await Utilities.getAvroBytes(this.files);
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
