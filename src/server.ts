@@ -17,6 +17,8 @@ import { Utilities } from './utilities';
 import { StatsStorage } from './statistics/cluster-stats';
 import { HourlyStatsStorage } from './statistics/hourly-stats';
 import cookieParser from 'cookie-parser';
+import { Plugin } from './plugin/Plugin';
+import { PluginLoader } from './plugin/PluginLoader';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -47,8 +49,16 @@ export class Server {
     protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
     protected stats: StatsStorage[];
     protected centerStats: HourlyStatsStorage;
+    protected plugins: Plugin[];
+    protected pluginLoader: PluginLoader;
 
     public constructor() {
+        this.plugins = [];
+        this.pluginLoader = new PluginLoader();
+        this.pluginLoader.loadPlugins(this)
+        .then(plugins => this.plugins = plugins)
+        .catch(error => console.error(error));
+
         this.files = [];
         this.avroBytes = new Uint8Array();
 
@@ -92,6 +102,7 @@ export class Server {
     public init(): void {
         this.updateFiles();
         this.setupRoutes();
+
     }
 
     public async updateFiles(checkClusters: boolean = false): Promise<void> {
