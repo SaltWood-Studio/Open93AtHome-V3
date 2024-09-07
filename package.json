@@ -3,7 +3,7 @@
   "version": "3.0.2",
   "type": "module",
   "scripts": {
-    "start": "tsc && node dist/index.js",
+    "start": "tsc && node --enable-source-maps dist/index.js",
     "build": "tsc",
     "test": "echo \"No test specified\" && exit 0"
   },
