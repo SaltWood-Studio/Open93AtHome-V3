@@ -6,7 +6,7 @@ import JwtHelper from './JwtHelper.js';
 import { File, IFileInfo } from './database/File.js';
 import { compress } from '@mongodb-js/zstd';
 import avsc from 'avsc';
-import { exec } from 'child_process';
+import { exec, ExecException } from 'child_process';
 import { ClusterEntity } from './database/Cluster.js';
 import { SQLiteHelper } from './SQLiteHelper.js';
 import { UserEntity } from './database/User.js';
@@ -37,10 +37,9 @@ export class Utilities {
         return crypto.randomBytes(length).toString('hex').slice(0, length);
     }
 
-    // 将 exec 封装为 Promise
-    public static execCommand(command: string, cwd: string): Promise<void> {
+    public static execCommand(command: string, cwd: string, timeout: number = 30000): Promise<void> {
         return new Promise((resolve, reject) => {
-            exec(command, { cwd }, (error, stdout, stderr) => {
+            const childProcess = exec(command, { cwd }, (error: ExecException | null, stdout: string, stderr: string) => {
                 if (error) {
                     console.error(`Error updating repository ${cwd}: ${error.message}`);
                     reject(error);
@@ -54,6 +53,17 @@ export class Utilities {
                 console.log(`Repository ${cwd} updated successfully.`);
                 console.log(stdout);
                 resolve();
+            });
+    
+            // 设置超时逻辑
+            const timeoutId = setTimeout(() => {
+                childProcess.kill();  // 强制终止子进程
+                reject(new Error(`Command timed out after ${timeout} ms`));
+            }, timeout);
+    
+            // 清理定时器
+            childProcess.on('exit', () => {
+                clearTimeout(timeoutId);  // 如果命令正常退出，清除超时定时器
             });
         });
     }
