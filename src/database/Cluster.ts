@@ -84,12 +84,12 @@ export class ClusterEntity {
             if (file) {
                 Utilities.checkSpecfiedFiles([file], this, -5)
                 .then(result => {
-                    if (!result) {
-                        this.doOffline(`Warden failed: ${file.hash}, ${result}`);
+                    if (result) {
+                        this.doOffline(`Warden failed: ${file.hash}, result: ${result}`);
                     }
                 })
                 .catch(error => {
-                    this.doOffline(`Warden failed: ${file.hash}, ${error}`);
+                    this.doOffline(`Warden failed: ${file.hash}, error: ${error}`);
                 });
             }
         }, 1000 * 60 * 5);

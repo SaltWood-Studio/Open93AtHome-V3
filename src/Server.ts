@@ -876,7 +876,7 @@ export class Server {
 
                 if (!cluster || !cluster?.isOnline || cluster?.isBanned) {
                     if (!cluster?.isOnline) {
-                        socket.send(`Your cluster was kicked by server because: ${cluster?.downReason}`);
+                        socket.send(`Your cluster was kicked by server because of: ${cluster?.downReason}`);
                     }
                     else if (cluster?.isBanned) {
                         socket.send("This cluster is banned.");
