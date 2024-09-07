@@ -398,19 +398,21 @@ export class Server {
             const file = this.files.find(f => f.path === p);
             if (file) {
                 let cluster = Utilities.getRandomElement(this.clusters.filter(c => c.isOnline));
-                this.centerStats.addData({ hits: 1, bytes: file.size });
                 if (!cluster) {
                     res.sendFile(file.path.substring(1), {
                         root: ".",
                         maxAge: "30d"
                     }, (err) => {
-                        const availablePlugins = this.plugins.filter(p => p.exists(file));
-                        if (err && availablePlugins.length > 0) {
-                            Utilities.getRandomElement(this.plugins)?.express(file, req, res);
-                            return;
-                        } else {
-                            res.status(404).send("The requested file is not found or is not accessible.");
-                            return;
+                        if (err) {
+                            const availablePlugins = this.plugins.filter(p => p.exists(file));
+                            if (availablePlugins.length > 0) {
+                                Utilities.getRandomElement(this.plugins)?.express(file, req, res);
+                                this.centerStats.addData({ hits: 1, bytes: file.size });
+                                return;
+                            } else {
+                                res.status(404).send("The requested file is not found or is not accessible.");
+                                return;
+                            }
                         }
                     });
                     return;
@@ -419,6 +421,7 @@ export class Server {
                 res.status(302)
                 .header('Location', Utilities.getUrl(file, cluster))
                 .send();
+                this.centerStats.addData({ hits: 1, bytes: file.size });
                 cluster.pendingHits++;
                 cluster.pendingTraffic += file.size;
             } else {
