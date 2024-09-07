@@ -91,7 +91,7 @@ export class ClusterEntity {
                     this.doOffline(`Warden failed: ${file.hash}, ${error}`);
                 });
             }
-        });
+        }, 1000 * 60 * 5);
     }
 
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
