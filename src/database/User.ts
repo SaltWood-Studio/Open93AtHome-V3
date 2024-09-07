@@ -2,7 +2,7 @@ import { PrimaryKey, Table } from '../SQLiteHelper.js';
 
 // TypeScript 等效的 UserEntity 类
 @Table('users', `
-    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 
     username TEXT NOT NULL, 
     photo TEXT,
     isSuperUser INTEGER
