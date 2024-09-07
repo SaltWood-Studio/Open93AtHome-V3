@@ -112,7 +112,6 @@ export class Server {
     public init(): void {
         this.updateFiles();
         this.setupRoutes();
-
     }
 
     public async updateFiles(checkClusters: boolean = false): Promise<void> {
@@ -121,12 +120,18 @@ export class Server {
         try {
             await Utilities.updateGitRepositories("./files");
             const oldFiles = this.files;
-            const files = Utilities.scanFiles("./files");
+            await Promise.all(this.plugins.map(p => p.updateFiles()));
+            const files = [
+                ...Utilities.scanFiles("./files")
+            ];
             const fileTasks = files.map(async file => {
                 const f = await File.createInstanceFromPath(`.${file}`);
                 return f;
             });
-            this.files = await Promise.all(fileTasks);
+            this.files = [
+                ...(await Promise.all(fileTasks)),
+                ...this.plugins.map(p => p.getFiles()).flat()
+            ];
             this.avroBytes = await Utilities.getAvroBytes(this.files);
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
             this.isUpdating = false;
