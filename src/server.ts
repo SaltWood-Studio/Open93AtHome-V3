@@ -457,7 +457,7 @@ export class Server {
                 ...onlineClustersSorted,
                 ...offlineClustersSorted
             ].map(c => ({
-                ...(c as ClusterEntity).getJson(true, true),
+                ...c,
                 ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || ''
             }));
         
