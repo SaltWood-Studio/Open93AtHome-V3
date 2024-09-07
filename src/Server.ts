@@ -500,8 +500,18 @@ export class Server {
                 }
             });
             
-            res.setHeader('Content-Type', 'application/json');
-            res.status(200).json(result);
+            try {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200).json(result);
+            } catch (error) {
+                console.error('Error processing rank request:', error);
+                res.status(500).send();
+                console.log(result);
+                result.forEach(element => {
+                    console.log(element);
+                    console.log(JSON.stringify(element));
+                });
+            }
         });
         
         this.app.get('/93AtHome/dashboard/user/profile', (req: Request, res: Response) => {
