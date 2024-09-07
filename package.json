@@ -28,7 +28,6 @@
     "http2-express-bridge": "^1.0.7",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.7.5",
-    "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },
   "devDependencies": {

@@ -4,56 +4,49 @@ import { Plugin } from './Plugin';
 import { Server } from '../server';
 
 export class PluginLoader {
-    private plugins: Plugin[] = [];
+    private pluginInstances: Plugin[] = [];
 
-    async loadPlugins(server: Server, directory: string = './plugins'): Promise<Plugin[]> {
-        const files = fs.readdirSync(directory);
+    async loadPlugins(server: Server, pluginDir: string = './plugins'): Promise<Plugin[]> {
+        const pluginFiles = fs.readdirSync(pluginDir);
+        for (const file of pluginFiles) {
+            const fullPath = path.join(pluginDir, file);
 
-        for (const file of files) {
-            const filePath = path.join(directory, file);
-
-            if (file.endsWith('.ts') || file.endsWith('.js')) {
+            // 只加载 .ts 或 .js 文件
+            if (file.endsWith('.js')) {
                 try {
-                    const module = await import(filePath);
+                    const module = await import(path.resolve(fullPath));
 
-                    for (const key in module) {
-                        const Class = module[key];
+                    for (const exportedKey in module) {
+                        const ExportedClass = module[exportedKey];
 
-                        if (this.isPluginClass(Class)) {
-                            let instance: Plugin | null = null;
+                        if (this.isConcretePluginClass(ExportedClass)) {
+                            let pluginInstance: Plugin | null = null;
 
                             try {
-                                instance = this.createInstance(Class);
-                            } catch {
+                                pluginInstance = new (ExportedClass as new () => Plugin)();
+                            } catch (error) {
                                 try {
-                                    instance = this.createInstance(Class, server);
-                                } catch {
-                                    // Handle instantiation errors as needed
+                                    pluginInstance = new (ExportedClass as unknown as new (server: Server) => Plugin)(server);
+                                } catch (error) {
+                                    console.error(`Failed to instantiate plugin from ${file} with a Server parameter:`, error);
                                 }
                             }
 
-                            if (instance) {
-                                this.plugins.push(instance);
+                            if (pluginInstance) {
+                                this.pluginInstances.push(pluginInstance);
                             }
                         }
                     }
-                } catch {
-                    // Handle module loading errors as needed
+                } catch (err) {
+                    console.error(`Failed to load plugin from ${file}:`, err);
                 }
             }
         }
 
-        return this.plugins;
+        return this.pluginInstances;
     }
 
-    private isPluginClass(value: any): value is typeof Plugin {
-        return typeof value === 'function' && value.prototype instanceof Plugin && value !== Plugin;
-    }
-
-    private createInstance(Class: any, server?: Server): Plugin {
-        if (server) {
-            return new Class(server);
-        }
-        return new Class();
+    private isConcretePluginClass(obj: any): obj is typeof Plugin {
+        return typeof obj === 'function' && obj.prototype instanceof Plugin && !Object.is(obj, Plugin);
     }
 }

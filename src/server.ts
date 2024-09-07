@@ -56,7 +56,10 @@ export class Server {
         this.plugins = [];
         this.pluginLoader = new PluginLoader();
         this.pluginLoader.loadPlugins(this)
-        .then(plugins => this.plugins = plugins)
+        .then(plugins => {
+            this.plugins = plugins;
+            plugins.forEach(plugin => plugin.init());
+        })
         .catch(error => console.error(error));
 
         this.files = [];
@@ -398,7 +401,7 @@ export class Server {
                 }
 
                 res.status(302)
-                .setHeader('Location', `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}`)
+                .header('Location', Utilities.getUrl(file, cluster))
                 .send();
                 cluster.pendingHits++;
                 cluster.pendingTraffic += file.size;
