@@ -5,7 +5,6 @@ import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
 // import cors from 'cors';
 import JwtHelper from './jwt-helper.js';
-import axios from 'axios';
 import { SQLiteHelper } from './sqlite.js';
 import { UserEntity } from './database/user.js';
 import { ClusterEntity } from './database/cluster.js';
@@ -19,7 +18,7 @@ import { HourlyStatsStorage } from './statistics/hourly-stats.js';
 import cookieParser from 'cookie-parser';
 import { Plugin } from './plugin/Plugin.js';
 import { PluginLoader } from './plugin/PluginLoader.js';
-import { Got } from 'got';
+import got, {type Got} from 'got'
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -52,6 +51,7 @@ export class Server {
     protected centerStats: HourlyStatsStorage;
     protected plugins: Plugin[];
     protected pluginLoader: PluginLoader;
+    protected got: Got;
 
     public constructor() {
         this.plugins = [];
@@ -62,6 +62,12 @@ export class Server {
             plugins.forEach(plugin => plugin.init());
         })
         .catch(error => console.error(error));
+
+        this.got = got.extend({
+            headers: {
+                'User-Agent': `93AtHome-V3/${Config.version}`
+            }
+        });
 
         this.files = [];
         this.avroBytes = new Uint8Array();
@@ -192,28 +198,27 @@ export class Server {
                 const code = req.query.code as string || '';
         
                 // 请求GitHub获取access_token
-                const tokenResponse = await axios.post(`https://${Config.getInstance().githubUrl}/login/oauth/access_token`, {
-                    code,
-                    client_id: Config.getInstance().githubOAuthClientId,
-                    client_secret: Config.getInstance().githubOAuthClientSecret
-                }, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                const tokenResponse = await this.got.post(`https://${Config.getInstance().githubUrl}/login/oauth/access_token`, {
+                    json: {
+                        code,
+                        client_id: Config.getInstance().githubOAuthClientId,
+                        client_secret: Config.getInstance().githubOAuthClientSecret
+                    },
+                    responseType: 'json'
                 });
         
-                const tokenData = tokenResponse.data as { access_token: string };
+                const tokenData = tokenResponse.body as { access_token: string };
                 const accessToken = tokenData.access_token;
         
                 let userResponse;
                 try {
-                    userResponse = await axios.get(`https://${Config.getInstance().githubApiUrl}/user`, {
+                    userResponse = await this.got.get(`https://${Config.getInstance().githubApiUrl}/user`, {
                         headers: {
                             'Authorization': `token ${accessToken}`,
                             'Accept': 'application/json',
                             'User-Agent': 'Open93AtHome-V3/3.0.0' // GitHub API要求设置User-Agent
                         }
-                    }).then(response => response.data) as { id: number, login: string, avatar_url: string, name: string };
+                    }).then(response => response.body) as { id: number, login: string, avatar_url: string, name: string };
                 } catch (error) {
                     console.error('Error fetching GitHub user info: ', error as Error);
                     throw error; // 或者返回一个默认的错误响应

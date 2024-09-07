@@ -1,5 +1,5 @@
-import { Table } from "../sqlite";
-import { UserEntity } from "./user";
+import { Table } from "../sqlite.js";
+import { UserEntity } from "./user.js";
 
 @Table('github_users', `
     id INTEGER PRIMARY KEY,

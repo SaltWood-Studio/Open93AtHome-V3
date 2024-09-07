@@ -6,11 +6,11 @@ import JwtHelper from './jwt-helper.js';
 import { File, IFileInfo } from './database/file.js';
 import { compress } from '@mongodb-js/zstd';
 import avsc from 'avsc';
-import axios from 'axios';
 import { exec } from 'child_process';
 import { ClusterEntity } from './database/cluster.js';
 import { SQLiteHelper } from './sqlite.js';
 import { UserEntity } from './database/user.js';
+import got, { Got } from 'got';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -27,6 +27,8 @@ export const FileListSchema = avsc.Type.forSchema({
 })
 
 export class Utilities {
+    public static got: Got = got.extend();
+
     public static isRunningInDocker(): boolean {
         return process.env.IS_IN_DOCKER === 'true';
     }
@@ -156,8 +158,10 @@ export class Utilities {
 
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {
         try {
-            const response = await axios.get(url, { responseType: 'arraybuffer' });
-            const responseData = response.data as Buffer;
+            const response = await got.get(url, {
+                responseType: 'buffer'
+            });
+            const responseData = response.body as Buffer;
 
             // 计算响应数据的哈希值
             const hash = crypto.createHash('sha1').update(responseData).digest('hex');

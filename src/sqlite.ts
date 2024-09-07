@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { ClusterEntity } from './database/cluster';
+import { ClusterEntity } from './database/cluster.js';
 
 // 表的定义映射
 const tableSchemaMap = new Map<Function, string>();
