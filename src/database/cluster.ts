@@ -64,4 +64,18 @@ export class ClusterEntity {
     public version: string = '';
 
     public downTime: number = 0;
+
+    private interval: NodeJS.Timeout | null = null;
+
+    public doOffline(reason: string = "Unspecfied"): void {
+        this.isOnline = false;
+        this.downReason = reason;
+        this.downTime = Date.now();
+        this.interval && clearInterval(this.interval);
+    }
+
+    public doOnline(): void {
+        this.isOnline = true;
+        this.interval = setInterval(() => {});
+    }
 }
