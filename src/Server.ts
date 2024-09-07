@@ -407,6 +407,15 @@ export class Server {
                     res.sendFile(file.path.substring(1), {
                         root: ".",
                         maxAge: "30d"
+                    }, (err) => {
+                        const availablePlugins = this.plugins.filter(p => p.exists(file));
+                        if (err && availablePlugins.length > 0) {
+                            Utilities.getRandomElement(this.plugins)?.express(file, req, res);
+                            return;
+                        } else {
+                            res.status(404).send("The requested file is not found or is not accessible.");
+                            return;
+                        }
                     });
                     return;
                 }
