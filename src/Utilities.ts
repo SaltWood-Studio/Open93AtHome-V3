@@ -98,13 +98,20 @@ export class Utilities {
      * @param directoryPath 要扫描的目录路径
      * @return 包含所有文件相对路径的 Set 集合
      */
-    public static scanFiles(directoryPath: string): string[] {
-        const filePaths: string[] = [];
+    public static scanFiles(directoryPath: string): { files: string[], name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] {
+        const sources: { files: string[], name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
         directoryPath = path.resolve(directoryPath);
         if (fs.existsSync(directoryPath) && fs.lstatSync(directoryPath).isDirectory()) {
-            this.scanDirectory(directoryPath, filePaths, directoryPath);
+            const folders = fs.readdirSync(directoryPath);
+            for (const folder of folders) {
+                if (folder.startsWith('.')) continue;
+                const fullPath = path.join(directoryPath, folder);
+                let files: string[] = [];
+                this.scanDirectory(directoryPath, files, directoryPath);
+                sources.push({ files, name: folder, count: files.length, lastUpdated: new Date(), isFromPlugin: false })
+            }
         }
-        return filePaths;
+        return sources;
     }
 
     /**

@@ -5,6 +5,9 @@ export abstract class Plugin {
     public abstract init(): void;
     public abstract getName(): string;
 
+    public abstract getFileSourceName(): string;
+    public abstract getSourceAddress(): string;
+
     public abstract updateFiles(): Promise<void>;
 
     // 任何插件都应该在 updateFiles 未结束之前阻塞此方法的调用

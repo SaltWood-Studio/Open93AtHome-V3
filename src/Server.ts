@@ -52,6 +52,7 @@ export class Server {
     protected plugins: Plugin[];
     protected pluginLoader: PluginLoader;
     protected got: Got;
+    protected sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
 
     public constructor() {
         this.plugins = [];
@@ -121,16 +122,29 @@ export class Server {
             await Utilities.updateGitRepositories("./files");
             const oldFiles = this.files;
             await Promise.all(this.plugins.map(p => p.updateFiles()));
-            const files = [
-                ...Utilities.scanFiles("./files")
-            ];
-            const fileTasks = files.map(async file => {
+            const files = Utilities.scanFiles("./files");
+            const fileTasks = (files as { files: string[] }[]).map(f => f.files).flat().map(async file => {
                 const f = await File.createInstanceFromPath(`.${file}`);
                 return f;
             });
+            const localFiles = await Promise.all(fileTasks);
+            const pluginFiles = await Promise.all(this.plugins.map(async p => {
+                const files = await p.getFiles();
+                return {
+                    name: p.getName(),
+                    count: files.length,
+                    lastUpdated: new Date(),
+                    isFromPlugin: true,
+                    files
+                }
+            }));
+            this.sources = [
+                ...files as { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[],
+                ...pluginFiles as { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[]
+            ];
             this.files = [
-                ...(await Promise.all(fileTasks)),
-                ...(await Promise.all(this.plugins.map(p => p.getFiles()))).flat()
+                ...localFiles,
+                ...pluginFiles.map(p => p.files).flat()
             ];
             this.avroBytes = await Utilities.getAvroBytes(this.files);
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
@@ -739,6 +753,7 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(cluster.getJson(true, false));
         });
+        this.app.get('/93AtHome/syncSources', (req: Request, res: Response) => res.status(200).json(this.sources));
     }
 
     public setupSocketIO(): void {
