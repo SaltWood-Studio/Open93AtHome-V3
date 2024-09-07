@@ -96,15 +96,15 @@ export class ClusterEntity {
     }
 
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
-        const convertBanned = ({ isBanned, ...rest }: ClusterEntity) => {
-            return {
-                isBanned: Boolean(isBanned),
-                ...rest
-            };
-        };
         const removeSensitiveInfo = ({ clusterSecret, endpoint, bandwidth, measureBandwidth, port, downReason, ...rest }: {clusterSecret: string, endpoint: string, bandwidth: number, measureBandwidth: number, port: number, downReason: string, [key: string]: any}) => rest;
-        const removeSecretInfo = ({ clusterSecret, ...rest }: {clusterSecret: string, [key: string]: any}) => rest;
-        let json: any = convertBanned(this);
+        const removeSecretInfo = ({ clusterSecret, ...rest }: { clusterSecret: string, [key: string]: any }) => rest;
+        const optimizeJsonObject = ({ interval, isBanned, ...rest }: ClusterEntity) => {
+            return {
+                ...rest,
+                isOnline: Boolean(this.isOnline)
+            }
+        };
+        let json: any = optimizeJsonObject(this);
         if (removeSensitive) json = removeSensitiveInfo(json);
         if (removeSecret) json = removeSecretInfo(json);
         return json;
