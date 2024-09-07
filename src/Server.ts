@@ -203,31 +203,27 @@ export class Server {
                 const code = req.query.code as string || '';
         
                 // 请求GitHub获取access_token
-                const tokenResponse = await this.got.post(`https://${Config.getInstance().githubUrl}/login/oauth/access_token`, {
-                    json: {
+                const tokenData = await this.got.post(`https://${Config.getInstance().githubUrl}/login/oauth/access_token`, {
+                    form: {
                         code,
                         client_id: Config.getInstance().githubOAuthClientId,
                         client_secret: Config.getInstance().githubOAuthClientSecret
                     },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     responseType: 'json'
-                });
+                }).json<{ access_token: string }>();
         
-                const tokenData = tokenResponse.body as { access_token: string };
                 const accessToken = tokenData.access_token;
         
-                let userResponse;
-                try {
-                    userResponse = await this.got.get(`https://${Config.getInstance().githubApiUrl}/user`, {
-                        headers: {
-                            'Authorization': `token ${accessToken}`,
-                            'Accept': 'application/json',
-                            'User-Agent': 'Open93AtHome-V3/3.0.0' // GitHub API要求设置User-Agent
-                        }
-                    }).then(response => response.body) as { id: number, login: string, avatar_url: string, name: string };
-                } catch (error) {
-                    console.error('Error fetching GitHub user info: ', error as Error);
-                    throw error; // 或者返回一个默认的错误响应
-                }
+                let userResponse = await this.got.get(`https://${Config.getInstance().githubApiUrl}/user`, {
+                    headers: {
+                        'Authorization': `token ${accessToken}`,
+                        'Accept': 'application/json',
+                        'User-Agent': 'Open93AtHome-V3/3.0.0' // GitHub API要求设置User-Agent
+                    }
+                }).json<{ id: number, login: string, avatar_url: string, name: string }>();
              
                 const user = GitHubUser.create(
                     userResponse.id,
