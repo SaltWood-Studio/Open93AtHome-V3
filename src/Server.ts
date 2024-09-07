@@ -139,8 +139,8 @@ export class Server {
                 }
             }));
             this.sources = [
-                ...files as { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[],
-                ...pluginFiles as { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[]
+                ...files.map(f => ({ name: f.name, count: f.count, lastUpdated: f.lastUpdated, isFromPlugin: f.isFromPlugin })),
+                ...pluginFiles.map(p => ({ name: p.name, count: p.count, lastUpdated: p.lastUpdated, isFromPlugin: p.isFromPlugin })),
             ];
             this.files = [
                 ...localFiles,

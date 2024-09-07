@@ -107,7 +107,7 @@ export class Utilities {
                 if (folder.startsWith('.')) continue;
                 const fullPath = path.join(directoryPath, folder);
                 let files: string[] = [];
-                this.scanDirectory(directoryPath, files, directoryPath);
+                this.scanDirectory(fullPath, files, directoryPath);
                 sources.push({ files, name: folder, count: files.length, lastUpdated: new Date(), isFromPlugin: false })
             }
         }
