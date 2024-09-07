@@ -1,7 +1,7 @@
 import { exec } from "child_process";
-import { Config } from "./Config.js";
-import { Server } from "./Server.js";
-import { Utilities } from "./Utilities.js";
+import { Config } from './Config.js';
+import { Server } from './Server.js';
+import { Utilities } from './Utilities.js';
 
 function onStop(signal: string) {
     server.db.close();

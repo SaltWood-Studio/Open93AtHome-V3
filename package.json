@@ -1,7 +1,7 @@
 {
   "name": "93athome",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "3.0.2",
+  "type": "module",
   "scripts": {
     "start": "tsc && node dist/index.js",
     "build": "tsc",
@@ -34,6 +34,5 @@
     "@types/better-sqlite3": "^7.6.11",
     "@types/cookie-parser": "^1.4.7",
     "@types/jsonwebtoken": "^9.0.6"
-  },
-  "type": "module"
+  }
 }

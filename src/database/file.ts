@@ -1,4 +1,4 @@
-import { Utilities } from "../Utilities.js";
+import { Utilities } from '../Utilities.js';
 
 export class File {
     public path: string;

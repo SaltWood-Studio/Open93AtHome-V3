@@ -11,7 +11,7 @@ export class PluginLoader {
         for (const file of pluginFiles) {
             const fullPath = path.join(pluginDir, file);
 
-            // 只加载 .ts 或 .js 文件
+            // 只加载 .js 文件
             if (file.endsWith('.js')) {
                 try {
                     const module = await import(path.resolve(fullPath));
