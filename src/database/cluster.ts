@@ -1,5 +1,7 @@
 import { Ignore, Table, PrimaryKey } from '../sqlite';
 import { StatsStorage } from '../statistics/cluster-stats';
+import { Utilities } from '../utilities';
+import { File } from './file';
 
 @Table('clusters', `
     clusterId TEXT PRIMARY KEY UNIQUE,
@@ -74,8 +76,36 @@ export class ClusterEntity {
         this.interval && clearInterval(this.interval);
     }
 
-    public doOnline(): void {
+    public doOnline(files: File[]): void {
         this.isOnline = true;
-        this.interval = setInterval(() => {});
+        this.interval = setInterval(() => {
+            const file = Utilities.getRandomElement(files);
+            if (file) {
+                Utilities.checkSpecfiedFiles([file], this, -5)
+                .then(result => {
+                    if (!result) {
+                        this.doOffline(`Warden failed: ${file.hash}, ${result}`);
+                    }
+                })
+                .catch(error => {
+                    this.doOffline(`Warden failed: ${file.hash}, ${error}`);
+                });
+            }
+        });
     }
+
+    public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
+        const convertBanned = ({ isBanned, ...rest }: ClusterEntity) => {
+            return {
+                isBanned: Boolean(isBanned),
+                ...rest
+            };
+        };
+        const removeSensitiveInfo = ({ clusterSecret, endpoint, bandwidth, measureBandwidth, port, downReason, ...rest }: {clusterSecret: string, endpoint: string, bandwidth: number, measureBandwidth: number, port: number, downReason: string, [key: string]: any}) => rest;
+        const removeSecretInfo = ({ clusterSecret, ...rest }: {clusterSecret: string, [key: string]: any}) => rest;
+        let json: any = convertBanned(this);
+        if (removeSensitive) json = removeSensitiveInfo(json);
+        if (removeSecret) json = removeSecretInfo(json);
+        return json;
+    } 
 }

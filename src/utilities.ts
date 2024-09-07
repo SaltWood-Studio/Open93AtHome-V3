@@ -152,6 +152,8 @@ export class Utilities {
         return array[randomIndex];
     }
 
+    public static getUrl(file: File, cluster: ClusterEntity): string { return `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}` }
+
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {
         try {
             const response = await axios.get(url, { responseType: 'arraybuffer' });
@@ -197,7 +199,7 @@ export class Utilities {
         let result: string | null = "Error: This value should never be returned. if you see this message, please contact to the administrator.";
     
         try {
-            const urls = files.map(f => `http://${cluster.endpoint}:${cluster.port}/download/${f.hash}?${Utilities.getSign(f.hash, cluster.clusterSecret)}`);
+            const urls = files.map(f => Utilities.getUrl(f, cluster));
             for (const [url, file] of Utilities.zip(urls, files)) {
                 const realHash = file.hash;
                 const remote = await Utilities.checkUrl(url);

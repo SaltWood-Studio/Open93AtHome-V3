@@ -35,9 +35,6 @@ const logAccess = (req: Request, res: Response) => {
     console.log(`${req.method} ${req.originalUrl} ${req.protocol} <${res.statusCode}> - [${ip}] ${userAgent}`);
 };
 
-// 使用对象解构来移除敏感信息
-const removeSensitiveInfo = ({ clusterSecret, ...rest }: ClusterEntity) => rest;
-
 export class Server {
     private app;
     private io: SocketIOServer;
@@ -162,7 +159,7 @@ export class Server {
         this.app.get('/93AtHome/list_clusters', (req, res) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(removeSensitiveInfo)));
+            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => c.getJson(true, true))));
         });
         this.app.get('/93AtHome/list_files', (req, res) => {
             res.statusCode = 200;
@@ -438,18 +435,18 @@ export class Server {
         
             const onlineClustersSorted = onlineClusters
                 .sort((a, b) => b.traffic - a.traffic)
-                .map(removeSensitiveInfo);
+                .map(c => c.getJson(true, true));
         
             const offlineClustersSorted = offlineClusters
                 .sort((a, b) => b.traffic - a.traffic)
-                .map(removeSensitiveInfo);
+                .map(c => c.getJson(true, true));
         
             // 添加 ownerName 并返回 JSON 响应
             const result = [
                 ...onlineClustersSorted,
                 ...offlineClustersSorted
             ].map(c => ({
-                ...c,
+                ...(c as ClusterEntity).getJson(true, true),
                 ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || ''
             }));
         
@@ -498,7 +495,7 @@ export class Server {
                 c.owner = user.id;
                 this.db.update(c);
             });
-            res.status(200).json(matches.map(c => removeSensitiveInfo(c)));
+            res.status(200).json(matches.map(c => c.getJson(true, false)));
         });
         this.app.post('/93AtHome/dashboard/user/unbindCluster', (req: Request, res: Response) => {
             const token = req.cookies.token;
@@ -522,7 +519,7 @@ export class Server {
                 c.owner = 0;
                 this.db.update(c);
             });
-            res.status(200).json(matches.map(c => removeSensitiveInfo(c)));
+            res.status(200).json(matches.map(c => c.getJson(true, false)));
         });
         this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
             const token = req.cookies.token;
@@ -539,14 +536,14 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             if (!clusterId) {
                 const clusters = this.clusters.filter(c => c.owner === user.id);
-                res.status(200).json(clusters.map(c => removeSensitiveInfo(c)));
+                res.status(200).json(clusters.map(c => c.getJson(true, false)));
             } else {
                 const cluster = this.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
                 if (!cluster) {
                     res.status(404).send(); // 集群不存在
                     return;
                 }
-                res.status(200).json(removeSensitiveInfo(cluster));
+                res.status(200).json(cluster.getJson(true, false));
             }
         });
         this.app.post('/93AtHome/dashboard/user/cluster/profile', (req: Request, res: Response) => {
@@ -590,7 +587,7 @@ export class Server {
             }
 
             this.db.update(cluster);
-            res.status(200).json(removeSensitiveInfo(cluster));
+            res.status(200).json(cluster.getJson(true, false));
         });
         
         this.app.get('/93AtHome/dashboard/user/cluster/reset_secret', (req: Request, res: Response) => {
@@ -649,7 +646,7 @@ export class Server {
             this.db.insert(cluster);
             this.clusters.push(cluster);
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json(cluster);
+            res.status(200).json(cluster.getJson(false, false));
         });
         this.app.post('/93AtHome/super/cluster/remove', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
@@ -683,7 +680,7 @@ export class Server {
             cluster.isBanned = Number(data.ban);
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json(removeSensitiveInfo(cluster));
+            res.status(200).json(cluster.getJson(true, false));
         });
         this.app.post('/93AtHome/super/cluster/profile', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
@@ -707,7 +704,7 @@ export class Server {
 
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json(removeSensitiveInfo(cluster));
+            res.status(200).json(cluster.getJson(true, false));
         });
     }
 
@@ -752,7 +749,8 @@ export class Server {
         this.io.on('connection', (socket) => {
             console.log(`SOCKET ${socket.handshake.url} socket.io <CONNECTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
 
-            socket.on('enable', (data, ack: Function) => {
+            socket.on('enable', (data, callback: Function) => {
+                const ack = callback ? callback : (...rest: any[]) => {};
                 const enableData = data as  {
                     host: string,
                     port: number,
@@ -789,15 +787,19 @@ export class Server {
                         ack({ message: message });
                         return;
                     } else {
-                        cluster.isOnline = true;
-                        cluster.downReason = "null";
+                        cluster.doOnline(this.files);
                         this.db.update(cluster);
                         ack([null, true]);
                     }
+                })
+                .catch(err => {
+                    ack({ message: err.message });
+                    console.error(err);
                 });
             });
 
-            socket.on('keep-alive', (data, ack: Function) => {
+            socket.on('keep-alive', (data, callback: Function) => {
+                const ack = callback ? callback : (...rest: any[]) => {};
                 const keepAliveData = data as  {
                     time: string,
                     hits: number,
@@ -828,7 +830,8 @@ export class Server {
                 }
             });
 
-            socket.on('disable', (data, ack: Function) => {
+            socket.on('disable', (data, callback: Function) => {
+                const ack = callback ? callback : (...rest: any[]) => {};
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (!cluster || !cluster.isOnline) {
@@ -836,9 +839,8 @@ export class Server {
                 }
                 else {
                     console.log(`SOCKET ${socket.handshake.url} socket.io <DISABLE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
-                    cluster.isOnline = false;
+                    cluster.doOffline("Client disabled");
                     socket.send('Bye. Have a good day!');
-                    cluster.downReason = "Client disabled";
                     cluster.downTime = Math.floor(Date.now() / 1000);
                     ack([null, true]);
                     this.db.update(cluster);
@@ -853,7 +855,7 @@ export class Server {
                     if (cluster.isOnline) {
                         cluster.downReason = "Client disconnected";
                         cluster.downTime = Math.floor(Date.now() / 1000);
-                        cluster.isOnline = false;
+                        cluster.doOffline("Client disconnected")
                         this.db.update(cluster);
                     }
                 }
