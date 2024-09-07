@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Plugin } from './Plugin';
-import { Server } from '../server';
+import { Plugin } from './Plugin.js';
+import { Server } from '../server.js';
 
 export class PluginLoader {
     private pluginInstances: Plugin[] = [];

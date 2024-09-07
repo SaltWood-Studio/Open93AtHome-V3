@@ -2,15 +2,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Request, Response } from 'express';
-import JwtHelper from './jwt-helper';
-import { File, IFileInfo } from './database/file';
+import JwtHelper from './jwt-helper.js';
+import { File, IFileInfo } from './database/file.js';
 import { compress } from '@mongodb-js/zstd';
 import avsc from 'avsc';
 import axios from 'axios';
 import { exec } from 'child_process';
-import { ClusterEntity } from './database/cluster';
-import { SQLiteHelper } from './sqlite';
-import { UserEntity } from './database/user';
+import { ClusterEntity } from './database/cluster.js';
+import { SQLiteHelper } from './sqlite.js';
+import { UserEntity } from './database/user.js';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',

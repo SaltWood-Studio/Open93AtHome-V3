@@ -4,21 +4,22 @@ import fs from 'fs';
 import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
 // import cors from 'cors';
-import JwtHelper from './jwt-helper';
+import JwtHelper from './jwt-helper.js';
 import axios from 'axios';
-import { SQLiteHelper } from './sqlite';
-import { UserEntity } from './database/user';
-import { ClusterEntity } from './database/cluster';
+import { SQLiteHelper } from './sqlite.js';
+import { UserEntity } from './database/user.js';
+import { ClusterEntity } from './database/cluster.js';
 import http2Express from 'http2-express-bridge';
-import { Config } from './config';
-import { GitHubUser } from './database/github-user';
-import { File } from './database/file';
-import { Utilities } from './utilities';
-import { StatsStorage } from './statistics/cluster-stats';
-import { HourlyStatsStorage } from './statistics/hourly-stats';
+import { Config } from './config.js';
+import { GitHubUser } from './database/github-user.js';
+import { File } from './database/file.js';
+import { Utilities } from './utilities.js';
+import { StatsStorage } from './statistics/cluster-stats.js';
+import { HourlyStatsStorage } from './statistics/hourly-stats.js';
 import cookieParser from 'cookie-parser';
-import { Plugin } from './plugin/Plugin';
-import { PluginLoader } from './plugin/PluginLoader';
+import { Plugin } from './plugin/Plugin.js';
+import { PluginLoader } from './plugin/PluginLoader.js';
+import { Got } from 'got';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {

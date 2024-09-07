@@ -25,6 +25,7 @@
     "dotenv": "^16.4.5",
     "env-var": "^7.5.0",
     "express": "^4.19.2",
+    "got": "^14.4.2",
     "http2-express-bridge": "^1.0.7",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.7.5",
@@ -34,5 +35,6 @@
     "@types/better-sqlite3": "^7.6.11",
     "@types/cookie-parser": "^1.4.7",
     "@types/jsonwebtoken": "^9.0.6"
-  }
+  },
+  "type": "module"
 }
