@@ -493,14 +493,13 @@ export class Server {
                 .map(c => c.getJson(true, true));
         
             // 添加 ownerName 并返回 JSON 响应
-            const result = [
-                ...onlineClustersSorted,
-                ...offlineClustersSorted
-            ].map(c => ({
-                ...c,
-                ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || ''
-            }));
-        
+            const result = onlineClustersSorted.concat(offlineClustersSorted).map(c => {
+                return {
+                    ...c,
+                    ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || ''
+                }
+            });
+            
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(result);
         });
