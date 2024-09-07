@@ -20,6 +20,7 @@ WORKDIR /app
 COPY . .
 
 RUN rm -rf node_modules && \
+    rm -rf dist && \
     npm install
 
 # 安装TypeScript以及其他依赖包
