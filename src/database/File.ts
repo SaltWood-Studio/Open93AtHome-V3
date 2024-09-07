@@ -17,7 +17,7 @@ export class File {
 
     public static createInstance(path: string, hash: string, size: number, lastModified: number): File {
         const file = new File();
-        file.path = path.substring(1);
+        file.path = path;
         file.hash = hash;
         file.size = size;
         file.lastModified = lastModified;
