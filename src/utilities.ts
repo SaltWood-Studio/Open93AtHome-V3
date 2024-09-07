@@ -2,14 +2,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Request, Response } from 'express';
-import JwtHelper from './jwt-helper.js';
-import { File, IFileInfo } from './database/file.js';
+import JwtHelper from './JwtHelper.js';
+import { File, IFileInfo } from './database/File.js';
 import { compress } from '@mongodb-js/zstd';
 import avsc from 'avsc';
 import { exec } from 'child_process';
-import { ClusterEntity } from './database/cluster.js';
-import { SQLiteHelper } from './sqlite.js';
-import { UserEntity } from './database/user.js';
+import { ClusterEntity } from './database/Cluster.js';
+import { SQLiteHelper } from './SQLiteHelper.js';
+import { UserEntity } from './database/User.js';
 import got, { Got } from 'got';
 
 export const FileListSchema = avsc.Type.forSchema({

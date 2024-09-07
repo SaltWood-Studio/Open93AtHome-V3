@@ -1,7 +1,7 @@
-import { Ignore, Table, PrimaryKey } from '../sqlite.js';
-import { StatsStorage } from '../statistics/cluster-stats.js';
-import { Utilities } from '../utilities.js';
-import { File } from './file.js';
+import { Ignore, Table, PrimaryKey } from '../SQLiteHelper.js';
+import { StatsStorage } from '../statistics/ClusterStats.js';
+import { Utilities } from '../Utilities.js';
+import { File } from './File.js';
 
 @Table('clusters', `
     clusterId TEXT PRIMARY KEY UNIQUE,

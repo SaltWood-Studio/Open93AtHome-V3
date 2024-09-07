@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config } from '../config.js';
+import { Config } from '../Config.js';
 
 export class StatsStorage {
     public readonly id: string;

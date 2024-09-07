@@ -1,4 +1,4 @@
-import { File } from "../database/file.js";
+import { File } from "../database/File.js";
 import { Request, Response } from "express";
 
 export abstract class Plugin {

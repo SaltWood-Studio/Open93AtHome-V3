@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 import env from 'env-var'
-import { Utilities } from './utilities.js'
+import { Utilities } from './Utilities.js'
 
 export class Config {
     public static instance: Config
