@@ -676,7 +676,7 @@ export class Server {
         });
         this.app.get('/93AtHome/random', (req: Request, res: Response) => {
             res.status(302);
-            res.setHeader('Location', Utilities.getRandomElement(this.files)?.encodedPath || '');
+            res.setHeader('Location', encodeURI(Utilities.getRandomElement(this.files)?.path || ''));
             res.send();
         });
         this.app.post('/openbmclapi/report', (req: Request, res: Response) => {
