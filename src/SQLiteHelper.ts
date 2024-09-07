@@ -126,12 +126,15 @@ export class SQLiteHelper {
         stmt.run(values);
     }    
 
-    public remove<T extends object>(type: { new (): T }, primaryKey: number | string): void {
+    public remove<T extends object>(type: { new (): T }, obj: T): void {
+        const data = obj as Record<string, any>;
         const tableName = this.getTableNameByConstructor(type);
-        const pk = primaryKeyMap.get(type.constructor as { new (): T }) || 'id';
+
+        const pk = primaryKeyMap.get(obj.constructor as { new (): T }) || 'id';
+        
         const deleteSQL = `DELETE FROM ${tableName} WHERE ${pk} = ?`;
         const stmt = this.db.prepare(deleteSQL);
-        stmt.run(primaryKey);
+        stmt.run(data[pk]);
     }    
 
     private getTableName<T>(obj: T): string {

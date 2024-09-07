@@ -689,7 +689,7 @@ export class Server {
                 }); // 集群不存在
                 return;
             }
-            this.db.remove<ClusterEntity>(ClusterEntity, cluster.clusterId);
+            this.db.remove<ClusterEntity>(ClusterEntity, cluster);
             this.clusters = this.clusters.filter(c => c.clusterId !== clusterId);
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json({
