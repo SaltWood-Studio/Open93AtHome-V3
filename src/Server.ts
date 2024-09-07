@@ -853,7 +853,7 @@ export class Server {
                         ack({ message: message });
                         return;
                     } else {
-                        cluster.doOnline(this.files);
+                        cluster.doOnline(this.files, socket);
                         this.db.update(cluster);
                         ack([null, true]);
                     }

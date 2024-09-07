@@ -1,3 +1,4 @@
+import { Socket } from 'socket.io';
 import { Ignore, Table, PrimaryKey } from '../SQLiteHelper.js';
 import { StatsStorage } from '../statistics/ClusterStats.js';
 import { Utilities } from '../Utilities.js';
@@ -77,7 +78,7 @@ export class ClusterEntity {
         this.interval && clearInterval(this.interval);
     }
 
-    public doOnline(files: File[]): void {
+    public doOnline(files: File[], io: Socket): void {
         this.isOnline = true;
         this.interval = setInterval(() => {
             const file = Utilities.getRandomElement(files);
@@ -86,10 +87,12 @@ export class ClusterEntity {
                 .then(result => {
                     if (result) {
                         this.doOffline(`Warden failed: ${file.hash}, result: ${result}`);
+                        io.emit('warden-error', { message: this.downReason, file: file })
                     }
                 })
                 .catch(error => {
                     this.doOffline(`Warden failed: ${file.hash}, error: ${error}`);
+                    io.emit('warden-error', { message: this.downReason, file: file, error: error })
                 });
             }
         }, 1000 * 60 * 5);
