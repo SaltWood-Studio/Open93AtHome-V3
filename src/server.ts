@@ -777,6 +777,11 @@ export class Server {
                     return;
                 }
 
+                if (cluster.isBanned) {
+                    ack({ message: "This cluster is banned."});
+                    return;
+                }
+
                 cluster.endpoint = enableData.host;
                 cluster.port = enableData.port;
                 cluster.version = enableData.version;
@@ -808,9 +813,12 @@ export class Server {
 
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
-                if (!cluster || !cluster?.isOnline) {
+                if (!cluster || !cluster?.isOnline || cluster?.isBanned) {
                     if (!cluster?.isOnline) {
                         socket.send(`Your cluster was kicked by server because: ${cluster?.downReason}`);
+                    }
+                    else if (cluster?.isBanned) {
+                        socket.send("This cluster is banned.");
                     }
                     ack([null, false]);
                 }
