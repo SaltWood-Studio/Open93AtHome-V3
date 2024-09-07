@@ -5,13 +5,15 @@
       "experimentalDecorators": true,
       "emitDecoratorMetadata": true,
       "resolveJsonModule": true,
-      "outDir": "dist",
+      "outDir": "./dist",
+      "rootDir": "./src",
       "skipLibCheck": true,
       "allowJs": true,
       "esModuleInterop": true
     },
     "exclude": [
       "node_modules",
-      "public/**/*"
+      "public/**/*",
+      "plugins"
     ]
   }
