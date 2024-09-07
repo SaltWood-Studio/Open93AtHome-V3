@@ -24,7 +24,7 @@ RUN rm -rf node_modules && \
     npm install
 
 # 安装TypeScript以及其他依赖包
-RUN npm install -g typescript && npm install
+RUN npm install -g typescript && npm install && npm run build
 
 # 启动应用程序
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/index.js"]
