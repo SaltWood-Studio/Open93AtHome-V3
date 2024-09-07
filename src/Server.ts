@@ -354,6 +354,10 @@ export class Server {
             }
         });
         this.app.get('/openbmclapi/files', async (req: Request, res: Response) => {
+            if (this.isUpdating) {
+                res.status(503).send('File list update in progress');
+                return;
+            }
             if (!Utilities.verifyClusterRequest(req)) {
                 res.status(403).send(); // 禁止访问
                 return;
