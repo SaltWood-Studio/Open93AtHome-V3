@@ -76,12 +76,18 @@ export class ClusterEntity {
         this.isOnline = false;
         this.downReason = reason;
         this.downTime = Date.now();
-        this.interval && clearInterval(this.interval);
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
     }
 
     public doOnline(files: File[], io: Socket): void {
         this.isOnline = true;
-        if (this.interval) clearInterval(this.interval);
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
         this.interval = setInterval(() => {
             const file = Utilities.getRandomElement(files);
             if (file) {
