@@ -636,6 +636,12 @@ export class Server {
             }
 
             if (bandwidth) {
+                if (bandwidth < 10 || bandwidth > 500) {
+                    res.status(400).send({
+                        message: "Bandwidth must be between 10 and 500"
+                    });
+                    return;
+                }
                 cluster.bandwidth = bandwidth;
             }
 
@@ -759,7 +765,15 @@ export class Server {
             }
 
             if (clusterName) cluster.clusterName = clusterName;
-            if (bandwidth) cluster.bandwidth = bandwidth;
+            if (bandwidth) {
+                if (bandwidth < 10 || bandwidth > 500) {
+                    res.status(400).send({
+                        message: "Bandwidth must be between 10 and 500"
+                    });
+                    return;
+                }
+                cluster.bandwidth = bandwidth;
+            }
             if (sponsor) cluster.sponsor = sponsor;
             if (sponsorUrl) cluster.sponsorUrl = sponsorUrl;
 
