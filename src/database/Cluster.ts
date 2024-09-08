@@ -99,12 +99,12 @@ export class ClusterEntity {
     }
 
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
-        const removeSensitiveInfo = ({ clusterSecret, endpoint, bandwidth, measureBandwidth, port, downReason, ...rest }: {clusterSecret: string, endpoint: string, bandwidth: number, measureBandwidth: number, port: number, downReason: string, [key: string]: any}) => rest;
+        const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, ...rest }: {clusterSecret: string, endpoint: string, measureBandwidth: number, port: number, downReason: string, [key: string]: any}) => rest;
         const removeSecretInfo = ({ clusterSecret, ...rest }: { clusterSecret: string, [key: string]: any }) => rest;
         const optimizeJsonObject = ({ interval, isBanned, ...rest }: ClusterEntity) => {
             return {
                 ...rest,
-                isOnline: Boolean(this.isOnline)
+                isBanned: Boolean(this.isBanned)
             }
         };
         let json: any = optimizeJsonObject(this);
