@@ -27,6 +27,7 @@
     "got": "^14.4.2",
     "http2-express-bridge": "^1.0.7",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
     "socket.io": "^4.7.5",
     "typescript": "^5.5.4"
   },
