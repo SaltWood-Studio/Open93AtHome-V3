@@ -462,6 +462,7 @@ export class Server {
                 }),
                 today: this.centerStats.today(),
                 onlines: this.clusters.filter(c => c.isOnline).length,
+                sourceCount: this.sources.length
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
