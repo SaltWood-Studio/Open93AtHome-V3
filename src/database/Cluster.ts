@@ -3,6 +3,7 @@ import { Ignore, Table, PrimaryKey } from '../SQLiteHelper.js';
 import { StatsStorage } from '../statistics/ClusterStats.js';
 import { Utilities } from '../Utilities.js';
 import { File } from './File.js';
+import { clear } from 'console';
 
 @Table('clusters', `
     clusterId TEXT PRIMARY KEY UNIQUE,
@@ -80,6 +81,7 @@ export class ClusterEntity {
 
     public doOnline(files: File[], io: Socket): void {
         this.isOnline = true;
+        if (this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
             const file = Utilities.getRandomElement(files);
             if (file) {
