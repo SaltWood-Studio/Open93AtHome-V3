@@ -48,8 +48,8 @@ export class Server {
     protected clusters: ClusterEntity[];
     protected avroBytes: Uint8Array;
     protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
-    protected stats: StatsStorage[];
-    protected centerStats: HourlyStatsStorage;
+    public stats: StatsStorage[];
+    public centerStats: HourlyStatsStorage;
     protected plugins: Plugin[];
     protected pluginLoader: PluginLoader;
     protected got: Got;

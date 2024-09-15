@@ -6,6 +6,8 @@ import got from "got";
 
 function onStop(signal: string) {
     server.db.close();
+    server.stats.forEach(stats => stats.stopAutoSave());
+    server.centerStats.stopAutoSave();
     server.io.sockets.sockets.forEach(socket => {
         socket.disconnect(true);
     });
