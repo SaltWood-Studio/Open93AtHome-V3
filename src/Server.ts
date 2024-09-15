@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
-import https from 'https';
+import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
@@ -8,7 +8,6 @@ import JwtHelper from './JwtHelper.js';
 import { SQLiteHelper } from './SQLiteHelper.js';
 import { UserEntity } from './database/User.js';
 import { ClusterEntity } from './database/Cluster.js';
-import http2Express from 'http2-express-bridge';
 import { Config } from './Config.js';
 import { GitHubUser } from './database/GitHubUser.js';
 import { File } from './database/File.js';
@@ -41,7 +40,7 @@ const logAccess = (req: Request, res: Response) => {
 export class Server {
     private app;
     public io: SocketIOServer;
-    private httpsServer: https.Server;
+    private httpServer;
     public db: SQLiteHelper;
     protected files: File[];
     protected isUpdating: boolean = false;
@@ -71,7 +70,7 @@ export class Server {
         this.avroBytes = new Uint8Array();
 
         // 创建 Express 应用
-        this.app = http2Express(express);
+        this.app = express();
 
         // 创建文件夹
         if (!fs.existsSync('./data')) fs.mkdirSync('./data');
@@ -96,10 +95,10 @@ export class Server {
         JwtHelper.getInstance();
 
         // 创建 HTTPS 服务器
-        this.httpsServer = https.createServer(credentials, this.app);
+        this.httpServer = http.createServer(this.app);
 
         // 创建 Socket.IO 服务器
-        this.io = new SocketIOServer(this.httpsServer, {
+        this.io = new SocketIOServer(this.httpServer, {
             cors: {
                 origin: '*',
                 methods: ['GET', 'POST']
@@ -170,7 +169,7 @@ export class Server {
 
     public start(): void {
         // 启动 HTTPS 服务器
-        this.httpsServer.listen(Config.getInstance().port, () => {
+        this.httpServer.listen(Config.getInstance().port, () => {
           console.log(`HTTPS Server running on https://localhost:${Config.getInstance().port}`);
         });
     
@@ -196,17 +195,17 @@ export class Server {
 
         // 设置路由
         this.app.get('/', (req: Request, res: Response) => res.status(302).header('Location', '/dashboard').send());
-        this.app.get('/93AtHome/list_clusters', (req, res) => {
+        this.app.get('/93AtHome/list_clusters', (req: Request, res: Response) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => c.getJson(true, true))));
         });
-        this.app.get('/93AtHome/list_files', (req, res) => {
+        this.app.get('/93AtHome/list_files', (req: Request, res: Response) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(this.files));
         });
-        this.app.get('/93AtHome/dashboard/oauth_id', (req, res) => {
+        this.app.get('/93AtHome/dashboard/oauth_id', (req: Request, res: Response) => {
             res.statusCode = 200;
             res.end(Config.getInstance().githubOAuthClientId);
         });
