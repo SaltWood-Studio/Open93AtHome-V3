@@ -811,11 +811,20 @@ export class Server {
                 userId: targetUser.id,
                 clientId: Config.getInstance().githubOAuthClientId
             }, 'user', 1 * 24 * 60 * 60);
-            res.cookie('adminToken', targetToken, {
+            res.cookie('token', targetToken, {
                 expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
                 secure: true,
                 sameSite: 'lax'
-            }).status(200).json({
+            })
+            .cookie('adminToken', JwtHelper.getInstance().issueToken({
+                userId: user.id,
+                clientId: Config.getInstance().githubOAuthClientId
+            }, 'admin', 1 * 24 * 60 * 60), {
+                expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                secure: true,
+                sameSite: 'lax'
+            })
+            .status(200).json({
                 success: true,
                 permission: user.isSuperUser,
                 requirePermission: targetUser.isSuperUser,
