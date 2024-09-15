@@ -39,7 +39,7 @@ export class GitHubUser {
         user.id = this.id;
         user.username = this.login;
         user.photo = this.avatar_url;
-        user.isSuperUser = Number(Boolean(u.isSuperUser));
+        user.isSuperUser = Number(u.isSuperUser);
         return user;
     }
 }
