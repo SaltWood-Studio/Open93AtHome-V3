@@ -832,6 +832,11 @@ export class Server {
                 targetUser
             });
         });
+        this.app.get('/93AtHome/super/list_users', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const users = this.db.getEntities<UserEntity>(UserEntity);
+            res.status(200).json(users);
+        })
     }
 
     public setupSocketIO(): void {
