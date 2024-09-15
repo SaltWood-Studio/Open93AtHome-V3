@@ -194,6 +194,8 @@ export class Server {
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
 
+        this.app.use('/assets', express.static(path.resolve('./assets')));
+
         // 设置路由
         this.app.get('/', (req: Request, res: Response) => res.status(302).header('Location', '/dashboard').send());
         this.app.get('/93AtHome/list_clusters', (req, res) => {

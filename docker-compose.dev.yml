@@ -10,6 +10,7 @@ services:
       - ./data:/app/data
       - ./stats:/app/stats
       - ./plugins:/app/plugins
+      - ./assets:/app/assets
     env_file:
       - .env
     environment:
