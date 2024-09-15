@@ -28,11 +28,7 @@ export const FileListSchema = avsc.Type.forSchema({
 })
 
 export class Utilities {
-    public static got: Got = got.extend({
-        headers: {
-            'User-Agent': `93AtHome-V3/${Config.version}`
-        }
-    });
+    public static got: Got = got;
 
     public static isRunningInDocker(): boolean {
         return process.env.IS_IN_DOCKER === 'true';

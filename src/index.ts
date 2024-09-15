@@ -2,6 +2,7 @@ import { exec } from "child_process";
 import { Config } from './Config.js';
 import { Server } from './Server.js';
 import { Utilities } from './Utilities.js';
+import got from "got";
 
 function onStop(signal: string) {
     server.db.close();
@@ -10,6 +11,11 @@ function onStop(signal: string) {
 }
 
 Config.init();
+Utilities.got = got.extend({
+    headers: {
+        'User-Agent': `93AtHome-V3/${Config.version}`
+    }
+});
 
 if (Utilities.isRunningInDocker()) {
     console.debug("Running in Docker container");
