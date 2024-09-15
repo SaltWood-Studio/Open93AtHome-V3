@@ -84,13 +84,6 @@ export class Server {
 
         this.clusters = this.db.getEntities<ClusterEntity>(ClusterEntity);
 
-        // 读取证书和私钥文件
-        const keyPath = path.resolve(Config.getInstance().certificateDir, 'key.pem');
-        const certPath = path.resolve(Config.getInstance().certificateDir, 'cert.pem');
-        const privateKey = fs.readFileSync(keyPath, 'utf8');
-        const certificate = fs.readFileSync(certPath, 'utf8');
-        const credentials = { key: privateKey, cert: certificate };
-
         // 通过访问唯一 instance 来触发单例模式的创建
         JwtHelper.getInstance();
 
