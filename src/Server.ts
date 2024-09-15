@@ -811,15 +811,16 @@ export class Server {
                 userId: targetUser.id,
                 clientId: Config.getInstance().githubOAuthClientId
             }, 'user', 1 * 24 * 60 * 60);
+            const newAdminToken = JwtHelper.getInstance().issueToken({
+                userId: user.id,
+                clientId: Config.getInstance().githubOAuthClientId
+            }, 'admin', 1 * 24 * 60 * 60);
             res.cookie('token', targetToken, {
                 expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
                 secure: true,
                 sameSite: 'lax'
             })
-            .cookie('adminToken', JwtHelper.getInstance().issueToken({
-                userId: user.id,
-                clientId: Config.getInstance().githubOAuthClientId
-            }, 'admin', 1 * 24 * 60 * 60), {
+            .cookie('adminToken', newAdminToken, {
                 expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
                 secure: true,
                 sameSite: 'lax'
