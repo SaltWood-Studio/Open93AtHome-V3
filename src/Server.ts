@@ -39,7 +39,7 @@ const logAccess = (req: Request, res: Response) => {
 
 export class Server {
     private app;
-    private io: SocketIOServer;
+    public io: SocketIOServer;
     private httpsServer: https.Server;
     public db: SQLiteHelper;
     protected files: File[];

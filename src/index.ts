@@ -6,6 +6,10 @@ import got from "got";
 
 function onStop(signal: string) {
     server.db.close();
+    server.io.sockets.sockets.forEach(socket => {
+        socket.disconnect(true);
+    });
+    server.io.close();
     console.log(`Received ${signal}. Shutting down...`);
     process.exit(0);
 }
