@@ -3,8 +3,8 @@
   "version": "3.0.2",
   "type": "module",
   "scripts": {
-    "start": "tsc && node --enable-source-maps dist/index.js",
-    "build": "tsc",
+    "start": "rimraf dist && tsc && node --enable-source-maps dist/index.js",
+    "build": "rimraf dist && tsc",
     "test": "echo \"No test specified\" && exit 0"
   },
   "keywords": [],
@@ -28,6 +28,7 @@
     "got": "^14.4.2",
     "http2-express-bridge": "^1.0.7",
     "jsonwebtoken": "^9.0.2",
+    "rimraf": "^6.0.1",
     "socket.io": "^4.7.5",
     "typescript": "^5.5.4"
   },
