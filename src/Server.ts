@@ -659,7 +659,7 @@ export class Server {
             res.status(200).json(cluster.getJson(true, false));
         });
         
-        this.app.get('/93AtHome/dashboard/user/cluster/reset_secret', (req: Request, res: Response) => {
+        this.app.post('/93AtHome/dashboard/user/cluster/reset_secret', (req: Request, res: Response) => {
             const token = req.cookies.token;
             if (!token) {
                 res.status(401).send(); // 未登录
