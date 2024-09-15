@@ -801,7 +801,7 @@ export class Server {
                 res.status(404).send(); // 用户不存在
                 return;
             }
-            if (user.isSuperUser <= targetUser.isSuperUser) {
+            if ((user.isSuperUser <= targetUser.isSuperUser) && user.id !== targetUser.id) {
                 res.status(403).send({
                     message: `Permission denied: Your permission level is not high enough to perform this action.`
                 });
