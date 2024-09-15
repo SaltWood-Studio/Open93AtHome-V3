@@ -132,6 +132,7 @@ export class Utilities {
      * @param rootPath  根目录路径，用于计算相对路径
      */
     private static scanDirectory(directory: string, filePaths: string[], rootPath: string): void {
+        if (!fs.statSync(directory).isDirectory()) return;
         const files = fs.readdirSync(directory);
         files.forEach(file => {
             const fullPath = path.join(directory, file);
