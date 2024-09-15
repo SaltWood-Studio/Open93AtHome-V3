@@ -170,7 +170,7 @@ export class Server {
     public start(): void {
         // 启动 HTTPS 服务器
         this.httpServer.listen(Config.getInstance().port, () => {
-          console.log(`HTTPS Server running on https://localhost:${Config.getInstance().port}`);
+          console.log(`HTTP Server running on http://localhost:${Config.getInstance().port}`);
         });
     
         // 启动 Socket.IO 服务器
