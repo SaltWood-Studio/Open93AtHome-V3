@@ -25,5 +25,5 @@ process.on("SIGTERM", onStop);
 
 // 创建 Server 实例
 const server = new Server();
-server.init();
+await server.init();
 server.start();

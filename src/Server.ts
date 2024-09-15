@@ -57,12 +57,6 @@ export class Server {
     public constructor() {
         this.plugins = [];
         this.pluginLoader = new PluginLoader();
-        this.pluginLoader.loadPlugins(this)
-        .then(plugins => {
-            this.plugins = plugins;
-            plugins.forEach(plugin => plugin.init());
-        })
-        .catch(error => console.error(error));
 
         this.got = Utilities.got;
 
@@ -99,9 +93,19 @@ export class Server {
         });
     }
 
-    public init(): void {
-        this.updateFiles();
+    public async init(): Promise<void> {
+        await this.loadPlugins();
+        await this.updateFiles();
         this.setupRoutes();
+    }
+
+    public async loadPlugins(): Promise<void> {
+        await this.pluginLoader.loadPlugins(this)
+        .then(plugins => {
+            this.plugins = plugins;
+            plugins.forEach(plugin => plugin.init());
+        })
+        .catch(error => console.error(error));
     }
 
     public async updateFiles(checkClusters: boolean = false): Promise<void> {
