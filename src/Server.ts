@@ -64,11 +64,7 @@ export class Server {
         })
         .catch(error => console.error(error));
 
-        this.got = got.extend({
-            headers: {
-                'User-Agent': `93AtHome-V3/${Config.version}`
-            }
-        });
+        this.got = Utilities.got;
 
         this.files = [];
         this.avroBytes = new Uint8Array();

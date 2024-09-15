@@ -11,6 +11,7 @@ import { ClusterEntity } from './database/Cluster.js';
 import { SQLiteHelper } from './SQLiteHelper.js';
 import { UserEntity } from './database/User.js';
 import got, { Got } from 'got';
+import { Config } from './Config.js';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -27,7 +28,11 @@ export const FileListSchema = avsc.Type.forSchema({
 })
 
 export class Utilities {
-    public static got: Got = got.extend();
+    public static got: Got = got.extend({
+        headers: {
+            'User-Agent': `93AtHome-V3/${Config.version}`
+        }
+    });
 
     public static isRunningInDocker(): boolean {
         return process.env.IS_IN_DOCKER === 'true';
