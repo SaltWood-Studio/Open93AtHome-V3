@@ -14,6 +14,7 @@ export class Config {
     public readonly certificateDir: string = env.get('CERTIFICATE_DIRECTORY').default("./certificates").asString()
     public readonly port: number = env.get('PORT').default(9388).asPortNumber()
     public readonly adminToken: string = env.get('ADMIN_TOKEN').default(Utilities.generateRandomString(24)).asString()
+    public readonly concurrency: number = env.get('CONCURRENCY').default(10).asIntPositive()
     public static readonly version: string = "3.0.2";
 
     private constructor() { }

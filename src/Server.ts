@@ -389,7 +389,7 @@ export class Server {
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json({ sync: { concurrency: 10, source: "center" }});
+            res.status(200).json({ sync: { concurrency: Config.getInstance().concurrency, source: "center" }});
         });
         this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
