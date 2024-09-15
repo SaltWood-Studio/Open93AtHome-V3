@@ -19,6 +19,7 @@ import cookieParser from 'cookie-parser';
 import { Plugin } from './plugin/Plugin.js';
 import { PluginLoader } from './plugin/PluginLoader.js';
 import {type Got} from 'got'
+import { permission } from 'process';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -785,6 +786,43 @@ export class Server {
             res.status(200).json(cluster.getJson(true, false));
         });
         this.app.get('/93AtHome/syncSources', (req: Request, res: Response) => res.status(200).json(this.sources));
+        this.app.post('/93AtHome/super/sudo', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(req.cookies.adminToken, 'admin') as { userId: number }).userId);
+            if (!user) {
+                res.status(401).send();
+                return;
+            }
+            const data = req.body as {
+                id: number
+            };
+            const targetUser = this.db.getEntity<UserEntity>(UserEntity, data.id);
+            if (!targetUser) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            if (user.isSuperUser <= targetUser.isSuperUser) {
+                res.status(403).send({
+                    message: `Permission denied: Your permission level is not high enough to perform this action.`
+                });
+                return;
+            }
+            const targetToken = JwtHelper.getInstance().issueToken({
+                userId: targetUser.id,
+                clientId: Config.getInstance().githubOAuthClientId
+            }, 'user', 1 * 24 * 60 * 60);
+            res.cookie('adminToken', targetToken, {
+                expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                secure: true,
+                sameSite: 'lax'
+            }).status(200).json({
+                success: true,
+                permission: user.isSuperUser,
+                requirePermission: targetUser.isSuperUser,
+                user,
+                targetUser
+            });
+        });
     }
 
     public setupSocketIO(): void {
