@@ -18,7 +18,7 @@ import { HourlyStatsStorage } from './statistics/HourlyStats.js';
 import cookieParser from 'cookie-parser';
 import { Plugin } from './plugin/Plugin.js';
 import { PluginLoader } from './plugin/PluginLoader.js';
-import got, {type Got} from 'got'
+import {type Got} from 'got'
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {

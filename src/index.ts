@@ -11,11 +11,6 @@ function onStop(signal: string) {
 }
 
 Config.init();
-Utilities.got = got.extend({
-    headers: {
-        'User-Agent': `93AtHome-V3/${Config.version}`
-    }
-});
 
 if (Utilities.isRunningInDocker()) {
     console.debug("Running in Docker container");
