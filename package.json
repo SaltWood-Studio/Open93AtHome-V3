@@ -20,7 +20,6 @@
     "avsc": "^5.7.7",
     "better-sqlite3": "^11.3.0",
     "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
     "cron": "^3.1.7",
     "dotenv": "^16.4.5",
     "env-var": "^7.5.0",
