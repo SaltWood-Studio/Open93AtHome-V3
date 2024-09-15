@@ -11,6 +11,7 @@ import { ClusterEntity } from './database/Cluster.js';
 import { SQLiteHelper } from './SQLiteHelper.js';
 import { UserEntity } from './database/User.js';
 import got, { Got } from 'got';
+import { Config } from './Config.js';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -27,7 +28,7 @@ export const FileListSchema = avsc.Type.forSchema({
 })
 
 export class Utilities {
-    public static got: Got = got.extend();
+    public static got: Got = got;
 
     public static isRunningInDocker(): boolean {
         return process.env.IS_IN_DOCKER === 'true';
@@ -132,6 +133,7 @@ export class Utilities {
      * @param rootPath  根目录路径，用于计算相对路径
      */
     private static scanDirectory(directory: string, filePaths: string[], rootPath: string): void {
+        if (!fs.statSync(directory).isDirectory()) return;
         const files = fs.readdirSync(directory);
         files.forEach(file => {
             const fullPath = path.join(directory, file);
@@ -217,7 +219,7 @@ export class Utilities {
     }
 
     public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity, attempt: number = -3): Promise<string | null> {
-        let result: string | null = "Error: This value should never be returned. if you see this message, please contact to the administrator.";
+        let result: string | null = "Error: This value should never be returned. if you see this message, please contact the developer.";
     
         try {
             const urls = files.map(f => Utilities.getUrl(f, cluster));

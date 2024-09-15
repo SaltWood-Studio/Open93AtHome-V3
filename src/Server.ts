@@ -18,7 +18,8 @@ import { HourlyStatsStorage } from './statistics/HourlyStats.js';
 import cookieParser from 'cookie-parser';
 import { Plugin } from './plugin/Plugin.js';
 import { PluginLoader } from './plugin/PluginLoader.js';
-import got, {type Got} from 'got'
+import {type Got} from 'got'
+import { permission } from 'process';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -39,7 +40,7 @@ const logAccess = (req: Request, res: Response) => {
 
 export class Server {
     private app;
-    private io: SocketIOServer;
+    public io: SocketIOServer;
     private httpsServer: https.Server;
     public db: SQLiteHelper;
     protected files: File[];
@@ -47,8 +48,8 @@ export class Server {
     protected clusters: ClusterEntity[];
     protected avroBytes: Uint8Array;
     protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
-    protected stats: StatsStorage[];
-    protected centerStats: HourlyStatsStorage;
+    public stats: StatsStorage[];
+    public centerStats: HourlyStatsStorage;
     protected plugins: Plugin[];
     protected pluginLoader: PluginLoader;
     protected got: Got;
@@ -64,11 +65,7 @@ export class Server {
         })
         .catch(error => console.error(error));
 
-        this.got = got.extend({
-            headers: {
-                'User-Agent': `93AtHome-V3/${Config.version}`
-            }
-        });
+        this.got = Utilities.got;
 
         this.files = [];
         this.avroBytes = new Uint8Array();
@@ -150,7 +147,7 @@ export class Server {
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
             this.isUpdating = false;
             if (checkClusters) {
-                for (const cluster of this.clusters.filter(c => c.isOnline)) {
+                const wardenPromises = this.clusters.filter(c => c.isOnline).map(async cluster => {
                     const message = await Utilities.checkSpecfiedFiles(Utilities.findDifferences(oldFiles, this.files, true), cluster); // 只查找新增的文件，不然删文件会把全部节点踢了
                     if (message) {
                         cluster.downReason = message;
@@ -158,7 +155,8 @@ export class Server {
                         this.db.update(cluster);
                         console.log(`Cluster ${cluster.clusterId} is down because of ${message}`);
                     }
-                }
+                });
+                await Promise.all(wardenPromises);
             }
             return;
         }
@@ -193,6 +191,8 @@ export class Server {
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
+
+        this.app.use('/assets', express.static(path.resolve('./assets')));
 
         // 设置路由
         this.app.get('/', (req: Request, res: Response) => res.status(302).header('Location', '/dashboard').send());
@@ -261,6 +261,8 @@ export class Server {
         
                 res.cookie('token', token, {
                     expires: new Date(Date.now() + 86400000), // 24小时后过期
+                    secure: true,
+                    sameSite: 'lax',
                 });
 
                 if (this.db.getEntity<UserEntity>(UserEntity, user.id)?.isSuperUser) {
@@ -270,6 +272,8 @@ export class Server {
                     }, "admin", 60 * 60 * 24);
                     res.cookie('adminToken', adminToken, {
                         expires: new Date(Date.now() + 86400000), // 24小时后过期
+                        secure: true,
+                        sameSite: 'lax',
                     });
                 }
         
@@ -385,7 +389,7 @@ export class Server {
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json({ sync: { concurrency: 10, source: "center" }});
+            res.status(200).json({ sync: { concurrency: Config.getInstance().concurrency, source: "center" }});
         });
         this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
@@ -657,7 +661,7 @@ export class Server {
             res.status(200).json(cluster.getJson(true, false));
         });
         
-        this.app.get('/93AtHome/dashboard/user/cluster/reset_secret', (req: Request, res: Response) => {
+        this.app.post('/93AtHome/dashboard/user/cluster/reset_secret', (req: Request, res: Response) => {
             const token = req.cookies.token;
             if (!token) {
                 res.status(401).send(); // 未登录
@@ -782,6 +786,58 @@ export class Server {
             res.status(200).json(cluster.getJson(true, false));
         });
         this.app.get('/93AtHome/syncSources', (req: Request, res: Response) => res.status(200).json(this.sources));
+        this.app.post('/93AtHome/super/sudo', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(req.cookies.adminToken, 'admin') as { userId: number }).userId);
+            if (!user) {
+                res.status(401).send();
+                return;
+            }
+            const data = req.body as {
+                id: number
+            };
+            const targetUser = this.db.getEntity<UserEntity>(UserEntity, data.id);
+            if (!targetUser) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            if ((user.isSuperUser <= targetUser.isSuperUser) && user.id !== targetUser.id) {
+                res.status(403).send({
+                    message: `Permission denied: Your permission level is not high enough to perform this action.`
+                });
+                return;
+            }
+            const targetToken = JwtHelper.getInstance().issueToken({
+                userId: targetUser.id,
+                clientId: Config.getInstance().githubOAuthClientId
+            }, 'user', 1 * 24 * 60 * 60);
+            const newAdminToken = JwtHelper.getInstance().issueToken({
+                userId: user.id,
+                clientId: Config.getInstance().githubOAuthClientId
+            }, 'admin', 1 * 24 * 60 * 60);
+            res.cookie('token', targetToken, {
+                expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                secure: true,
+                sameSite: 'lax'
+            })
+            .cookie('adminToken', newAdminToken, {
+                expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                secure: true,
+                sameSite: 'lax'
+            })
+            .status(200).json({
+                success: true,
+                permission: user.isSuperUser,
+                requirePermission: targetUser.isSuperUser,
+                user,
+                targetUser
+            });
+        });
+        this.app.get('/93AtHome/super/list_users', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const users = this.db.getEntities<UserEntity>(UserEntity);
+            res.status(200).json(users);
+        })
     }
 
     public setupSocketIO(): void {

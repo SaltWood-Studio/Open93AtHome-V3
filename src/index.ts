@@ -5,6 +5,8 @@ import { Utilities } from './Utilities.js';
 
 function onStop(signal: string) {
     server.db.close();
+    server.stats.forEach(stats => stats.stopAutoSave());
+    server.centerStats.stopAutoSave();
     console.log(`Received ${signal}. Shutting down...`);
     process.exit(0);
 }
