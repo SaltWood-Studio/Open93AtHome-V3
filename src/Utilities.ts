@@ -223,7 +223,7 @@ export class Utilities {
     }
 
     public static async checkSpecfiedFiles(files: File[], cluster: ClusterEntity, attempt: number = -3): Promise<string | null> {
-        let result: string | null = "Error: This value should never be returned. if you see this message, please contact to the administrator.";
+        let result: string | null = "Error: This value should never be returned. if you see this message, please contact the developer.";
     
         try {
             const urls = files.map(f => Utilities.getUrl(f, cluster));
