@@ -834,6 +834,17 @@ export class Server {
             const users = this.db.getEntities<UserEntity>(UserEntity);
             res.status(200).json(users);
         })
+        this.app.post('/93AtHome/super/update', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            if (this.isUpdating) {
+                res.status(409).send({
+                    message: "File list is updating, please try again later."
+                });
+                return;
+            }
+            this.updateFiles();
+            res.status(204).send();
+        });
     }
 
     public setupSocketIO(): void {
