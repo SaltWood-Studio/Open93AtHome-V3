@@ -1,4 +1,3 @@
-version: '3'
 services:
   93athome:
     image: saltwood233/open93athome
