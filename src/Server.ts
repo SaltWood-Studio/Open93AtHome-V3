@@ -903,7 +903,7 @@ export class Server {
                 };
 
                 if (this.isUpdating) {
-                    ack({ message: "File list is updating, please try again later."});
+                    ack(["File list is updating, please try again later."]);
                     return;
                 }
 
@@ -912,12 +912,12 @@ export class Server {
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (!cluster) {
-                    ack({ message: "Cluster not found."});
+                    ack(["Cluster not found."]);
                     return;
                 }
 
                 if (cluster.isBanned) {
-                    ack({ message: "This cluster is banned."});
+                    ack(["This cluster is banned."]);
                     return;
                 }
 
@@ -937,7 +937,7 @@ export class Server {
                     }
                 })
                 .catch(err => {
-                    ack({ message: err.message });
+                    ack([err.message]);
                     console.error(err);
                 });
             });
