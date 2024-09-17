@@ -402,6 +402,18 @@ export class Server {
                 res.sendFile(file.path.substring(1), {
                     root: ".",
                     maxAge: "30d"
+                }, err => {
+                    if (err) {
+                        const availablePlugins = this.plugins.filter(p => p.exists(file));
+                        if (availablePlugins.length > 0) {
+                            Utilities.getRandomElement(this.plugins)?.express(file, req, res);
+                            this.centerStats.addData({ hits: 1, bytes: file.size });
+                            return;
+                        } else {
+                            res.status(404).send("The requested file is not found or is not accessible.");
+                            return;
+                        }
+                    }
                 });
             } else {
                 res.status(404).send();
