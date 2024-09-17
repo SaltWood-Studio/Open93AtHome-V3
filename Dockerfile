@@ -2,7 +2,7 @@
 FROM alpine:latest
 
 # 更改apk软件源为清华大学镜像并更新软件包
-# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
+# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
 RUN apk update && \
     apk add --no-cache \
         build-base \
