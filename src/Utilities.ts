@@ -122,8 +122,16 @@ export class Utilities {
                 if (folder.startsWith('.')) continue;
                 const fullPath = path.join(directoryPath, folder);
                 let files: string[] = [];
-                this.scanDirectory(fullPath, files, directoryPath);
-                sources.push({ files, name: folder, count: files.length, lastUpdated: new Date(), isFromPlugin: false })
+                let latestFileTime: Date | null = null; // 用于记录最新文件的修改时间
+                this.scanDirectory(fullPath, files, directoryPath, latestFileTime);
+                
+                sources.push({ 
+                    files, 
+                    name: folder, 
+                    count: files.length, 
+                    lastUpdated: latestFileTime || new Date(), // 如果没有文件，默认当前时间
+                    isFromPlugin: false 
+                });
             }
         }
         return sources;
@@ -133,10 +141,11 @@ export class Utilities {
      * 递归扫描目录及其子目录，收集所有文件的相对路径
      *
      * @param directory 当前扫描的目录
-     * @param filePaths 存储文件路径的 Set 集合
+     * @param filePaths 存储文件路径的数组
      * @param rootPath  根目录路径，用于计算相对路径
+     * @param latestFileTime 用于存储目录中最新的文件修改时间
      */
-    private static scanDirectory(directory: string, filePaths: string[], rootPath: string): void {
+    private static scanDirectory(directory: string, filePaths: string[], rootPath: string, latestFileTime: Date | null): void {
         if (!fs.statSync(directory).isDirectory()) return;
         const files = fs.readdirSync(directory);
         files.forEach(file => {
@@ -154,12 +163,19 @@ export class Utilities {
                 }
                 relativePath = '/files' + relativePath;
                 filePaths.push(relativePath);
+
+                // 更新最新的文件修改时间
+                const fileModTime = stats.mtime;
+                if (!latestFileTime || fileModTime > latestFileTime) {
+                    latestFileTime = fileModTime;
+                }
             } else if (stats.isDirectory()) {
                 // 递归扫描子目录
-                this.scanDirectory(fullPath, filePaths, rootPath);
+                this.scanDirectory(fullPath, filePaths, rootPath, latestFileTime);
             }
         });
     }
+
 
     public static async wait(seconds: number): Promise<void> {
         return new Promise(resolve => {
