@@ -46,7 +46,6 @@ export class Server {
     protected fileList: FileList;
     protected isUpdating: boolean = false;
     protected clusters: ClusterEntity[];
-    protected avroBytes: Uint8Array;
     protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
     public stats: StatsStorage[];
     public centerStats: HourlyStatsStorage;
@@ -70,7 +69,6 @@ export class Server {
         this.got = Utilities.got;
 
         this.fileList = new FileList();
-        this.avroBytes = new Uint8Array();
 
         // 创建 Express 应用
         this.app = express();
@@ -148,7 +146,6 @@ export class Server {
                 ...localFiles,
                 ...pluginFiles.map(p => p.files).flat()
             ];
-            this.avroBytes = await Utilities.getAvroBytes(this.files);
             console.log(`...file list was successfully updated. Found ${this.files.length} files`);
             this.isUpdating = false;
             if (checkClusters) {
@@ -178,11 +175,6 @@ export class Server {
         this.httpServer.listen(Config.getInstance().port, () => {
           console.log(`HTTP Server running on http://localhost:${Config.getInstance().port}`);
         });
-    
-        // 启动 Socket.IO 服务器
-        // const SOCKET_PORT = 9300;
-        // this.io.listen(SOCKET_PORT);
-        // console.log(`Socket.IO Server running on http://localhost:${SOCKET_PORT}`);
     }
 
     public setupRoutes(): void {
@@ -383,7 +375,7 @@ export class Server {
             lastModified = Number.isNaN(lastModified)? 0 : lastModified;
 
             if (lastModified === 0) {
-                res.status(200).send(this.avroBytes);
+                res.status(200).send(Utilities.getAvroBytes(this.fileList.getAvailableFiles(cluster)));
             }
             else {
                 const files = this.fileList.getAvailableFiles(cluster);
