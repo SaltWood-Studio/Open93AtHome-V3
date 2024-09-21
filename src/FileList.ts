@@ -18,6 +18,11 @@ export class FileList {
 
     public notifyUpdateShards(): void {
         this._shards = FileList.splitIntoShards(this._files, FileList.SHARD_COUNT);
+        console.log(`File shards updated: ${this._shards.map(s => s.length)}`);
+        for (const cluster of this._clusters) {
+            const availableShards = Utilities.bigIntToBooleans(cluster.availShards, FileList.SHARD_COUNT);
+            console.log(`Cluster ${cluster.clusterId}, available shards: ${availableShards.filter(b => b).length}`);
+        }
     }
 
     public set files(files: File[]) {
