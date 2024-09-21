@@ -22,7 +22,7 @@ export class FileList {
         console.log(`File shards updated: ${this._shards.map(s => s.length)}`);
         for (const cluster of this._clusters) {
             const availableShards = Utilities.intToBooleans(cluster.availShards, FileList.SHARD_COUNT);
-            console.log(`Cluster ${cluster.clusterId}, available shards: ${availableShards.filter(b => b).length}`);
+            console.log(`Cluster ${cluster.clusterId}, shards: ${cluster.availShards}, available shards: ${availableShards.filter(b => b).length}`);
         }
     }
 
