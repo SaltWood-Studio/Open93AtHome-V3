@@ -404,20 +404,20 @@ export class Utilities {
     }
 
     // 将布尔数组转换为整数（BigInt）
-    public static booleansToBigInt(bits: boolean[]): bigint {
+    public static booleansToInt(bits: boolean[]): number {
         return bits.reduce((acc, bit, index) => {
             if (bit) {
-                acc |= (1n << BigInt(index)); // 设置第 index 位为 1
+                acc |= (1 << index); // 设置第 index 位为 1
             }
             return acc;
-        }, 0n);
+        }, 0);
     }
 
     // 将 BigInt 整数转换为布尔数组
-    public static bigIntToBooleans(value: bigint, size: number): boolean[] {
+    public static intToBooleans(value: number, size: number): boolean[] {
         const bits = [];
         for (let i = 0; i < size; i++) {
-            bits.push((BigInt(value || 0) & (1n << BigInt(i))) !== 0n); // 检查第 i 位是否为 1
+            bits.push((value || 0 & (1 << i)) !== 0); // 检查第 i 位是否为 1
         }
         return bits;
     }

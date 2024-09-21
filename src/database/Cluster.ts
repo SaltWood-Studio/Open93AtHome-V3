@@ -71,7 +71,7 @@ export class ClusterEntity {
 
     public downTime: number = 0;
 
-    public availShards: bigint = 2147483647n;
+    public availShards: number = 2147483647;
 
     @Ignore()
     private interval: NodeJS.Timeout | null = null;

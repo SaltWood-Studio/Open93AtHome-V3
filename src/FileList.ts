@@ -4,7 +4,8 @@ import crc32 from 'crc-32';
 import { Utilities } from './Utilities.js';
 
 export class FileList {
-    public static readonly SHARD_COUNT = 32;
+    // 不能大于 number 的安全范围 MAX_SAFE_INTEGER = 2 ^ 53 - 1
+    public static readonly SHARD_COUNT = 32; // 最大 53
 
     private _files: File[] = [];
     private _clusters: ClusterEntity[] = [];
@@ -20,7 +21,7 @@ export class FileList {
         this._shards = FileList.splitIntoShards(this._files, FileList.SHARD_COUNT);
         console.log(`File shards updated: ${this._shards.map(s => s.length)}`);
         for (const cluster of this._clusters) {
-            const availableShards = Utilities.bigIntToBooleans(cluster.availShards, FileList.SHARD_COUNT);
+            const availableShards = Utilities.intToBooleans(cluster.availShards, FileList.SHARD_COUNT);
             console.log(`Cluster ${cluster.clusterId}, available shards: ${availableShards.filter(b => b).length}`);
         }
     }
@@ -45,32 +46,37 @@ export class FileList {
     public getFiles(type: "path" | "hash", value: string): File[] {
         let index: number;
         if (type === "path") index = FileList.getShardIndex(value, FileList.SHARD_COUNT);
-        else if (type === "hash") index = FileList.getShardIndex(value, FileList.SHARD_COUNT);
+        else if (type === "hash") return this.getFiles("path", this._files.find(file => file.hash === value)?.path || "");
         else throw new Error("Invalid type");
 
         return this._shards[index].filter((file) => {
             if (type === "path") return file.path === value;
-            else if (type === "hash") return file.hash === value;
             else throw new Error("Invalid type");
         });
     }
 
     public getAvailableFiles(cluster: ClusterEntity): File[] {
-        const availableShards = Utilities.bigIntToBooleans(cluster.availShards, FileList.SHARD_COUNT);
+        const availableShards = Utilities.intToBooleans(cluster.availShards, FileList.SHARD_COUNT);
 
         return this._shards.filter((_, index) => availableShards[index]).flat();
     }
 
     public getAvailableClusters(file: File, clusters: ClusterEntity[] | undefined = undefined): ClusterEntity[] {
         const availableClusters: ClusterEntity[] = [];
-        if (!clusters) clusters = this._clusters;
-        clusters.filter(cluster => cluster.isOnline).forEach((cluster) => {
-            if (Utilities.bigIntToBooleans(cluster.availShards, FileList.SHARD_COUNT)[FileList.getShardIndex(file.path, FileList.SHARD_COUNT)]) {
+        const values = clusters? clusters : this._clusters;
+
+        for (const cluster of values.filter(c => c.isOnline)) {
+            if (FileList.availableInCluster(file, cluster)) {
                 availableClusters.push(cluster);
             }
-        });
+        }
 
         return availableClusters;
+    }
+
+    public static availableInCluster(file: File, cluster: ClusterEntity): boolean {
+        const index = FileList.getShardIndex(file.path, FileList.SHARD_COUNT);
+        return (cluster.availShards & (1 << index)) !== 0;
     }
 
     // 计算对象的分片索引
