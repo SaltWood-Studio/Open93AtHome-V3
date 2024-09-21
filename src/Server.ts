@@ -891,6 +891,9 @@ export class Server {
             this.updateFiles();
             res.status(204).send();
         });
+        this.app.get('/93AtHome/shards', (req: Request, res: Response) => {
+            res.json(this.fileList.shards);
+        });
     }
 
     public setupSocketIO(): void {

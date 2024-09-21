@@ -5,6 +5,7 @@ import { Utilities } from '../Utilities.js';
 import { File } from './File.js';
 import { clear } from 'console';
 import { Config } from '../Config.js';
+import { FileList } from '../FileList.js';
 
 @Table('clusters', `
     clusterId TEXT PRIMARY KEY UNIQUE,
@@ -113,12 +114,13 @@ export class ClusterEntity {
     }
 
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
-        const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, ...rest }: {clusterSecret: string, endpoint: string, measureBandwidth: number, port: number, downReason: string, [key: string]: any}) => rest;
-        const removeSecretInfo = ({ clusterSecret, ...rest }: { clusterSecret: string, [key: string]: any }) => rest;
+        const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, availShards, ...rest }: any) => rest;
+        const removeSecretInfo = ({ clusterSecret, ...rest }: any) => rest;
         const optimizeJsonObject = ({ interval, isBanned, ...rest }: ClusterEntity) => {
             return {
                 ...rest,
-                isBanned: Boolean(this.isBanned)
+                isBanned: Boolean(this.isBanned),
+                fullsize: Utilities.intToBooleans(this.availShards, FileList.SHARD_COUNT).every(Boolean)
             }
         };
         let json: any = optimizeJsonObject(this);
