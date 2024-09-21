@@ -1,6 +1,6 @@
 {
   "name": "93athome",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "type": "module",
   "scripts": {
     "start": "rimraf dist && tsc && node --enable-source-maps dist/index.js",
