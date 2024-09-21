@@ -15,6 +15,8 @@ export class Config {
     public readonly adminToken: string = env.get('ADMIN_TOKEN').default(Utilities.generateRandomString(24)).asString()
     public readonly concurrency: number = env.get('CONCURRENCY').default(10).asIntPositive()
     public static readonly version: string = "3.0.2";
+    public readonly forceNoOpen: boolean = env.get('FORCE_NO_OPEN').default("false").asBool();
+    public readonly noWarden: boolean = env.get('NO_WARDEN').default("false").asBool();
 
     private constructor() { }
 
