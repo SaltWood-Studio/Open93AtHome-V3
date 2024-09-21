@@ -4,6 +4,7 @@ import { StatsStorage } from '../statistics/ClusterStats.js';
 import { Utilities } from '../Utilities.js';
 import { File } from './File.js';
 import { clear } from 'console';
+import { Config } from '../Config.js';
 
 @Table('clusters', `
     clusterId TEXT PRIMARY KEY UNIQUE,
@@ -88,22 +89,24 @@ export class ClusterEntity {
             clearInterval(this.interval);
             this.interval = null;
         }
-        this.interval = setInterval(() => {
-            const file = Utilities.getRandomElement(files);
-            if (file) {
-                Utilities.checkSpecfiedFiles([file], this, -5)
-                .then(result => {
-                    if (result) {
-                        this.doOffline(`Warden failed: ${file.hash}, result: ${result}`);
-                        io.emit('warden-error', { message: this.downReason, file: file })
-                    }
-                })
-                .catch(error => {
-                    this.doOffline(`Warden failed: ${file.hash}, error: ${error}`);
-                    io.emit('warden-error', { message: this.downReason, file: file, error: error })
-                });
-            }
-        }, 1000 * 60 * 5);
+        if (!Config.getInstance().noWarden) {
+            this.interval = setInterval(() => {
+                const file = Utilities.getRandomElement(files);
+                if (file) {
+                    Utilities.checkSpecfiedFiles([file], this, -5)
+                    .then(result => {
+                        if (result) {
+                            this.doOffline(`Warden failed: ${file.hash}, result: ${result}`);
+                            io.emit('warden-error', { message: this.downReason, file: file })
+                        }
+                    })
+                    .catch(error => {
+                        this.doOffline(`Warden failed: ${file.hash}, error: ${error}`);
+                        io.emit('warden-error', { message: this.downReason, file: file, error: error })
+                    });
+                }
+            }, 1000 * 60 * 5);
+        }
     }
 
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {

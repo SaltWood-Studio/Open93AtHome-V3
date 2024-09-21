@@ -427,6 +427,25 @@ export class Server {
             const p = decodeURI(req.path);
             const file = this.files.find(f => f.path === p);
             if (file) {
+                if (Config.getInstance().forceNoOpen) {
+                    res.sendFile(file.path.substring(1), {
+                        root: ".",
+                        maxAge: "30d"
+                    }, err => {
+                        if (err) {
+                            const availablePlugins = this.plugins.filter(p => p.exists(file));
+                            if (availablePlugins.length > 0) {
+                                Utilities.getRandomElement(this.plugins)?.express(file, req, res);
+                                this.centerStats.addData({ hits: 1, bytes: file.size });
+                                return;
+                            } else {
+                                res.status(404).send("The requested file is not found or is not accessible.");
+                                return;
+                            }
+                        }
+                    });
+                    return;
+                }
                 let cluster = Utilities.getRandomElement(this.clusters.filter(c => c.isOnline));
                 if (!cluster) {
                     res.sendFile(file.path.substring(1), {
