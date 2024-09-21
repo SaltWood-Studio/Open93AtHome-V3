@@ -376,7 +376,7 @@ export class Server {
             console.log(`Available files for cluster ${clusterId}: ${this.fileList.getAvailableFiles(cluster).length}`);
 
             if (lastModified === 0) {
-                res.status(200).send(Utilities.getAvroBytes(this.fileList.getAvailableFiles(cluster)));
+                res.status(200).send(await Utilities.getAvroBytes(this.fileList.getAvailableFiles(cluster)));
             }
             else {
                 const files = this.fileList.getAvailableFiles(cluster);
