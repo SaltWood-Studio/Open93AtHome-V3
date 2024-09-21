@@ -35,6 +35,14 @@ export class FileList {
         return this._files;
     }
 
+    public set clusters(clusters: ClusterEntity[]) {
+        this._clusters = clusters;
+    }
+
+    public get clusters(): ClusterEntity[] {
+        return this._clusters;
+    }
+
     public get shards(): File[][] {
         return this._shards;
     }

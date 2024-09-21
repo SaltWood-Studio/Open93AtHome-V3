@@ -45,7 +45,6 @@ export class Server {
     public db: SQLiteHelper;
     protected fileList: FileList;
     protected isUpdating: boolean = false;
-    protected clusters: ClusterEntity[];
     protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
     public stats: StatsStorage[];
     public centerStats: HourlyStatsStorage;
@@ -61,14 +60,20 @@ export class Server {
     protected set files(files: File[]) {
         this.fileList.files = files;
     }
+    
+    protected get clusters(): ClusterEntity[] {
+        return this.fileList.clusters;
+    }
+
+    protected set clusters(clusters: ClusterEntity[]) {
+        this.fileList.clusters = clusters;
+    }
 
     public constructor() {
         this.plugins = [];
         this.pluginLoader = new PluginLoader();
 
         this.got = Utilities.got;
-
-        this.fileList = new FileList();
 
         // 创建 Express 应用
         this.app = express();
@@ -83,7 +88,7 @@ export class Server {
         this.stats = this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => new StatsStorage(c.clusterId));
         this.centerStats = new HourlyStatsStorage();
 
-        this.clusters = this.db.getEntities<ClusterEntity>(ClusterEntity);
+        this.fileList = new FileList(undefined, this.db.getEntities<ClusterEntity>(ClusterEntity));
 
         // 通过访问唯一 instance 来触发单例模式的创建
         JwtHelper.getInstance();
