@@ -11,7 +11,7 @@ import { ClusterEntity } from './database/Cluster.js';
 import { SQLiteHelper } from './SQLiteHelper.js';
 import { UserEntity } from './database/User.js';
 import got, { Got } from 'got';
-import { Config } from './Config.js';
+import crc32 from 'crc-32';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -340,6 +340,10 @@ export class Utilities {
         return JwtHelper.getInstance().verifyToken(req.headers.authorization?.split(' ').at(-1), 'cluster') instanceof Object;
     }
 
+    public static tryGetRequestCluster<T>(req: Request): T {
+        return JwtHelper.getInstance().verifyToken(req.headers.authorization?.split(' ').at(-1), 'cluster') as T;
+    }
+
     public static toUrlSafeBase64String(buffer: Buffer): string {
         return buffer.toString('base64')
             .replace(/\+/g, '-')  // Replace '+' with '-'
@@ -397,5 +401,24 @@ export class Utilities {
             return false;
         }
         return true;
+    }
+
+    // 将布尔数组转换为整数（BigInt）
+    public static booleansToBigInt(bits: boolean[]): bigint {
+        return bits.reduce((acc, bit, index) => {
+            if (bit) {
+                acc |= (1n << BigInt(index)); // 设置第 index 位为 1
+            }
+            return acc;
+        }, 0n);
+    }
+
+    // 将 BigInt 整数转换为布尔数组
+    public static bigIntToBooleans(value: bigint, size: number): boolean[] {
+        const bits = [];
+        for (let i = 0; i < size; i++) {
+            bits.push((value & (1n << BigInt(i))) !== 0n); // 检查第 i 位是否为 1
+        }
+        return bits;
     }
 }

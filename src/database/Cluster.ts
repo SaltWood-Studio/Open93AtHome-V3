@@ -22,7 +22,8 @@ import { Config } from '../Config.js';
     sponsor TEXT,
     sponsorUrl TEXT,
     version TEXT,
-    downTime INTEGER
+    downTime INTEGER,
+    availShards INTEGER
 `)
 @PrimaryKey('clusterId')
 export class ClusterEntity {
@@ -69,6 +70,8 @@ export class ClusterEntity {
     public version: string = '';
 
     public downTime: number = 0;
+
+    public availShards: bigint = 18446744073709551615n;
 
     @Ignore()
     private interval: NodeJS.Timeout | null = null;

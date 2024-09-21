@@ -19,6 +19,7 @@ import { Plugin } from './plugin/Plugin.js';
 import { PluginLoader } from './plugin/PluginLoader.js';
 import {type Got} from 'got'
 import { permission } from 'process';
+import { FileList } from './FileList.js';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -42,7 +43,7 @@ export class Server {
     public io: SocketIOServer;
     private httpServer;
     public db: SQLiteHelper;
-    protected files: File[];
+    protected fileList: FileList;
     protected isUpdating: boolean = false;
     protected clusters: ClusterEntity[];
     protected avroBytes: Uint8Array;
@@ -53,6 +54,14 @@ export class Server {
     protected pluginLoader: PluginLoader;
     protected got: Got;
     protected sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
+    
+    protected get files(): File[] {
+        return this.fileList.files;
+    }
+
+    protected set files(files: File[]) {
+        this.fileList.files = files;
+    }
 
     public constructor() {
         this.plugins = [];
@@ -60,7 +69,7 @@ export class Server {
 
         this.got = Utilities.got;
 
-        this.files = [];
+        this.fileList = new FileList();
         this.avroBytes = new Uint8Array();
 
         // 创建 Express 应用
@@ -362,6 +371,12 @@ export class Server {
                 res.status(403).send(); // 禁止访问
                 return;
             }
+            const clusterId = Utilities.tryGetRequestCluster<{ clusterId: string }>(req)?.clusterId || "";
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (!cluster) {
+                res.status(401).send();
+                return;
+            }
             res.setHeader('Content-Disposition', 'attachment; filename="files.avro"');
             
             let lastModified = Number(req.query.lastModified);
@@ -371,7 +386,7 @@ export class Server {
                 res.status(200).send(this.avroBytes);
             }
             else {
-                const files = this.files.filter(f => f.lastModified > lastModified);
+                const files = this.fileList.getAvailableFiles(cluster);
                 if (files.length === 0){
                     res.status(204).send();
                     return;
@@ -446,7 +461,7 @@ export class Server {
                     });
                     return;
                 }
-                let cluster = Utilities.getRandomElement(this.clusters.filter(c => c.isOnline));
+                let cluster = Utilities.getRandomElement(this.fileList.getAvailableClusters(file));
                 if (!cluster) {
                     res.sendFile(file.path.substring(1), {
                         root: ".",
