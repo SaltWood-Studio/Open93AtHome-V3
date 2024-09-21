@@ -410,7 +410,7 @@ export class Server {
                 return;
             }
             const hash = req.params.hash.toLowerCase();
-            const file = this.files.find(f => f.hash === hash);
+            const file = this.fileList.getFile("hash", hash);
             if (file) {
                 res.sendFile(file.path.substring(1), {
                     root: ".",
@@ -438,7 +438,7 @@ export class Server {
                 return;
             }
             const p = decodeURI(req.path);
-            const file = this.files.find(f => f.path === p);
+            const file = this.fileList.getFile("path", p);
             if (file) {
                 if (Config.getInstance().forceNoOpen) {
                     res.sendFile(file.path.substring(1), {

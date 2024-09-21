@@ -51,16 +51,22 @@ export class FileList {
         return this.getFiles(type, value).length > 0;
     }
 
+    public getFile(type: "path" | "hash", value: string): File | undefined {
+        let index: number;
+        if (type === "path") index = FileList.getShardIndex(value, FileList.SHARD_COUNT);
+        else if (type === "hash") return this._files.find(file => file.hash === value);
+        else throw new Error("Invalid type");
+
+        return this._shards[index].find((file) => file.path === value);
+    }
+
     public getFiles(type: "path" | "hash", value: string): File[] {
         let index: number;
         if (type === "path") index = FileList.getShardIndex(value, FileList.SHARD_COUNT);
         else if (type === "hash") return this.getFiles("path", this._files.find(file => file.hash === value)?.path || "");
         else throw new Error("Invalid type");
 
-        return this._shards[index].filter((file) => {
-            if (type === "path") return file.path === value;
-            else throw new Error("Invalid type");
-        });
+        return this._shards[index].filter((file) => file.path === value);
     }
 
     public getAvailableFiles(cluster: ClusterEntity): File[] {
