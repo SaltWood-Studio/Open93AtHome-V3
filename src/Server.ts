@@ -378,7 +378,7 @@ export class Server {
             
             let lastModified = Number(req.query.lastModified);
             lastModified = Number.isNaN(lastModified)? 0 : lastModified;
-            console.log(`Available files for cluster ${clusterId}: ${this.fileList.getAvailableFiles(cluster).length}`);
+            console.log(`Available files for cluster ${clusterId}: ${cluster.availShards} shards, ${this.fileList.getAvailableFiles(cluster).length}`);
 
             if (lastModified === 0) {
                 res.status(200).send(await Utilities.getAvroBytes(this.fileList.getAvailableFiles(cluster)));

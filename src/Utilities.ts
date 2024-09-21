@@ -417,7 +417,7 @@ export class Utilities {
     public static intToBooleans(value: number, size: number): boolean[] {
         const bits = [];
         for (let i = 0; i < size; i++) {
-            bits.push((value || 0 & (1 << i)) !== 0); // 检查第 i 位是否为 1
+            bits.push((value & (1 << i)) !== 0); // 检查第 i 位是否为 1
         }
         return bits;
     }
