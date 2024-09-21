@@ -958,6 +958,12 @@ export class Server {
                 cluster.port = enableData.port;
                 cluster.version = enableData.version;
 
+                if (Config.getInstance().noWarden){
+                    cluster.doOnline(this.files, socket);
+                    this.db.update(cluster);
+                    ack([null, true]);
+                    return;
+                }
                 Utilities.checkSpecfiedFiles(randomFiles, cluster)
                 .then(message => {
                     if (message) {
