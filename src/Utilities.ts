@@ -121,9 +121,17 @@ export class Utilities {
             for (const folder of folders) {
                 if (folder.startsWith('.')) continue;
                 const fullPath = path.join(directoryPath, folder);
-                let files: string[] = [];
+                const files: string[] = [];
                 this.scanDirectory(fullPath, files, directoryPath);
-                sources.push({ files, name: folder, count: files.length, lastUpdated: new Date(), isFromPlugin: false })
+
+                const folderStats = fs.statSync(fullPath);
+                sources.push({
+                    files,
+                    name: folder,
+                    count: files.length,
+                    lastUpdated: folderStats.mtime, // 使用文件夹的最后修改时间
+                    isFromPlugin: false // 根据需求可以动态设置
+                });
             }
         }
         return sources;
@@ -137,7 +145,19 @@ export class Utilities {
      * @param rootPath  根目录路径，用于计算相对路径
      */
     private static scanDirectory(directory: string, filePaths: string[], rootPath: string): void {
-        if (!fs.statSync(directory).isDirectory()) return;
+        const stats = fs.lstatSync(directory);
+
+        // 如果是符号链接，获取指向的真实路径
+        if (stats.isSymbolicLink()) {
+            const realPath = fs.realpathSync(directory);
+            if (fs.statSync(realPath).isDirectory()) {
+                this.scanDirectory(realPath, filePaths, rootPath);
+            }
+            return;
+        }
+
+        if (!stats.isDirectory()) return;
+
         const files = fs.readdirSync(directory);
         files.forEach(file => {
             const fullPath = path.join(directory, file);
@@ -145,20 +165,35 @@ export class Utilities {
             if (file.startsWith('.')) {
                 return;
             }
-            const stats = fs.lstatSync(fullPath);
-            if (stats.isFile()) {
-                // 计算相对于根目录的路径
-                let relativePath = fullPath.substring(rootPath.length).replace(/\\/g, '/');
-                if (!relativePath.startsWith('/')) {
-                    relativePath = '/' + relativePath;
+
+            const fileStats = fs.lstatSync(fullPath);
+            if (fileStats.isSymbolicLink()) {
+                const realPath = fs.realpathSync(fullPath);
+                const realStats = fs.statSync(realPath);
+                if (realStats.isDirectory()) {
+                    this.scanDirectory(realPath, filePaths, rootPath);
+                } else if (realStats.isFile()) {
+                    this.addFileToPaths(realPath, filePaths, rootPath);
                 }
-                relativePath = '/files' + relativePath;
-                filePaths.push(relativePath);
-            } else if (stats.isDirectory()) {
+            } else if (fileStats.isFile()) {
+                this.addFileToPaths(fullPath, filePaths, rootPath);
+            } else if (fileStats.isDirectory()) {
                 // 递归扫描子目录
                 this.scanDirectory(fullPath, filePaths, rootPath);
             }
         });
+    }
+
+    /**
+     * 添加文件到文件路径数组中
+     * @param fullPath 文件的完整路径
+     * @param filePaths 文件路径数组
+     * @param rootPath 根目录路径
+     */
+    private static addFileToPaths(fullPath: string, filePaths: string[], rootPath: string) {
+        const relativePath = path.relative(rootPath, fullPath).replace(/\\/g, '/'); // 处理Windows和Unix路径的差异
+        const formattedPath = `/files/${relativePath}`;
+        filePaths.push(formattedPath);
     }
 
     public static async wait(seconds: number): Promise<void> {
