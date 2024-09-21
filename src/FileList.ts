@@ -4,7 +4,7 @@ import crc32 from 'crc-32';
 import { Utilities } from './Utilities.js';
 
 export class FileList {
-    public static readonly SHARD_COUNT = 64;
+    public static readonly SHARD_COUNT = 32;
 
     private _files: File[] = [];
     private _clusters: ClusterEntity[] = [];
