@@ -452,7 +452,7 @@ export class Utilities {
     public static bigIntToBooleans(value: bigint, size: number): boolean[] {
         const bits = [];
         for (let i = 0; i < size; i++) {
-            bits.push((value & (1n << BigInt(i))) !== 0n); // 检查第 i 位是否为 1
+            bits.push((BigInt(value) & (1n << BigInt(i))) !== 0n); // 检查第 i 位是否为 1
         }
         return bits;
     }
