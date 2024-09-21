@@ -894,6 +894,26 @@ export class Server {
         this.app.get('/93AtHome/shards', (req: Request, res: Response) => {
             res.json(this.fileList.shards);
         });
+        this.app.post('/93AtHome/super/modify_shards', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const cluster = this.clusters.find(c => c.clusterId === req.query.clusterId);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            // 判断 shards 是不是在 int 范围内
+            const shards = req.body.shards as number;
+            if (shards < -2147483648 || shards > 2147483647) {
+                res.status(400).send({
+                    message: "Shards must be between -2147483648 and 2147483647"
+                });
+                return;
+            }
+            cluster.availShards = shards;
+            this.db.update(cluster);
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(cluster.getJson(true, false));
+        });
     }
 
     public setupSocketIO(): void {
