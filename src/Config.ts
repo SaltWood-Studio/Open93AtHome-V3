@@ -18,6 +18,9 @@ export class Config {
     public readonly noWarden: boolean = env.get('NO_WARDEN').default("false").asBool();
     public readonly forceHttps: boolean = env.get('FORCE_HTTPS').default("false").asBool();
 
+    // 开发变量
+    public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString()
+
     public static readonly version: string = "3.1.0";
 
     private constructor() { }
