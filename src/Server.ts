@@ -93,7 +93,7 @@ export class Server {
         // 通过访问唯一 instance 来触发单例模式的创建
         JwtHelper.getInstance();
 
-        // 创建 HTTPS 服务器
+        // 创建 HTTP 服务器
         this.httpServer = http.createServer(this.app);
 
         // 创建 Socket.IO 服务器
@@ -183,11 +183,11 @@ export class Server {
     }
 
     public setupRoutes(): void {
-        this.setupHttps();
+        this.setupHttp();
         this.setupSocketIO();
     }
 
-    public setupHttps(): void {
+    public setupHttp(): void {
         // 设置中间件
         this.app.use(logMiddleware);
         this.app.use(express.json());

@@ -12,6 +12,7 @@ import { SQLiteHelper } from './SQLiteHelper.js';
 import { UserEntity } from './database/User.js';
 import got, { Got } from 'got';
 import crc32 from 'crc-32';
+import { Config } from './Config.js';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -193,7 +194,7 @@ export class Utilities {
         return array[randomIndex];
     }
 
-    public static getUrl(file: File, cluster: ClusterEntity): string { return `http://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}` }
+    public static getUrl(file: File, cluster: ClusterEntity): string { return `${Config.getInstance().forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}` }
 
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {
         try {

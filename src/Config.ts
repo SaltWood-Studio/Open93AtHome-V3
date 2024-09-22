@@ -16,6 +16,7 @@ export class Config {
     public readonly concurrency: number = env.get('CONCURRENCY').default(10).asIntPositive()
     public readonly forceNoOpen: boolean = env.get('FORCE_NO_OPEN').default("false").asBool();
     public readonly noWarden: boolean = env.get('NO_WARDEN').default("false").asBool();
+    public readonly forceHttps: boolean = env.get('FORCE_HTTPS').default("false").asBool();
 
     public static readonly version: string = "3.1.0";
 
