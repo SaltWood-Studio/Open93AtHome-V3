@@ -204,6 +204,7 @@ export class Server {
             res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => c.getJson(true, true))));
         });
         this.app.get('/93AtHome/list_files', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(this.files));
@@ -892,6 +893,7 @@ export class Server {
             res.status(204).send();
         });
         this.app.get('/93AtHome/shards', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
             res.json(this.fileList.shards);
         });
         this.app.post('/93AtHome/super/modify_shards', (req: Request, res: Response) => {
