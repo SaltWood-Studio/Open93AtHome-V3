@@ -16,8 +16,6 @@ import { FileList } from '../FileList.js';
     downReason TEXT,
     clusterName TEXT,
     bandwidth INTEGER,
-    traffic INTEGER,
-    hits INTEGER,
     isBanned INTEGER,
     createdAt INTEGER,
     sponsor TEXT,
@@ -47,11 +45,13 @@ export class ClusterEntity {
     @Ignore()
     public measureBandwidth: number = -1;
 
+    @Ignore()
     public traffic: number = 0;
 
     @Ignore()
     public pendingTraffic: number = 0;
 
+    @Ignore()
     public hits: number = 0;
 
     @Ignore()
