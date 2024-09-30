@@ -11,7 +11,7 @@ export class StatsStorage {
 
     constructor(id: string) {
         this.id = id;
-        this.filePath = path.join(Config.getInstance().statsDir, `${this.id}.stats`);
+        this.filePath = path.join(Config.getInstance().statsDir, `${this.id}.stats.json`); // 改为 .json 文件
         this.data = [];
         this.dataUpdated = false;  // 初始时数据未更新
 
@@ -23,7 +23,7 @@ export class StatsStorage {
         // 每10分钟保存一次数据（如果有更新）
         this.saveInterval = setInterval(() => {
             this.maybeWriteToFile();
-        }, 10 * 60 * 1000);
+        }, 10 * 60 * 1000); // 10分钟
     }
 
     public addData({ hits, bytes }: { hits: number, bytes: number }): void {
@@ -55,9 +55,7 @@ export class StatsStorage {
 
     public getLast30DaysStats(): { date: string, hits: number, bytes: number }[] {
         const now = new Date();
-        // const today = now.toISOString().split('T')[0];
 
-        // 创建一个包含最近30天的日期和默认数据的映射
         const dateMap: { [key: string]: { hits: number, bytes: number } } = {};
 
         // 填充最近30天的数据
@@ -89,18 +87,15 @@ export class StatsStorage {
     }
 
     private writeToFile(): void {
-        const fileContent = this.data.map(entry => `${entry.date} ${entry.hits} ${entry.bytes}`).join('\n');
+        // 使用 JSON 序列化存储数据
+        const fileContent = JSON.stringify(this.data);
         fs.writeFileSync(this.filePath, fileContent, 'utf8');
     }
 
     private loadFromFile(): void {
+        // 直接读取 JSON 数据
         const fileContent = fs.readFileSync(this.filePath, 'utf8');
-        const lines = fileContent.split('\n').filter(line => line.trim() !== '');
-
-        this.data = lines.map(line => {
-            const [date, hits, bytes] = line.split(' ');
-            return { date, hits: Number(hits), bytes: Number(bytes) };
-        });
+        this.data = JSON.parse(fileContent);
     }
 
     public stopAutoSave(): void {
