@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from '../Config.js';
+import { Utilities } from '../Utilities.js';
 
 export class StatsStorage {
     public readonly id: string;
@@ -27,7 +28,7 @@ export class StatsStorage {
     }
 
     public addData({ hits, bytes }: { hits: number, bytes: number }): void {
-        const today = new Date().toISOString().split('T')[0];
+        const today = Utilities.getCurrentDate();
 
         let todayData = this.data.find(entry => entry.date === today);
         if (!todayData) {
@@ -44,7 +45,7 @@ export class StatsStorage {
     }
 
     public getTodayStats(): { hits: number, bytes: number } {
-        const today = new Date().toISOString().split('T')[0];
+        const today = Utilities.getCurrentDate();
         const todayData = this.data.find(entry => entry.date === today);
         if (todayData) {
             return { hits: todayData.hits, bytes: todayData.bytes };
@@ -60,7 +61,7 @@ export class StatsStorage {
 
         // 填充最近30天的数据
         for (let i = 0; i < 30; i++) {
-            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const date = Utilities.getDateDate(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
             dateMap[date] = { hits: 0, bytes: 0 };
         }
 

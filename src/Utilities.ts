@@ -438,4 +438,26 @@ export class Utilities {
         }
         return bits;
     }
+
+    public static getCurrentTime(): string {
+        return Utilities.getDateTime(new Date());
+    }
+
+    public static getDateTime(date: Date): string {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    public static getCurrentDate(): string {
+        return Utilities.getDateDate(new Date());
+    }
+
+    public static getDateDate(date: Date): string {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 }

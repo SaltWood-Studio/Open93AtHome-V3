@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from '../Config.js';
+import { Utilities } from '../Utilities.js';
 
 export class HourlyStatsStorage {
     private data: { date: string, hourlyStats: { hour: string, hits: number, bytes: number }[] }[];
@@ -23,8 +24,7 @@ export class HourlyStatsStorage {
     }
 
     public today(): { hits: number, bytes: number } {
-        const now = new Date();
-        const date = now.toISOString().split('T')[0];
+        const date = Utilities.getCurrentDate();
         let today = { hits: 0, bytes: 0 };
         this.data.find(entry => entry.date === date)?.hourlyStats.forEach(hourData => {
             today.hits += hourData.hits;
@@ -35,7 +35,7 @@ export class HourlyStatsStorage {
 
     public addData({ hits, bytes }: { hits: number, bytes: number }): void {
         const now = new Date();
-        const date = now.toISOString().split('T')[0];
+        const date = Utilities.getDateDate(now);
         const hour = now.getHours().toString().padStart(2, '0');
 
         let dayData = this.data.find(entry => entry.date === date);
@@ -66,8 +66,7 @@ export class HourlyStatsStorage {
         const now = new Date();
 
         for (let i = 0; i < 30; i++) {
-            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-            const dateString = date.toISOString().split('T')[0];
+            const dateString = Utilities.getDateDate(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
 
             const dayData = this.data.find(entry => entry.date === dateString);
             const dayResult: { date: string, hits: number, bytes: number }[] = [];
