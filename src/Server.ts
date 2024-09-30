@@ -981,9 +981,9 @@ export class Server {
         this.io.on('connection', (socket) => {
             console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'}`);
 
-            socket.onAny((event, data) => {
+            socket.onAny((event: string, data) => {
                 if (this.sessionToClusterMap.has(socket.id)) {
-                    console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <${event?.upperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+                    console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <${event?.toUpperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
                 }
             });
 
