@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./certificates:/app/certificates
       - ./files:/app/files
       - ./data:/app/data
       - ./stats:/app/stats

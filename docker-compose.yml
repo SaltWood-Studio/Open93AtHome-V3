@@ -2,7 +2,6 @@ services:
   93athome:
     image: saltwood233/open93athome
     volumes:
-      - ./certificates:/app/certificates
       - ./files:/app/files
       - ./data:/app/data
       - ./stats:/app/stats
