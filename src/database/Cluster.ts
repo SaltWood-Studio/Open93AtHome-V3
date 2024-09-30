@@ -69,6 +69,9 @@ export class ClusterEntity {
     public availShards: number = -1;
 
     @Ignore()
+    public enableHistory: Date[] = [];
+
+    @Ignore()
     private interval: NodeJS.Timeout | null = null;
 
     public doOffline(reason: string = "Unspecfied"): void {
@@ -110,7 +113,7 @@ export class ClusterEntity {
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
         const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, availShards, ...rest }: any) => rest;
         const removeSecretInfo = ({ clusterSecret, ...rest }: any) => rest;
-        const optimizeJsonObject = ({ interval, isBanned, ...rest }: ClusterEntity) => {
+        const optimizeJsonObject = ({ interval, isBanned, enableHistory, ...rest }: ClusterEntity) => {
             return {
                 ...rest,
                 isBanned: Boolean(this.isBanned),

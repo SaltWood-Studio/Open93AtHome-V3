@@ -515,4 +515,19 @@ export class Utilities {
         }
         return NaN;
     }
+
+    public static filterMinutes(dates: Date[], minutes: number = 15): void {
+        const now = Date.now();
+        const ms = minutes * 60 * 1000; // 15分钟的毫秒数
+    
+        // 过滤出15分钟之外的日期
+        const filteredDates = dates.filter(date => now - date.getTime() <= ms);
+    
+        // 如果所有日期都在最近15分钟内，返回 true；否则，更新数组并返回 false
+        if (filteredDates.length !== dates.length) {
+            // 删除15分钟之外的日期
+            dates.length = 0;
+            dates.push(...filteredDates);
+        }
+    }
 }

@@ -1000,6 +1000,16 @@ export class Server {
                     return;
                 }
 
+                Utilities.filterMinutes(cluster.enableHistory);
+                if (cluster.enableHistory.length >= 20) {
+                    ack(["Error: Too many failed enable requests. This cluster is now banned."]);
+                    cluster.isBanned = 1;
+                    cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
+                    this.db.update(cluster);
+                    return;
+                }
+                cluster.enableHistory.push(new Date());
+
                 if (cluster.isBanned) {
                     ack(["This cluster is banned."]);
                     return;
@@ -1033,6 +1043,8 @@ export class Server {
                             cluster.doOnline(this.files, socket);
                             this.db.update(cluster);
                             ack([null, true]);
+                            cluster.enableHistory = [];
+                            return;
                         }
                     })
                     .catch(err => {
