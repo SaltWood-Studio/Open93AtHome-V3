@@ -20,7 +20,7 @@ import { PluginLoader } from './plugin/PluginLoader.js';
 import {type Got} from 'got'
 import { permission } from 'process';
 import { FileList } from './FileList.js';
-import rateLimiter from './RateLimit.js';
+import { rateLimiter } from './RateLimit.js';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -210,6 +210,8 @@ export class Server {
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
+
+        
 
         this.app.use('/assets', express.static(path.resolve('./assets')));
 
@@ -1000,8 +1002,8 @@ export class Server {
                     return;
                 }
 
-                Utilities.filterMinutes(cluster.enableHistory);
-                if (cluster.enableHistory.length >= 20) {
+                Utilities.filterMinutes(cluster.enableHistory, Config.getInstance().failAttemptsDuration);
+                if (cluster.enableHistory.length >= Config.getInstance().failAttemptsToBan && Config.getInstance().failAttemptsToBan > 0) {
                     ack(["Error: Too many failed enable requests. This cluster is now banned."]);
                     cluster.isBanned = 1;
                     cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
