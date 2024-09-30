@@ -35,7 +35,7 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
 
 const logAccess = (req: Request, res: Response) => {
     const userAgent = req.headers['user-agent'] || '';
-    const ip = (req.headers[Config.getInstance().sourceIpHeader] as string) || req.ip;
+    const ip = (req.headers[Config.getInstance().sourceIpHeader] as string).split(',')[0] || req.ip;
     console.log(`${req.method} ${req.originalUrl} ${req.protocol} <${res.statusCode}> - [${ip}] ${userAgent}`);
 };
 
