@@ -20,6 +20,7 @@ import { PluginLoader } from './plugin/PluginLoader.js';
 import {type Got} from 'got'
 import { permission } from 'process';
 import { FileList } from './FileList.js';
+import rateLimiter from './RateLimit.js';
 
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -205,6 +206,7 @@ export class Server {
     public setupHttp(): void {
         // 设置中间件
         this.app.use(logMiddleware);
+        this.app.use(rateLimiter);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
