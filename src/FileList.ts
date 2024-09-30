@@ -88,6 +88,11 @@ export class FileList {
         return availableClusters;
     }
 
+    public randomAvailableCluster(file: File, clusters: ClusterEntity[] | undefined = undefined): ClusterEntity | null {
+        const availableClusters = this.getAvailableClusters(file, clusters);
+        return Utilities.getWeightedRandomElement(availableClusters, c => c.measureBandwidth || 0);
+    }
+
     public static availableInCluster(file: File, cluster: ClusterEntity): boolean {
         const index = FileList.getShardIndex(file.path, FileList.SHARD_COUNT);
         return (cluster.availShards & (1 << index)) !== 0;

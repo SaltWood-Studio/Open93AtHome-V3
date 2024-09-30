@@ -188,13 +188,12 @@ export class Utilities {
         return compress(FileListSchema.toBuffer(files as IFileInfo[]));
     }
 
-    public static getRandomElement<T>(array: T[]): T | undefined {
-        if (array.length === 0) return undefined; // 如果数组为空，返回 undefined
-        const randomIndex = Math.floor(Math.random() * array.length);
-        return array[randomIndex];
+    public static getUrl(file: File, cluster: ClusterEntity): string {
+        return Utilities.getUrlByPath(file.hash, `/download/${file.hash}`, cluster);
     }
-
-    public static getUrl(file: File, cluster: ClusterEntity): string { return `${Config.getInstance().forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/download/${file.hash}?${Utilities.getSign(file.hash, cluster.clusterSecret)}` }
+    public static getUrlByPath(hash: string, path: string, cluster: ClusterEntity): string {
+        return `${Config.getInstance().forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/${path.substring(1)}?${Utilities.getSign(hash, cluster.clusterSecret)}`
+    }
 
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {
         try {
@@ -282,6 +281,11 @@ export class Utilities {
         return result;
     }
     
+    public static getRandomElement<T>(array: T[]): T | undefined {
+        if (array.length === 0) return undefined; // 如果数组为空，返回 undefined
+        const randomIndex = Math.floor(Math.random() * array.length);
+        return array[randomIndex];
+    }
     
     public static getRandomElements<T>(array: T[], count: number, allowDuplicates: boolean = true): T[] {
         const result: T[] = [];
@@ -305,6 +309,27 @@ export class Utilities {
 
         return result;
     }
+
+    public static getWeightedRandomElement<T>(array: T[], weightFunc: (item: T) => number): T | null {
+        if (array.length === 0) return null; // 如果数组为空，返回 undefined
+    
+        const weights = array.map(weightFunc);
+        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    
+        if (totalWeight === 0) return null;
+    
+        const random = Math.random() * totalWeight;
+    
+        let cumulativeWeight = 0;
+        for (let i = 0; i < array.length; i++) {
+            cumulativeWeight += weights[i];
+            if (random < cumulativeWeight) {
+                return array[i];
+            }
+        }
+    
+        return null;
+    }    
 
     /**
     * 计算文件的 SHA-1 哈希值，并返回文件的字节数和最后的修改时间
@@ -459,5 +484,35 @@ export class Utilities {
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const day = date.getDate().toString().padStart(2, '0');
         return `${year}-${month}-${day}`;
+    }
+
+    public static async doMeasure(url: string): Promise<number> {
+        try {
+            // 发出请求，接收下载数据
+            const response = await got(url, {
+                responseType: 'buffer',  // 以二进制数据形式接收
+                timeout: { request: 60000 }, // 设置请求超时时间 (可选)
+            });
+    
+            // 获取响应时间数据
+            const timings = response.timings;
+    
+            // 计算总下载时间（秒）
+            const timeTakenInSeconds = (timings.phases.download || NaN) / 1000;
+    
+            // 获取下载的数据大小（字节）
+            const dataSizeInBytes = response.rawBody.length;
+    
+            // 计算下载带宽（字节每秒）
+            const bandwidthBps = dataSizeInBytes / timeTakenInSeconds;
+    
+            // 将带宽转换为 Mbps
+            const bandwidthMbps = (bandwidthBps * 8) / (1024 * 1024); // 1 Mbps = 1024 * 1024 bps
+    
+            return Math.round(bandwidthMbps);
+        } catch (error) {
+            console.error(error);
+        }
+        return NaN;
     }
 }

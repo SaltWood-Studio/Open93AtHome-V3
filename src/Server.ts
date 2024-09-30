@@ -450,7 +450,7 @@ export class Server {
                     this.sendFile(req, res, file);
                     return;
                 }
-                let cluster = Utilities.getRandomElement(this.fileList.getAvailableClusters(file));
+                let cluster = this.fileList.randomAvailableCluster(file);
                 if (!cluster) {
                     this.sendFile(req, res, file);
                     return;
@@ -1007,22 +1007,36 @@ export class Server {
                 cluster.port = enableData.port;
                 cluster.version = enableData.version;
 
-                if (Config.getInstance().noWarden){
-                    cluster.doOnline(this.files, socket);
-                    this.db.update(cluster);
-                    ack([null, true]);
-                    return;
-                }
-                Utilities.checkSpecfiedFiles(randomFiles, cluster)
-                .then(message => {
-                    if (message) {
-                        ack({ message: message });
+                const size = 20;
+                const url = Utilities.getUrlByPath(`/measure/${size}`, `/measure/${size}`, cluster);
+                Utilities.doMeasure(url)
+                .then(result => {
+                    if (!result || result < 10) {
+                        ack([`Error: Failed to measure bandwidth: Result is ${result} Mbps`]);
                         return;
-                    } else {
+                    }
+                    cluster.measureBandwidth = result;
+                    if (Config.getInstance().noWarden){
                         cluster.doOnline(this.files, socket);
                         this.db.update(cluster);
                         ack([null, true]);
+                        return;
                     }
+                    Utilities.checkSpecfiedFiles(randomFiles, cluster)
+                    .then(message => {
+                        if (message) {
+                            ack({ message: message });
+                            return;
+                        } else {
+                            cluster.doOnline(this.files, socket);
+                            this.db.update(cluster);
+                            ack([null, true]);
+                        }
+                    })
+                    .catch(err => {
+                        ack([err.message]);
+                        console.error(err);
+                    });
                 })
                 .catch(err => {
                     ack([err.message]);
