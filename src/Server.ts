@@ -979,7 +979,7 @@ export class Server {
 
         // 监听 Socket.IO 连接事件
         this.io.on('connection', (socket) => {
-            console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+            console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'}`);
 
             socket.onAny((event, data) => {
                 if (this.sessionToClusterMap.has(socket.id)) {
