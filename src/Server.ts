@@ -417,21 +417,15 @@ export class Server {
             const hash = req.params.hash.toLowerCase();
             const file = this.fileList.getFile("hash", hash);
             if (file) {
+                const availablePlugins = this.plugins.filter(p => p.exists(file));
+                if (availablePlugins.length > 0) {
+                    Utilities.getRandomElement(this.plugins)?.express(file, req, res);
+                    this.centerStats.addData({ hits: 1, bytes: file.size });
+                    return;
+                }
                 res.sendFile(file.path.substring(1), {
                     root: ".",
                     maxAge: "30d"
-                }, err => {
-                    if (err) {
-                        const availablePlugins = this.plugins.filter(p => p.exists(file));
-                        if (availablePlugins.length > 0) {
-                            Utilities.getRandomElement(this.plugins)?.express(file, req, res);
-                            this.centerStats.addData({ hits: 1, bytes: file.size });
-                            return;
-                        } else {
-                            res.status(404).send("The requested file is not found or is not accessible.");
-                            return;
-                        }
-                    }
                 });
             } else {
                 res.status(404).send();
@@ -446,23 +440,16 @@ export class Server {
             const file = this.fileList.getFile("path", p);
             if (file) {
                 if (Config.getInstance().forceNoOpen) {
+                    const availablePlugins = this.plugins.filter(p => p.exists(file));
+                    if (availablePlugins.length > 0) {
+                        Utilities.getRandomElement(this.plugins)?.express(file, req, res);
+                        this.centerStats.addData({ hits: 1, bytes: file.size });
+                        return;
+                    }
                     res.sendFile(file.path.substring(1), {
                         root: ".",
                         maxAge: "30d"
-                    }, err => {
-                        if (err) {
-                            const availablePlugins = this.plugins.filter(p => p.exists(file));
-                            if (availablePlugins.length > 0) {
-                                Utilities.getRandomElement(this.plugins)?.express(file, req, res);
-                                this.centerStats.addData({ hits: 1, bytes: file.size });
-                                return;
-                            } else {
-                                res.status(404).send("The requested file is not found or is not accessible.");
-                                return;
-                            }
-                        }
                     });
-                    return;
                 }
                 let cluster = Utilities.getRandomElement(this.fileList.getAvailableClusters(file));
                 if (!cluster) {
