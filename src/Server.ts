@@ -197,7 +197,9 @@ export class Server {
         this.app.use('/assets', express.static(path.resolve('./assets')));
 
         // 设置路由
-        this.app.get('/', (req: Request, res: Response) => res.status(302).header('Location', '/dashboard').send());
+        this.app.get('/', (req: Request, res: Response) => {
+            res.status(302).setHeader('Location', '/dashboard').send();
+        });
         this.app.get('/93AtHome/list_clusters', (req: Request, res: Response) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -293,17 +295,19 @@ export class Server {
                 });
             }
         });
-        this.app.get('/93AtHome/update_files', async (req: Request, res: Response) => {
+        this.app.get('/93AtHome/update_files', (req: Request, res: Response) => {
             const token = req.query.token as string || '';
             if (token !== Config.getInstance().adminToken) {
-                return res.status(403).send(); // 禁止访问
+                res.status(403).send(); // 禁止访问
+                return;
             }
             if (this.isUpdating) {
-                return res.status(409).send('Update in progress');
+                res.status(409).send('Update in progress');
+                return;
             }
 
             this.updateFiles(true);
-            return res.status(204).send();
+            res.status(204).send();
         });
         this.app.get('/openbmclapi-agent/challenge', (req: Request, res: Response) => {
             res.setHeader('Content-Type', 'application/json');
@@ -845,7 +849,9 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(cluster.getJson(true, false));
         });
-        this.app.get('/93AtHome/syncSources', (req: Request, res: Response) => res.status(200).json(this.sources));
+        this.app.get('/93AtHome/syncSources', (req: Request, res: Response) => {
+            res.status(200).json(this.sources);
+        });
         this.app.post('/93AtHome/super/sudo', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
             const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(req.cookies.adminToken, 'admin') as { userId: number }).userId);
