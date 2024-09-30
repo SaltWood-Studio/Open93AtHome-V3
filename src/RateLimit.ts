@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Config } from './Config.js';
 
 interface RateLimitRecord {
     tokens: number;        // 令牌数量
@@ -35,7 +36,7 @@ class RateLimiter {
             next(); // 速率限制功能关闭，直接处理请求
             return;
         }
-        const ip = req.ip; // 根据请求的IP地址进行限速
+        const ip = req.headers[Config.getInstance().sourceIpHeader]?.at(0) || req.ip; // 根据请求的IP地址进行限速
         if (!ip) throw new Error('No IP address provided.');
         const currentTime = Date.now();
 
