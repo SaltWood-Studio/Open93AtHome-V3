@@ -979,17 +979,17 @@ export class Server {
 
         // 监听 Socket.IO 连接事件
         this.io.on('connection', (socket) => {
-            console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'}`);
+            console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'}`);
 
             socket.onAny((event: string, data) => {
                 if (this.sessionToClusterMap.has(socket.id)) {
-                    console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <${event?.toUpperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+                    console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <${event?.toUpperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
                 }
             });
 
             socket.on('enable', (data, callback: Function) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
-                const enableData = data as  {
+                const enableData = data as {
                     host: string,
                     port: number,
                     version: string,
