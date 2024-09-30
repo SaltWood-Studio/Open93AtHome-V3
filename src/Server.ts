@@ -528,11 +528,27 @@ export class Server {
             const offlineClusters = this.clusters.filter(c => !c.isOnline);
         
             const onlineClustersSorted = onlineClusters
-                .sort((a, b) => b.traffic - a.traffic)
+                .sort((a, b) => {
+                    const aStat = this.stats.find(s => s.id === a.clusterId)?.getTodayStats();
+                    const bStat = this.stats.find(s => s.id === b.clusterId)?.getTodayStats();
+                    if (aStat && bStat) {
+                        return bStat.bytes - aStat.bytes;
+                    } else {
+                        return 0;
+                    }
+                })
                 .map(c => c.getJson(true, true));
         
             const offlineClustersSorted = offlineClusters
-                .sort((a, b) => b.traffic - a.traffic)
+                .sort((a, b) => {
+                    const aStat = this.stats.find(s => s.id === a.clusterId)?.getTodayStats();
+                    const bStat = this.stats.find(s => s.id === b.clusterId)?.getTodayStats();
+                    if (aStat && bStat) {
+                        return bStat.bytes - aStat.bytes;
+                    } else {
+                        return 0;
+                    }
+                })
                 .map(c => c.getJson(true, true));
         
             // 添加 ownerName 并返回 JSON 响应
@@ -750,8 +766,6 @@ export class Server {
             cluster.bandwidth = bandwidth;
             cluster.port = 0;
             cluster.owner = 0;
-            cluster.traffic = 0;
-            cluster.hits = 0;
             cluster.isOnline = false;
             cluster.downReason = "null";
             cluster.createdAt = Math.floor(Date.now() / 1000);
@@ -1059,8 +1073,6 @@ export class Server {
                     this.centerStats.addData({ hits: hits, bytes: traffic });
                     cluster.pendingHits = 0;
                     cluster.pendingTraffic = 0;
-                    cluster.traffic += traffic;
-                    cluster.hits += hits;
                     ack([null, new Date(Date.now()).toISOString()]);
                     this.db.update(cluster);
                     this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: hits, bytes: traffic }));

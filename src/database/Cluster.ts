@@ -46,13 +46,7 @@ export class ClusterEntity {
     public measureBandwidth: number = -1;
 
     @Ignore()
-    public traffic: number = 0;
-
-    @Ignore()
     public pendingTraffic: number = 0;
-
-    @Ignore()
-    public hits: number = 0;
 
     @Ignore()
     public pendingHits: number = 0;
