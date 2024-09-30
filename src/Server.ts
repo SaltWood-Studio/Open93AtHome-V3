@@ -537,9 +537,12 @@ export class Server {
         
             // 添加 ownerName 并返回 JSON 响应
             const result = onlineClustersSorted.concat(offlineClustersSorted).map(c => {
+                const stat = this.stats.find(s => s.id === c.clusterId)?.getTodayStats();
                 return {
                     ...c,
-                    ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || ''
+                    ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || '',
+                    hits: stat?.hits || 0,
+                    traffic: stat?.bytes || 0
                 }
             });
             
