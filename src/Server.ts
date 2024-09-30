@@ -792,8 +792,21 @@ export class Server {
                 return;
             }
             cluster.isBanned = Number(data.ban);
+            cluster.doOffline("This cluster is banned.");
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(cluster.getJson(true, false));
+        });
+        this.app.post('/93AtHome/super/cluster/kick', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const clusterId = req.query.clusterId as string || "";
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            cluster.doOffline("Operator kicked this cluster.");
+            this.db.update(cluster);
             res.status(200).json(cluster.getJson(true, false));
         });
         this.app.post('/93AtHome/super/cluster/profile', (req: Request, res: Response) => {
@@ -1035,6 +1048,7 @@ export class Server {
                     }
                     else if (cluster?.isBanned) {
                         socket.send("This cluster is banned.");
+                        cluster.doOffline("This cluster is banned.");
                     }
                     ack([null, false]);
                 }

@@ -79,7 +79,7 @@ export class FileList {
         const availableClusters: ClusterEntity[] = [];
         const values = clusters? clusters : this._clusters;
 
-        for (const cluster of values.filter(c => c.isOnline)) {
+        for (const cluster of values.filter(c => c.isOnline && !(c.isBanned))) {
             if (FileList.availableInCluster(file, cluster)) {
                 availableClusters.push(cluster);
             }
