@@ -484,7 +484,6 @@ export class Server {
                 res.status(302)
                 .header('Location', Utilities.getUrl(file, cluster))
                 .send();
-                this.centerStats.addData({ hits: 1, bytes: file.size });
                 cluster.pendingHits++;
                 cluster.pendingTraffic += file.size;
             } else {
@@ -494,18 +493,23 @@ export class Server {
         this.app.get('/93AtHome/centerStatistics', (req: Request, res: Response) => {
             res.setHeader('Content-Type', 'application/json');
             const data = this.centerStats.getLast30DaysHourlyStats();
+            let dailyHits: number[] = [];
+            let dailyBytes: number[] = [];
+            data.forEach(d => {
+                let hits = 0;
+                let bytes = 0;
+                d.filter(h => h !== null).forEach(h => {
+                    hits += h.hits;
+                    bytes += h.bytes;
+                });
+                dailyHits.push(hits);
+                dailyBytes.push(bytes);
+            });
             res.status(200).json({
-                dailyHits: data.map(d => {
-                    let hits = 0;
-                    d.filter(h => h !== null).forEach(h => hits += h.hits);
-                    return hits;
-                }),
-                dailyBytes: data.map(d => {
-                    let bytes = 0;
-                    d.filter(b => b !== null).forEach(b => bytes += b.bytes);
-                    return bytes;
-                }),
+                dailyHits,
+                dailyBytes,
                 today: this.centerStats.today(),
+                hourly: data.at(0)?.map(hour => ([hour.hits, hour.bytes])) || [],
                 onlines: this.clusters.filter(c => c.isOnline).length,
                 sourceCount: this.sources.length,
                 totalFiles: this.files.length,
@@ -1056,8 +1060,7 @@ export class Server {
                     console.log(`SOCKET ${socket.handshake.url} socket.io <KEEP-ALIVE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                     const hits = Math.min(keepAliveData.hits, cluster.pendingHits);
                     const traffic = Math.min(keepAliveData.bytes, cluster.pendingTraffic);
-                    cluster.pendingHits += hits;
-                    cluster.pendingTraffic += traffic;
+                    this.centerStats.addData({ hits: hits, bytes: traffic });
                     cluster.pendingHits = 0;
                     cluster.pendingTraffic = 0;
                     cluster.traffic += traffic;
