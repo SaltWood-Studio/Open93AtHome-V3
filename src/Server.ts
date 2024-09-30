@@ -22,6 +22,10 @@ import { permission } from 'process';
 import { FileList } from './FileList.js';
 import { rateLimiter } from './RateLimit.js';
 
+type Indexable<T> = {
+    [key: string]: T;
+}
+
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
     // 调用下一个中间件
@@ -33,9 +37,13 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
+const getRealIP = (obj: Indexable<any>): string => {
+    return (obj[Config.getInstance().sourceIpHeader] as string).split(',')[0];
+}
+
 const logAccess = (req: Request, res: Response) => {
     const userAgent = req.headers['user-agent'] || '';
-    const ip = (req.headers[Config.getInstance().sourceIpHeader] as string).split(',')[0] || req.ip;
+    const ip = getRealIP(req.headers) || req.ip;
     console.log(`${req.method} ${req.originalUrl} ${req.protocol} <${res.statusCode}> - [${ip}] ${userAgent}`);
 };
 
@@ -968,11 +976,16 @@ export class Server {
                 return next(new Error('Authentication error')); // 验证失败，拒绝连接
             }
         });
-        
 
         // 监听 Socket.IO 连接事件
         this.io.on('connection', (socket) => {
-            console.log(`SOCKET ${socket.handshake.url} socket.io <CONNECTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
+            console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+
+            socket.onAny((event, data) => {
+                if (this.sessionToClusterMap.has(socket.id)) {
+                    console.log(`SOCKET ${socket.handshake.url} socket.io {${this.sessionToClusterMap.get(socket.id)?.clusterId}} <${event?.upperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+                }
+            });
 
             socket.on('enable', (data, callback: Function) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
@@ -1081,7 +1094,6 @@ export class Server {
                     ack([null, false]);
                 }
                 else {
-                    console.log(`SOCKET ${socket.handshake.url} socket.io <KEEP-ALIVE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                     const hits = Math.min(keepAliveData.hits, cluster.pendingHits);
                     const traffic = Math.min(keepAliveData.bytes, cluster.pendingTraffic);
                     this.centerStats.addData({ hits: hits, bytes: traffic });
@@ -1101,7 +1113,6 @@ export class Server {
                     ack([null, false]);
                 }
                 else {
-                    console.log(`SOCKET ${socket.handshake.url} socket.io <DISABLE> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                     cluster.doOffline("Client disabled");
                     socket.send('Bye. Have a good day!');
                     cluster.downTime = Math.floor(Date.now() / 1000);
@@ -1114,7 +1125,6 @@ export class Server {
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (cluster) {
-                    console.log(`SOCKET ${socket.handshake.url} socket.io <DISCONNECTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                     if (cluster.isOnline) {
                         cluster.downReason = "Client disconnected";
                         cluster.downTime = Math.floor(Date.now() / 1000);
