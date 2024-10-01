@@ -214,12 +214,10 @@ export class Server {
     public setupHttp(): void {
         // 设置中间件
         this.app.use(logMiddleware);
-        this.app.use(rateLimiter);
+        // this.app.use(rateLimiter);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
-
-        
 
         this.app.use('/assets', express.static(path.resolve('./assets')));
 
@@ -363,6 +361,7 @@ export class Server {
         // 处理 POST 请求
         this.app.post('/openbmclapi-agent/token', (req: Request, res: Response) => {
             res.setHeader('Content-Type', 'application/json');
+            
         
             // 从请求体中获取参数
             const clusterId = req.body.clusterId as string;
@@ -1034,38 +1033,38 @@ export class Server {
                 cluster.port = enableData.port;
                 cluster.version = enableData.version;
 
-                const size = 20;
-                const url = Utilities.getUrlByPath(`/measure/${size}`, `/measure/${size}`, cluster);
-                Utilities.doMeasure(url)
-                .then(result => {
-                    if (!result || result < 10) {
-                        ack([`Error: Failed to measure bandwidth: Result is ${result} Mbps`]);
+                // const size = 20;
+                // const url = Utilities.getUrlByPath(`/measure/${size}`, `/measure/${size}`, cluster);
+                // Utilities.doMeasure(url)
+                // .then(result => {
+                //     if (!result || result < 10) {
+                //         ack([`Error: Failed to measure bandwidth: Result is ${result} Mbps`]);
+                //         return;
+                //     }
+                //     
+                // })
+                // .catch(err => {
+                //     ack([err.message]);
+                //     console.error(err);
+                // });
+                if (Config.getInstance().noWarden){
+                    cluster.doOnline(this.files, socket);
+                    this.db.update(cluster);
+                    ack([null, true]);
+                    return;
+                }
+                Utilities.checkSpecfiedFiles(randomFiles, cluster)
+                .then(message => {
+                    if (message) {
+                        ack([message]);
                         return;
-                    }
-                    cluster.measureBandwidth = result;
-                    if (Config.getInstance().noWarden){
+                    } else {
                         cluster.doOnline(this.files, socket);
                         this.db.update(cluster);
                         ack([null, true]);
+                        cluster.enableHistory = [];
                         return;
                     }
-                    Utilities.checkSpecfiedFiles(randomFiles, cluster)
-                    .then(message => {
-                        if (message) {
-                            ack({ message: message });
-                            return;
-                        } else {
-                            cluster.doOnline(this.files, socket);
-                            this.db.update(cluster);
-                            ack([null, true]);
-                            cluster.enableHistory = [];
-                            return;
-                        }
-                    })
-                    .catch(err => {
-                        ack([err.message]);
-                        console.error(err);
-                    });
                 })
                 .catch(err => {
                     ack([err.message]);
