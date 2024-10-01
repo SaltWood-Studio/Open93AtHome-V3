@@ -75,11 +75,12 @@ export class FileList {
         return this._shards.filter((_, index) => availableShards[index]).flat();
     }
 
-    public getAvailableClusters(file: File, clusters: ClusterEntity[] | undefined = undefined): ClusterEntity[] {
+    public getAvailableClusters(file: File | null = null, clusters: ClusterEntity[] | undefined = undefined): ClusterEntity[] {
         const availableClusters: ClusterEntity[] = [];
-        const values = clusters? clusters : this._clusters;
+        const values = (clusters? clusters : this._clusters).filter(c => c.isOnline && !(c.isBanned));
+        if (file === null) return values;
 
-        for (const cluster of values.filter(c => c.isOnline && !(c.isBanned))) {
+        for (const cluster of values) {
             if (FileList.availableInCluster(file, cluster)) {
                 availableClusters.push(cluster);
             }

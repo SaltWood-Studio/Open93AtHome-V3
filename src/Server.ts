@@ -209,6 +209,49 @@ export class Server {
     public setupRoutes(): void {
         this.setupHttp();
         this.setupSocketIO();
+        if (Config.getInstance().enableDebugRoutes) this.setupDebugRoutes();
+    }
+
+    public setupDebugRoutes(): void {
+        // 认证中间件
+        const authMiddleware = (req: Request, res: Response, next: Function) => {
+            if (Utilities.verifyAdmin(req, res, this.db)) {
+                next();
+            } else {
+                res.status(403).json({ message: 'Forbidden' }); // 验证失败，返回 403 错误
+            }
+        };
+
+        // 统一使用 authMiddleware 中间件来验证
+        this.app.use('/93AtHome/debug', authMiddleware);
+
+        this.app.get('/93AtHome/debug/list_plugins', async (req: Request, res: Response) => {
+            const promises = this.plugins.map(async p => ({
+                name: p.getName(),
+                fileCount: (await p.getFiles()).length
+            }));
+            res.status(200).json(await Promise.all(promises));
+        });
+        this.app.get('/93AtHome/debug/all', (req: Request, res: Response) => {
+            res.status(200).json({
+                clusters: this.clusters.map(c => c.getJson(true, true)),
+                sources: this.sources,
+                plugins: this.plugins
+            })
+        })
+        this.app.get('/93AtHome/debug/list_sessions', (req: Request, res: Response) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(Array.from(this.sessionToClusterMap.entries())));
+        });
+        this.app.get('/93AtHome/debug/test_all_cluster', (req: Request, res: Response) => {
+            const hash = req.body.hash as string;
+            const path = req.body.path as string;
+            res.status(200).json(this.fileList.getAvailableClusters().map(c => ({
+                clusterId: c.clusterId,
+                requestUrl: Utilities.getUrlByPath(hash, path.startsWith('/')? path : `/${path}`, c)
+            })));
+        })
     }
 
     public setupHttp(): void {

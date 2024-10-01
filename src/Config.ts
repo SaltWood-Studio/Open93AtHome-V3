@@ -23,7 +23,8 @@ export class Config {
     // public readonly requestRateLimit: number = env.get('REQUEST_RATE_LIMIT').default(10).asIntPositive();
 
     // 开发变量
-    public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString()
+    public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();
+    public readonly enableDebugRoutes: boolean = env.get('ENABLE_DEBUG_ROUTES').default("false").asBool();
 
     public static readonly version: string = "3.1.0";
 
