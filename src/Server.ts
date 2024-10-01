@@ -282,7 +282,7 @@ export class Server {
     public setupHttp(): void {
         // 设置中间件
         this.app.use(logMiddleware);
-        // this.app.use(rateLimiter);
+        if (Config.getInstance().requestRateLimit > 0) this.app.use(rateLimiter);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
@@ -1082,15 +1082,17 @@ export class Server {
                     return;
                 }
 
-                Utilities.filterMinutes(cluster.enableHistory, Config.getInstance().failAttemptsDuration);
-                if (cluster.enableHistory.length >= Config.getInstance().failAttemptsToBan && Config.getInstance().failAttemptsToBan > 0) {
-                    ack(["Error: Too many failed enable requests. This cluster is now banned."]);
-                    cluster.isBanned = 1;
-                    cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
-                    this.db.update(cluster);
-                    return;
+                if (Config.getInstance().failAttemptsToBan <= 0 || Config.getInstance().failAttemptsDuration <= 0) {
+                    Utilities.filterMinutes(cluster.enableHistory, Config.getInstance().failAttemptsDuration);
+                    if (cluster.enableHistory.length >= Config.getInstance().failAttemptsToBan) {
+                        ack(["Error: Too many failed enable requests. This cluster is now banned."]);
+                        cluster.isBanned = 1;
+                        cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
+                        this.db.update(cluster);
+                        return;
+                    }
+                    cluster.enableHistory.push(new Date());
                 }
-                cluster.enableHistory.push(new Date());
 
                 if (cluster.isBanned) {
                     ack(["This cluster is banned."]);
