@@ -256,6 +256,27 @@ export class Server {
                 requestUrl: Utilities.getUrl(file, c)
             })));
         })
+        this.app.get('/93AtHome/debug/get_shard', (req: Request, res: Response) => {
+            const hash = req.query.hash as string;
+            const file = this.fileList.getFile("hash", hash);
+            if (!file) {
+                res.status(404).json({ message: 'File not found' });
+                return;
+            }
+            res.status(200).json({
+                shard: FileList.getShardIndex(file.path, FileList.SHARD_COUNT),
+                file
+            });
+        });
+        this.app.get('/93AtHome/debug/get_available_files', (req: Request, res: Response) => {
+            const clusterId = req.query.clusterId as string;
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (!cluster) {
+                res.status(404).json({ message: 'Cluster not found' });
+                return;
+            }
+            res.status(200).json(this.fileList.getAvailableFiles(cluster));
+        });
     }
 
     public setupHttp(): void {
