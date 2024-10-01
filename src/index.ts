@@ -11,7 +11,9 @@ function onStop(signal: string) {
     process.exit(0);
 }
 
+// 初始化配置
 Config.init();
+Utilities.init();
 
 if (Utilities.isRunningInDocker()) {
     console.debug("Running in Docker container");
