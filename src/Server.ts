@@ -1082,7 +1082,7 @@ export class Server {
                     return;
                 }
 
-                if (Config.getInstance().failAttemptsToBan <= 0 || Config.getInstance().failAttemptsDuration <= 0) {
+                if (Config.getInstance().failAttemptsToBan > 0 && Config.getInstance().failAttemptsDuration > 0) {
                     Utilities.filterMinutes(cluster.enableHistory, Config.getInstance().failAttemptsDuration);
                     if (cluster.enableHistory.length >= Config.getInstance().failAttemptsToBan) {
                         ack(["Error: Too many failed enable requests. This cluster is now banned."]);
