@@ -244,12 +244,16 @@ export class Server {
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(Array.from(this.sessionToClusterMap.entries())));
         });
-        this.app.get('/93AtHome/debug/test_all_cluster', (req: Request, res: Response) => {
+        this.app.post('/93AtHome/debug/test_all_cluster', (req: Request, res: Response) => {
             const hash = req.body.hash as string;
-            const path = req.body.path as string;
-            res.status(200).json(this.fileList.getAvailableClusters().map(c => ({
+            const file = this.fileList.getFile("hash", hash);
+            if (!file) {
+                res.status(404).json({ message: 'File not found' });
+                return;
+            }
+            res.status(200).json(this.fileList.getAvailableClusters(file).map(c => ({
                 clusterId: c.clusterId,
-                requestUrl: Utilities.getUrlByPath(hash, path.startsWith('/')? path : `/${path}`, c)
+                requestUrl: Utilities.getUrl(file, c)
             })));
         })
     }
