@@ -90,7 +90,7 @@ export class FileList {
 
     public randomAvailableCluster(file: File, clusters: ClusterEntity[] | undefined = undefined): ClusterEntity | null {
         const availableClusters = this.getAvailableClusters(file, clusters);
-        return Utilities.getRandomElement(availableClusters);//Utilities.getWeightedRandomElement(availableClusters, c => c.measureBandwidth || 0);
+        return Utilities.getRandomElement(availableClusters) || null;//Utilities.getWeightedRandomElement(availableClusters, c => c.measureBandwidth || 0);
     }
 
     public static availableInCluster(file: File, cluster: ClusterEntity): boolean {
