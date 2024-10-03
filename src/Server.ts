@@ -1223,7 +1223,7 @@ export class Server {
             });
 
             if (Config.instance.enableRequestCertificate) {
-                socket.on('request-cert', (data, callback: Function) => {
+                socket.on('request-cert', (callback: Function) => {
                     const ack = callback ? callback : (...rest: any[]) => {};
 
                     const cluster = this.sessionToClusterMap.get(socket.id);
@@ -1258,6 +1258,8 @@ export class Server {
                                 err = null;
                                 cert = { cert: certificate, key };
                                 validRecordFound = true;
+                                ack([null, cert]);
+                                return;
                             }
                         }
 
@@ -1312,9 +1314,7 @@ export class Server {
                     catch (e) {
                         err = e;
                     }
-                    finally {
-                        ack([err, cert]);
-                    }
+                    ack([err, cert]);
                 });
             }
 
