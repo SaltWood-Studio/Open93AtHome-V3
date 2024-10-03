@@ -1245,7 +1245,7 @@ export class Server {
                             const certificate = record.certificate;
                             const key = record.key;
                             const csr = record.csr;
-                            const date = record.createdAt;
+                            const date = record.validFrom;
                             const expires = record.expiresAt;
                             const now = Date.now();
 
