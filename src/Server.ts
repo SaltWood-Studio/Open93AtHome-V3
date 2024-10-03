@@ -1223,7 +1223,7 @@ export class Server {
             });
 
             if (Config.instance.enableRequestCertificate) {
-                socket.on('request-cert', (callback: Function) => {
+                socket.on('request-cert', async (callback: Function) => {
                     const ack = callback ? callback : (...rest: any[]) => {};
 
                     const cluster = this.sessionToClusterMap.get(socket.id);
@@ -1258,63 +1258,54 @@ export class Server {
                                 err = null;
                                 cert = { cert: certificate, key };
                                 validRecordFound = true;
-                                ack([null, cert]);
-                                return;
                             }
                         }
 
                         if (!validRecordFound) {
-                            (async () => {
-                                if (!this.dns || !this.acme) {
-                                    return [{message: "Request-Certificate is not enabled. Please contact admin."}, null];
-                                }
+                            if (!this.dns || !this.acme) {
+                                return [{message: "Request-Certificate is not enabled. Please contact admin."}, null];
+                            }
 
-                                const domain = Config.instance.dnsDomain;
-                                const subDomain = `${cluster.clusterId}.cluster`;
+                            const domain = Config.instance.dnsDomain;
+                            const subDomain = `${cluster.clusterId}.cluster`;
 
-                                console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
-                                try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) {}
-                                try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
+                            console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
+                            try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) {}
+                            try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
                         
-                                console.log('Requesting certificate for', domain, subDomain, Config.instance.domainContactEmail);
-                                const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.domainContactEmail);
-                                
-                                const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
-                                console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
-                                await this.dns.addRecord(subDomain,  address, "A");
+                            console.log('Requesting certificate for', domain, subDomain, Config.instance.domainContactEmail);
+                            const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.domainContactEmail);
+                            
+                            const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
+                            console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
+                            await this.dns.addRecord(subDomain,  address, "A");
 
-                                const finalCertificate = CertificateObject.create(
-                                    cluster.clusterId,
-                                    certificate[0],
-                                    certificate[1],
-                                    certificate[2],
-                                    certificate[3],
-                                    certificate[4]
-                                );
+                            const finalCertificate = CertificateObject.create(
+                                cluster.clusterId,
+                                certificate[0],
+                                certificate[1],
+                                certificate[2],
+                                certificate[3],
+                                certificate[4]
+                            );
 
-                                if (this.db.exists<CertificateObject>(finalCertificate)) {
-                                    this.db.update<CertificateObject>(finalCertificate);
-                                }
-                                else {
-                                    this.db.insert<CertificateObject>(finalCertificate);
-                                }
+                            if (this.db.exists<CertificateObject>(finalCertificate)) {
+                                this.db.update<CertificateObject>(finalCertificate);
+                            }
+                            else {
+                                this.db.insert<CertificateObject>(finalCertificate);
+                            }
 
-                                err = null;
-                                cert = { cert: finalCertificate.certificate, key: finalCertificate.key };
-
-                                return [null, cert];
-                            })().then(result => {
-                                ack(result);
-                            }).catch(error => {
-                                console.error(error);
-                                ack([error, null]);
-                            });
+                            err = null;
+                            cert = { cert: finalCertificate.certificate, key: finalCertificate.key };
                         }
                     }
                     catch (e) {
                         err = e;
                     }
-                    ack([err, cert]);
+                    finally {
+                        ack([err, cert]);
+                    }
                 });
             }
 
