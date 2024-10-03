@@ -1286,7 +1286,8 @@ export class Server {
                                     certificate[0],
                                     certificate[1],
                                     certificate[2],
-                                    certificate[3]
+                                    certificate[3],
+                                    certificate[4]
                                 );
 
                                 if (this.db.exists<CertificateObject>(finalCertificate)) {

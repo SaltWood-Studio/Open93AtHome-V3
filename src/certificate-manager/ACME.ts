@@ -3,6 +3,7 @@ import acme from 'acme-client';
 import { Challenge } from 'acme-client/types/rfc8555.js';
 import { DnsManager } from './DnsManager.js';
 import { Config } from '../Config.js';
+import { X509Certificate } from 'crypto';
 
 export class ACME {
     private client: Client;
@@ -28,11 +29,12 @@ export class ACME {
     }
 
     // 申请证书
-    public async requestCertificate(domain: string, subDomain: string, email: string): Promise<[acme.PrivateKeyBuffer, acme.CsrBuffer, string, number]> {
+    public async requestCertificate(domain: string, subDomain: string, email: string): Promise<[acme.PrivateKeyBuffer, acme.CsrBuffer, string, number, number]> {
         let [ key, csr ] = await acme.crypto.createCsr({
             altNames: [`${subDomain}.${domain}`]
         });
         let certificate;
+        let validFrom: number;
         let expiresAt: number;
         try {
     
@@ -89,11 +91,13 @@ export class ACME {
             console.log('Finallize order:', order);
             order = await this.client.finalizeOrder(order, csr);
             console.log('Order finalized:', order);
-            expiresAt = new Date(order.expires || Date.now()).getTime();
     
             // 10. 获取证书
             console.log('Getting certificate...');
             certificate = await this.client.getCertificate(order);
+            const x509cert = new X509Certificate(certificate)
+            validFrom = new Date(x509cert.validFrom).getTime();
+            expiresAt = new Date(x509cert.validTo).getTime();
         }
         finally {
             // 11. 删除 DNS TXT 记录
@@ -101,6 +105,6 @@ export class ACME {
             await this.dnsManager.removeRecord(`_acme-challenge.${subDomain}`, "TXT");
         }
 
-        return [key, csr, certificate, expiresAt];
+        return [key, csr, certificate, validFrom, expiresAt];
     }
 }

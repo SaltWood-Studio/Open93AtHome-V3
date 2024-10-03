@@ -5,7 +5,7 @@ import { Ignore, PrimaryKey, Table } from "../SQLiteHelper.js";
     key TEXT,
     csr TEXT,
     certificate TEXT,
-    createdAt INTEGER NOT NULL,
+    validFrom INTEGER NOT NULL,
     expiresAt INTEGER NOT NULL
 `)
 @PrimaryKey("clusterId")
@@ -18,7 +18,7 @@ export class CertificateObject {
 
     public certificate: string;
 
-    public createdAt: number;
+    public validFrom: number;
 
     public expiresAt: number;
 
@@ -27,17 +27,17 @@ export class CertificateObject {
         this.key = "";
         this.csr = "";
         this.certificate = "";
-        this.createdAt = 0;
+        this.validFrom = 0;
         this.expiresAt = 0;
     }
 
-    public static create(clusterId: string, key: Buffer, csr: Buffer, certificate: string, expiresAt: number): CertificateObject {
+    public static create(clusterId: string, key: Buffer, csr: Buffer, certificate: string, validFrom: number, expiresAt: number): CertificateObject {
         const obj = new CertificateObject();
         obj.clusterId = clusterId;
         obj.key = key.toString();
         obj.csr = csr.toString();
         obj.certificate = certificate;
-        obj.createdAt = Date.now();
+        obj.validFrom = validFrom;
         obj.expiresAt = expiresAt;
         return obj;
     }
