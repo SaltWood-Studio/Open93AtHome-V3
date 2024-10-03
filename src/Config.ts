@@ -12,7 +12,10 @@ export class Config {
     public readonly dnsSecretToken: string = env.get('DNS_SECRET_TOKEN').default("").asString();
     public readonly dnsDomain: string = env.get('DNS_DOMAIN').default("").asString();
     public readonly domainContactEmail: string = env.get('DOMAIN_CONTACT_EMAIL').default("").asString();
-    public readonly acmeStaging: boolean = env.get('ACME_STAGING').default("false").asBool();
+    // public readonly acmeStaging: boolean = env.get('ACME_STAGING').default("false").asBool();
+
+    public readonly zerosslKid: string = env.get('ZEROSSL_KID').default("").asString();
+    public readonly zerosslHmacKey: string = env.get('ZEROSSL_HMAC_KEY').default("").asString();
 
     public readonly githubOAuthClientId: string = env.get('GITHUB_OAUTH_CLIENT_ID').default("").asString();
     public readonly githubOAuthClientSecret: string = env.get('GITHUB_OAUTH_CLIENT_SECRET').default("").asString();
