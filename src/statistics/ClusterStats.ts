@@ -12,7 +12,7 @@ export class StatsStorage {
 
     constructor(id: string) {
         this.id = id;
-        this.filePath = path.join(Config.getInstance().statsDir, `${this.id}.stats.json`); // 改为 .json 文件
+        this.filePath = path.join(Config.instance.statsDir, `${this.id}.stats.json`); // 改为 .json 文件
         this.data = [];
         this.dataUpdated = false;  // 初始时数据未更新
 

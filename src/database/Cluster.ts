@@ -90,7 +90,7 @@ export class ClusterEntity {
             clearInterval(this.interval);
             this.interval = null;
         }
-        if (!Config.getInstance().noWarden) {
+        if (!Config.instance.noWarden) {
             this.interval = setInterval(() => {
                 const file = Utilities.getRandomElement(files);
                 if (file) {

@@ -8,7 +8,7 @@ interface RateLimitRecord {
 }
 
 class RateLimiter {
-    private static instance: RateLimiter;
+    private static _instance: RateLimiter;
     private rateLimitMap: Map<string, RateLimitRecord>;
     public static RATE_LIMIT: number = 10;
     public static REFILL_INTERVAL: number = 1000;
@@ -22,12 +22,16 @@ class RateLimiter {
         setInterval(this.cleanupRateLimitMap.bind(this), RateLimiter.CLEANUP_INTERVAL);
     }
 
+    public static get instance(): RateLimiter {
+        return RateLimiter.getInstance();
+    }
+
     // 获取单例实例
     public static getInstance(): RateLimiter {
-        if (!RateLimiter.instance) {
-            RateLimiter.instance = new RateLimiter();
+        if (!RateLimiter._instance) {
+            RateLimiter._instance = new RateLimiter();
         }
-        return RateLimiter.instance;
+        return RateLimiter._instance;
     }
 
     // 速率限制中间件
@@ -36,7 +40,7 @@ class RateLimiter {
             next(); // 速率限制功能关闭，直接处理请求
             return;
         }
-        const ip = (req.headers[Config.getInstance().sourceIpHeader] as string).split(',')[0] || req.ip; // 根据请求的IP地址进行限速
+        const ip = (req.headers[Config.instance.sourceIpHeader] as string).split(',')[0] || req.ip; // 根据请求的IP地址进行限速
         if (!ip) throw new Error('No IP address provided.');
         const currentTime = Date.now();
 
@@ -84,5 +88,5 @@ class RateLimiter {
 }
 
 // 导出单例实例的中间件方法
-export const rateLimiter = RateLimiter.getInstance().rateLimiterMiddleware.bind(RateLimiter.getInstance());
+export const rateLimiter = RateLimiter.instance.rateLimiterMiddleware.bind(RateLimiter.instance);
 export default RateLimiter;

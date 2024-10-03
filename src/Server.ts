@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import http from 'http';
 import fs from 'fs';
-import path from 'path';
+import path, { resolve } from 'path';
 import { Server as SocketIOServer } from 'socket.io';
 // import cors from 'cors';
 import JwtHelper from './JwtHelper.js';
@@ -18,9 +18,14 @@ import cookieParser from 'cookie-parser';
 import { Plugin } from './plugin/Plugin.js';
 import { PluginLoader } from './plugin/PluginLoader.js';
 import {type Got} from 'got'
-import { permission } from 'process';
+import acme from 'acme-client'
 import { FileList } from './FileList.js';
 import { rateLimiter } from './RateLimit.js';
+import { CertificateObject } from './database/Certificate.js';
+import { DnsManager } from './certificate-manager/dns-manager.js';
+import { CloudFlare } from './certificate-manager/cloudflare.js';
+import { DNSPod } from './certificate-manager/dnspod.js';
+import { ACME } from './certificate-manager/acme.js';
 
 type Indexable<T> = {
     [key: string]: T;
@@ -38,7 +43,7 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
 };
 
 const getRealIP = (obj: Indexable<any>): string => {
-    return (obj[Config.getInstance().sourceIpHeader] as string).split(',')[0];
+    return (obj[Config.instance.sourceIpHeader] as string).split(',')[0];
 }
 
 const logAccess = (req: Request, res: Response) => {
@@ -61,6 +66,8 @@ export class Server {
     protected pluginLoader: PluginLoader;
     protected got: Got;
     protected sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
+    protected dns: DnsManager | null = null;
+    protected acme: ACME | null = null;
     
     protected get files(): File[] {
         return this.fileList.files;
@@ -99,9 +106,6 @@ export class Server {
 
         this.fileList = new FileList(undefined, this.db.getEntities<ClusterEntity>(ClusterEntity));
 
-        // 通过访问唯一 instance 来触发单例模式的创建
-        JwtHelper.getInstance();
-
         // 创建 HTTP 服务器
         this.httpServer = http.createServer(this.app);
 
@@ -133,6 +137,26 @@ export class Server {
         await this.loadPlugins();
         await this.updateFiles();
         this.setupRoutes();
+
+        // 加载证书管理器
+        if (Config.instance.enableRequestCertificate) {
+            switch (Config.instance.dnsType) {
+                case "cloudflare":
+                    this.dns = new CloudFlare(Config.instance.dnsSecretId, Config.instance.dnsSecretToken, Config.instance.dnsDomain);
+                    break;
+                case "dnspod":
+                    this.dns = new DNSPod(Config.instance.dnsSecretId, Config.instance.dnsSecretToken, Config.instance.dnsDomain);
+                    break;
+                default:
+                    if (!Config.instance.dnsType) {
+                        throw new Error("DNS type is not specified in \".env\" file. Specify DNS type in it or disable request certificate.");
+                    }
+                    else {
+                        throw new Error(`Unsupported DNS type: ${Config.instance.dnsType}`);
+                    }
+            }
+            this.acme = new ACME(this.dns, await acme.crypto.createPrivateKey());
+        }
     }
 
     public async loadPlugins(): Promise<void> {
@@ -201,15 +225,15 @@ export class Server {
 
     public start(): void {
         // 启动 HTTPS 服务器
-        this.httpServer.listen(Config.getInstance().port, () => {
-          console.log(`HTTP Server running on http://localhost:${Config.getInstance().port}`);
+        this.httpServer.listen(Config.instance.port, () => {
+          console.log(`HTTP Server running on http://localhost:${Config.instance.port}`);
         });
     }
 
     public setupRoutes(): void {
         this.setupHttp();
         this.setupSocketIO();
-        if (Config.getInstance().enableDebugRoutes) this.setupDebugRoutes();
+        if (Config.instance.enableDebugRoutes) this.setupDebugRoutes();
     }
 
     public setupDebugRoutes(): void {
@@ -282,7 +306,7 @@ export class Server {
     public setupHttp(): void {
         // 设置中间件
         this.app.use(logMiddleware);
-        if (Config.getInstance().requestRateLimit > 0) this.app.use(rateLimiter);
+        if (Config.instance.requestRateLimit > 0) this.app.use(rateLimiter);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
@@ -306,7 +330,7 @@ export class Server {
         });
         this.app.get('/93AtHome/dashboard/oauth_id', (req: Request, res: Response) => {
             res.statusCode = 200;
-            res.end(Config.getInstance().githubOAuthClientId);
+            res.end(Config.instance.githubOAuthClientId);
         });
         this.app.get('/93AtHome/dashboard/user/oauth', async (req: Request, res: Response) => {
             res.set("Content-Type", "application/json");
@@ -315,11 +339,11 @@ export class Server {
                 const code = req.query.code as string || '';
         
                 // 请求GitHub获取access_token
-                const tokenData = await this.got.post(`https://${Config.getInstance().githubUrl}/login/oauth/access_token`, {
+                const tokenData = await this.got.post(`https://${Config.instance.githubUrl}/login/oauth/access_token`, {
                     form: {
                         code,
-                        client_id: Config.getInstance().githubOAuthClientId,
-                        client_secret: Config.getInstance().githubOAuthClientSecret
+                        client_id: Config.instance.githubOAuthClientId,
+                        client_secret: Config.instance.githubOAuthClientSecret
                     },
                     headers: {
                         'Accept': 'application/json'
@@ -329,7 +353,7 @@ export class Server {
         
                 const accessToken = tokenData.access_token;
         
-                let userResponse = await this.got.get(`https://${Config.getInstance().githubApiUrl}/user`, {
+                let userResponse = await this.got.get(`https://${Config.instance.githubApiUrl}/user`, {
                     headers: {
                         'Authorization': `token ${accessToken}`,
                         'Accept': 'application/json',
@@ -352,9 +376,9 @@ export class Server {
                 }
         
                 // 生成JWT并设置cookie
-                const token = JwtHelper.getInstance().issueToken({
+                const token = JwtHelper.instance.issueToken({
                     userId: user.id,
-                    clientId: Config.getInstance().githubOAuthClientId
+                    clientId: Config.instance.githubOAuthClientId
                 }, "user", 60 * 60 * 24);
         
                 res.cookie('token', token, {
@@ -364,9 +388,9 @@ export class Server {
                 });
 
                 if (this.db.getEntity<UserEntity>(UserEntity, user.id)?.isSuperUser) {
-                    const adminToken = JwtHelper.getInstance().issueToken({
+                    const adminToken = JwtHelper.instance.issueToken({
                         userId: user.id,
-                        clientId: Config.getInstance().githubOAuthClientId
+                        clientId: Config.instance.githubOAuthClientId
                     }, "admin", 60 * 60 * 24);
                     res.cookie('adminToken', adminToken, {
                         expires: new Date(Date.now() + 86400000), // 24小时后过期
@@ -390,7 +414,7 @@ export class Server {
         });
         this.app.get('/93AtHome/update_files', (req: Request, res: Response) => {
             const token = req.query.token as string || '';
-            if (token !== Config.getInstance().adminToken) {
+            if (token !== Config.instance.updateToken) {
                 res.status(403).send(); // 禁止访问
                 return;
             }
@@ -417,7 +441,7 @@ export class Server {
                     res.status(403).send();
                     return;
                 }
-                const token = JwtHelper.getInstance().issueToken({
+                const token = JwtHelper.instance.issueToken({
                     clusterId: clusterId
                 }, "cluster-challenge", 60 * 5);
         
@@ -435,13 +459,13 @@ export class Server {
             const clusterId = req.body.clusterId as string;
             const signature = req.body.signature as string;
             const challenge = req.body.challenge as string;
-            const claims = JwtHelper.getInstance().verifyToken(challenge, 'cluster-challenge') as { clusterId: string };
+            const claims = JwtHelper.instance.verifyToken(challenge, 'cluster-challenge') as { clusterId: string };
             const cluster = this.clusters.find(c => c.clusterId === claims.clusterId);
         
             if (cluster) {
 
                 if (claims && claims.clusterId === clusterId && Utilities.computeSignature(challenge, signature, cluster.clusterSecret)) {
-                    const token = JwtHelper.getInstance().issueToken(
+                    const token = JwtHelper.instance.issueToken(
                         { clusterId: clusterId },
                         'cluster',
                         60 * 60 * 24 // 过期时间：24小时
@@ -497,7 +521,7 @@ export class Server {
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json({ sync: { concurrency: Config.getInstance().concurrency, source: "center" }});
+            res.status(200).json({ sync: { concurrency: Config.instance.concurrency, source: "center" }});
         });
         this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
@@ -525,7 +549,7 @@ export class Server {
             const p = decodeURI(req.path);
             const file = this.fileList.getFile("path", p);
             if (file) {
-                if (Config.getInstance().forceNoOpen) {
+                if (Config.instance.forceNoOpen) {
                     this.sendFile(req, res, file);
                     return;
                 }
@@ -645,7 +669,7 @@ export class Server {
                 res.status(401).send(); // 未登录
                 return;
             }
-            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
                 res.status(404).send(); // 用户不存在
                 return;
@@ -664,7 +688,7 @@ export class Server {
                 res.status(401).send(); // 未登录
                 return;
             }
-            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number, exp: number }).userId);
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number, exp: number }).userId);
             if (!user) {
                 res.status(404).send(); // 用户不存在
                 return;
@@ -688,7 +712,7 @@ export class Server {
                 res.status(401).send(); // 未登录
                 return;
             }
-            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
                 res.status(404).send(); // 用户不存在
                 return;
@@ -713,7 +737,7 @@ export class Server {
                 res.status(401).send(); // 未登录
                 return;
             }
-            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
                 res.status(404).send(); // 用户不存在
                 return;
@@ -737,7 +761,7 @@ export class Server {
                 res.status(401).send(); // 未登录
                 return;
             }
-            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
                 res.status(404).send(); // 用户不存在
                 return;
@@ -787,7 +811,7 @@ export class Server {
                 res.status(401).send(); // 未登录
                 return;
             }
-            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(token, 'user') as { userId: number }).userId);
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
                 res.status(404).send(); // 用户不存在
                 return;
@@ -886,7 +910,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/profile', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const userId = JwtHelper.getInstance().verifyToken(req.cookies.token, 'user') as { userId: number };
+            const userId = JwtHelper.instance.verifyToken(req.cookies.token, 'user') as { userId: number };
             const clusterId = req.query.clusterId as string;
             const clusterName = req.body.clusterName as string || null;
             const bandwidth = req.body.bandwidth as number || null;
@@ -921,7 +945,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/sudo', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.getInstance().verifyToken(req.cookies.adminToken, 'admin') as { userId: number }).userId);
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(req.cookies.adminToken, 'admin') as { userId: number }).userId);
             if (!user) {
                 res.status(401).send();
                 return;
@@ -940,13 +964,13 @@ export class Server {
                 });
                 return;
             }
-            const targetToken = JwtHelper.getInstance().issueToken({
+            const targetToken = JwtHelper.instance.issueToken({
                 userId: targetUser.id,
-                clientId: Config.getInstance().githubOAuthClientId
+                clientId: Config.instance.githubOAuthClientId
             }, 'user', 1 * 24 * 60 * 60);
-            const newAdminToken = JwtHelper.getInstance().issueToken({
+            const newAdminToken = JwtHelper.instance.issueToken({
                 userId: user.id,
-                clientId: Config.getInstance().githubOAuthClientId
+                clientId: Config.instance.githubOAuthClientId
             }, 'admin', 1 * 24 * 60 * 60);
             res.cookie('token', targetToken, {
                 expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
@@ -1017,7 +1041,7 @@ export class Server {
                 }
         
                 // 验证 token
-                const object = JwtHelper.getInstance().verifyToken(token, 'cluster');
+                const object = JwtHelper.instance.verifyToken(token, 'cluster');
         
                 // 检查 payload 是否是对象类型，并且包含 exp 字段
                 if (object && typeof object === 'object' && 'exp' in object && 'clusterId' in object) {
@@ -1082,9 +1106,9 @@ export class Server {
                     return;
                 }
 
-                if (Config.getInstance().failAttemptsToBan > 0 && Config.getInstance().failAttemptsDuration > 0) {
-                    Utilities.filterMinutes(cluster.enableHistory, Config.getInstance().failAttemptsDuration);
-                    if (cluster.enableHistory.length >= Config.getInstance().failAttemptsToBan) {
+                if (Config.instance.failAttemptsToBan > 0 && Config.instance.failAttemptsDuration > 0) {
+                    Utilities.filterMinutes(cluster.enableHistory, Config.instance.failAttemptsDuration);
+                    if (cluster.enableHistory.length >= Config.instance.failAttemptsToBan) {
                         ack(["Error: Too many failed enable requests. This cluster is now banned."]);
                         cluster.isBanned = 1;
                         cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
@@ -1117,7 +1141,7 @@ export class Server {
                 //     ack([err.message]);
                 //     console.error(err);
                 // });
-                if (Config.getInstance().noWarden){
+                if (Config.instance.noWarden){
                     cluster.doOnline(this.files, socket);
                     this.db.update(cluster);
                     ack([null, true]);
@@ -1190,6 +1214,96 @@ export class Server {
                 }
             });
 
+            if (Config.instance.enableRequestCertificate) {
+                socket.on('request-cert', (data, callback: Function) => {
+                    const ack = callback ? callback : (...rest: any[]) => {};
+
+                    const cluster = this.sessionToClusterMap.get(socket.id);
+
+                    if (!cluster) {
+                        ack([null, false]);
+                        return;
+                    }
+
+                    let [err, cert]: [any | null, {cert: string, key: string} | null] = [null, null];
+                    let validRecordFound = false;
+
+                    try {
+                        const record = this.db.getEntities<CertificateObject>(CertificateObject).find(c => c.clusterId === cluster.clusterId);
+
+                        if (record) {
+                            const certificate = record.certificate;
+                            const key = record.key;
+                            const csr = record.csr;
+                            const date = record.createdAt;
+                            const expires = record.expiresAt;
+                            const now = Date.now();
+
+                            if (now + (10 * 24 * 60 * 60 * 1000) > expires) {
+                                socket.send("Certificate will expire in 10 days. Will generate a new one.");
+                                validRecordFound = false;
+                            }
+                            else {
+                                socket.send("Valid certificate found in database. Sending back to client.");
+                                err = null;
+                                cert = { cert: certificate, key };
+                                validRecordFound = true;
+                            }
+                        }
+
+                        if (!validRecordFound) {
+                            (async () => {
+                                if (!this.dns || !this.acme) {
+                                    return [{message: "Request-Certificate is not enabled. Please contact admin."}, null];
+                                }
+
+                                const domain = Config.instance.dnsDomain;
+                                const subDomain = `${cluster.clusterId}.cluster`;
+                                console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
+                                try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) {}
+                                try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
+                        
+                                console.log('Requesting certificate for', domain, subDomain, Config.instance.domainContactEmail);
+                                const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.domainContactEmail);
+                                
+                                this.dns.addRecord(subDomain, (socket.handshake.headers[Config.instance.sourceIpHeader] as string).at(0) || socket.handshake.address , "A");
+
+                                const finalCertificate = CertificateObject.create(
+                                    cluster.clusterId,
+                                    certificate[0],
+                                    certificate[1],
+                                    certificate[2],
+                                    certificate[3]
+                                );
+
+                                if (this.db.getEntity<CertificateObject>(CertificateObject, cluster.clusterId)) {
+                                    this.db.update<CertificateObject>(finalCertificate);
+                                }
+                                else {
+                                    this.db.insert<CertificateObject>(finalCertificate);
+                                }
+
+                                err = null;
+                                cert = { cert: finalCertificate.certificate, key: finalCertificate.key };
+
+                                return [null, cert];
+                            })().then(result => {
+                                ack(result);
+                            }).catch(error => {
+                                console.error(error);
+                                ack([error, null]);
+                            });
+                        }
+                    }
+                    catch (e) {
+                        err = e;
+                    }
+                    finally {
+                        ack([err, cert]);
+                    }
+                });
+            }
+
             socket.on('disconnect', () => {
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
@@ -1201,7 +1315,7 @@ export class Server {
                         this.db.update(cluster);
                     }
                 }
-            })
+            });
         });
     }
 }

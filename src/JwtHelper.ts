@@ -4,7 +4,7 @@ import { writeFileSync, readFileSync, existsSync } from 'fs';
 import path from 'path';
 
 class JwtHelper {
-    private static instance: JwtHelper;
+    private static _instance: JwtHelper;
     private readonly privateKey: KeyObject;
     private readonly publicKey: KeyObject;
     private static readonly privateKeyPath = path.resolve('./data', 'private.key');
@@ -27,12 +27,16 @@ class JwtHelper {
         }
     }
 
+    public static get instance(): JwtHelper {
+        return JwtHelper.getInstance();
+    }
+
     // 获取单例实例
     public static getInstance(): JwtHelper {
-        if (!JwtHelper.instance) {
-            JwtHelper.instance = new JwtHelper();
+        if (!JwtHelper._instance) {
+            JwtHelper._instance = new JwtHelper();
         }
-        return JwtHelper.instance;
+        return JwtHelper._instance;
     }
 
     // 颁发JWT

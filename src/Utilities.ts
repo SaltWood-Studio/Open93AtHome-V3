@@ -207,7 +207,7 @@ export class Utilities {
         return Utilities.getUrlByPath(file.hash, `/download/${file.hash}`, cluster);
     }
     public static getUrlByPath(hash: string, path: string, cluster: ClusterEntity): string {
-        return `${Config.getInstance().forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/${path.substring(1)}?${Utilities.getSign(hash, cluster.clusterSecret)}`
+        return `${Config.instance.forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/${path.substring(1)}?${Utilities.getSign(hash, cluster.clusterSecret)}`
     }
 
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {
@@ -394,11 +394,11 @@ export class Utilities {
     }
 
     public static verifyClusterRequest(req: Request): boolean {
-        return JwtHelper.getInstance().verifyToken(req.headers.authorization?.split(' ').at(-1), 'cluster') instanceof Object;
+        return JwtHelper.instance.verifyToken(req.headers.authorization?.split(' ').at(-1), 'cluster') instanceof Object;
     }
 
     public static tryGetRequestCluster<T>(req: Request): T {
-        return JwtHelper.getInstance().verifyToken(req.headers.authorization?.split(' ').at(-1), 'cluster') as T;
+        return JwtHelper.instance.verifyToken(req.headers.authorization?.split(' ').at(-1), 'cluster') as T;
     }
 
     public static toUrlSafeBase64String(buffer: Buffer): string {
@@ -429,7 +429,7 @@ export class Utilities {
      * verifyUser
      */
     public static verifyUser(req: Request, res: Response, db: SQLiteHelper): boolean {
-        const id = (JwtHelper.getInstance().verifyToken(req.cookies.token, 'user') as { userId: number })?.userId;
+        const id = (JwtHelper.instance.verifyToken(req.cookies.token, 'user') as { userId: number })?.userId;
         if (!id) {
             res.status(401).send('Unauthorized');
             return false;
@@ -443,7 +443,7 @@ export class Utilities {
     }
 
     public static verifyAdmin(req: Request, res: Response, db: SQLiteHelper): boolean {
-        const id = (JwtHelper.getInstance().verifyToken(req.cookies.adminToken, 'admin') as { userId: number })?.userId;
+        const id = (JwtHelper.instance.verifyToken(req.cookies.adminToken, 'admin') as { userId: number })?.userId;
         if (!id) {
             res.status(401).send('Unauthorized');
             return false;

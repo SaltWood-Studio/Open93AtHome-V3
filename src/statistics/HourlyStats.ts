@@ -10,7 +10,7 @@ export class HourlyStatsStorage {
     private dataUpdated: boolean;
 
     constructor() {
-        this.filePath = path.join(Config.getInstance().statsDir, `center.stats.json`);
+        this.filePath = path.join(Config.instance.statsDir, `center.stats.json`);
         this.data = [];
         this.dataUpdated = false;
 
