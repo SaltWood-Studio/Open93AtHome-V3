@@ -101,6 +101,7 @@ export class Server {
 
         this.db.createTable<UserEntity>(UserEntity);
         this.db.createTable<ClusterEntity>(ClusterEntity);
+        this.db.createTable<CertificateObject>(CertificateObject);
         this.stats = this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => new StatsStorage(c.clusterId));
         this.centerStats = new HourlyStatsStorage();
 
