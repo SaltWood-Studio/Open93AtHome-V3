@@ -28,6 +28,7 @@ export class Config {
     public readonly dnsSecretToken: string = env.get('DNS_SECRET_TOKEN').default("").asString();
     public readonly dnsDomain: string = env.get('DNS_DOMAIN').default("").asString();
     public readonly domainContactEmail: string = env.get('DOMAIN_CONTACT_EMAIL').default("").asString();
+    public readonly acmeStaging: boolean = env.get('ACME_STAGING').default("false").asBool();
 
     // 开发变量
     public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();

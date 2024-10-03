@@ -2,6 +2,7 @@ import { Client, directory } from 'acme-client';
 import acme from 'acme-client';
 import { Challenge } from 'acme-client/types/rfc8555.js';
 import { DnsManager } from './dns-manager.js';
+import { Config } from '../Config.js';
 
 export class ACME {
     private client: Client;
@@ -12,7 +13,7 @@ export class ACME {
 
         // 初始化 ACME 客户端，使用 Let's Encrypt 的 staging 环境测试
         this.client = new Client({
-            directoryUrl: directory.letsencrypt.production, // 换成 production 用于生产环境
+            directoryUrl: Config.instance.acmeStaging ? directory.letsencrypt.staging : directory.letsencrypt.production, // 换成 production 用于生产环境
             accountKey: privateKey
         });
     }

@@ -5,7 +5,8 @@ import { Ignore, PrimaryKey, Table } from "../SQLiteHelper.js";
     key TEXT,
     csr TEXT,
     certificate TEXT,
-    createdAt INTEGER NOT NULL
+    createdAt INTEGER NOT NULL,
+    expiresAt INTEGER NOT NULL
 `)
 @PrimaryKey("clusterId")
 export class CertificateObject {
