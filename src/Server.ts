@@ -157,7 +157,18 @@ export class Server {
                     }
             }
             console.log(`Certificate manager loaded. Using ${Config.instance.dnsType} DNS provider.`);
-            this.acme = new ACME(this.dns, await acme.crypto.createPrivateKey());
+
+            // 检查 ./data/acme.key
+            let buffer;
+            if (fs.existsSync(resolve("./data/acme.key"))) {
+                buffer = fs.readFileSync(resolve("./data/acme.key"));
+            }
+            else {
+                // 生成 ./data/acme.key
+                buffer = await acme.forge.createPrivateKey();
+                fs.writeFileSync(resolve("./data/acme.key"), buffer);
+            }
+            this.acme = new ACME(this.dns, buffer);
         }
     }
 
