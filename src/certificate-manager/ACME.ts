@@ -103,6 +103,10 @@ export class ACME {
             validFrom = new Date(x509cert.validFrom).getTime();
             expiresAt = new Date(x509cert.validTo).getTime();
         }
+        catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
         finally {
             // 11. 删除 DNS TXT 记录
             console.log('Removing DNS-01 challenge record from DNS...');

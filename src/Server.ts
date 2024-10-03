@@ -1302,6 +1302,7 @@ export class Server {
                     }
                     catch (e) {
                         err = e;
+                        console.error(e);
                     }
                     finally {
                         ack([err, cert]);
