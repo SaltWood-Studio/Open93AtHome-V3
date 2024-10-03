@@ -1123,7 +1123,13 @@ export class Server {
                     return;
                 }
 
-                cluster.endpoint = enableData.host;
+                if (enableData.byoc) {
+                    cluster.endpoint = enableData.host;
+                }
+                else {
+                    cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dnsDomain}`;
+                    this.db.update(cluster);
+                }
                 cluster.port = enableData.port;
                 cluster.version = enableData.version;
 
@@ -1259,6 +1265,7 @@ export class Server {
 
                                 const domain = Config.instance.dnsDomain;
                                 const subDomain = `${cluster.clusterId}.cluster`;
+
                                 console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
                                 try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) {}
                                 try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
