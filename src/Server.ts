@@ -155,6 +155,7 @@ export class Server {
                         throw new Error(`Unsupported DNS type: ${Config.instance.dnsType}`);
                     }
             }
+            console.log(`Certificate manager loaded. Using ${Config.instance.dnsType} DNS provider.`);
             this.acme = new ACME(this.dns, await acme.crypto.createPrivateKey());
         }
     }
@@ -1230,6 +1231,8 @@ export class Server {
                         ack([null, false]);
                         return;
                     }
+
+                    console.log(`Cluster ${cluster.clusterId} is trying to request a certificate.`);
 
                     let [err, cert]: [any | null, {cert: string, key: string} | null] = [null, null];
                     let validRecordFound = false;
