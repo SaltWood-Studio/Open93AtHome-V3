@@ -1277,7 +1277,7 @@ export class Server {
                                 console.log('Requesting certificate for', domain, subDomain, Config.instance.domainContactEmail);
                                 const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.domainContactEmail);
                                 
-                                this.dns.addRecord(subDomain, (socket.handshake.headers[Config.instance.sourceIpHeader] as string).at(0) || socket.handshake.address , "A");
+                                await this.dns.addRecord(subDomain, (socket.handshake.headers[Config.instance.sourceIpHeader] as string).at(0) || socket.handshake.address , "A");
 
                                 const finalCertificate = CertificateObject.create(
                                     cluster.clusterId,

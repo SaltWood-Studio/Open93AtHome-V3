@@ -43,7 +43,7 @@ export class CloudFlare implements DnsManager {
     public async addRecord(recordName: string, value: string, type: "A" | "AAAA" | "CNAME" | "MX" | "NS" | "TXT"): Promise<void> {
         const data = {
             type: type,
-            name: recordName,
+            name: `${recordName}.${this.domain}`,
             content: value,
             ttl: CloudFlare.TTL,
             proxied: false // 根据需求可以设置为 true 或 false
@@ -75,7 +75,7 @@ export class CloudFlare implements DnsManager {
 
     public async getRecords(): Promise<any[]> {
         const records = await this.request('GET', `/zones/${this.zoneId}/dns_records`);
-        return records; // 返回 DNS 记录列表
+        return records.result; // 返回 DNS 记录列表
     }
 
     public async getRecordByType(recordName: string, recordType: "A" | "AAAA" | "CNAME" | "MX" | "NS" | "TXT"): Promise<any[]> {
