@@ -1,7 +1,7 @@
 import { Client, directory } from 'acme-client';
 import acme from 'acme-client';
 import { Challenge } from 'acme-client/types/rfc8555.js';
-import { DnsManager } from './dns-manager.js';
+import { DnsManager } from './DnsManager.js';
 import { Config } from '../Config.js';
 
 export class ACME {

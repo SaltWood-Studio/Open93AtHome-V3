@@ -22,10 +22,10 @@ import acme from 'acme-client'
 import { FileList } from './FileList.js';
 import { rateLimiter } from './RateLimit.js';
 import { CertificateObject } from './database/Certificate.js';
-import { DnsManager } from './certificate-manager/dns-manager.js';
-import { CloudFlare } from './certificate-manager/cloudflare.js';
-import { DNSPod } from './certificate-manager/dnspod.js';
-import { ACME } from './certificate-manager/acme.js';
+import { DnsManager } from './certificate-manager/DnsManager.js';
+import { CloudFlare } from './certificate-manager/CloudFlare.js';
+import { DNSPod } from './certificate-manager/DNSPod.js';
+import { ACME } from './certificate-manager/ACME.js';
 
 type Indexable<T> = {
     [key: string]: T;
@@ -1277,7 +1277,9 @@ export class Server {
                                 console.log('Requesting certificate for', domain, subDomain, Config.instance.domainContactEmail);
                                 const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.domainContactEmail);
                                 
-                                await this.dns.addRecord(subDomain, (socket.handshake.headers[Config.instance.sourceIpHeader] as string).at(0) || socket.handshake.address , "A");
+                                const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
+                                console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
+                                await this.dns.addRecord(subDomain,  address, "A");
 
                                 const finalCertificate = CertificateObject.create(
                                     cluster.clusterId,

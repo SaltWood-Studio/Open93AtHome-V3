@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as crypto from 'crypto';
-import { DnsManager } from './dns-manager.js';
+import { DnsManager } from './DnsManager.js';
 
 export class DNSPod implements DnsManager {
     private secretId: string;
