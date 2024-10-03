@@ -27,4 +27,4 @@ RUN rm -rf node_modules && \
 RUN npm install -g typescript && npm install && npm run build
 
 # 启动应用程序
-CMD ["node", "dist/index.js"]
+CMD ["node", "--enable-source-maps", "dist/index.js"]

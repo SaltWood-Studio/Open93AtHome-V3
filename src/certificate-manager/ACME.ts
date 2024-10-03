@@ -34,84 +34,31 @@ export class ACME {
 
     // 申请证书
     public async requestCertificate(domain: string, subDomain: string, email: string): Promise<[acme.PrivateKeyBuffer, acme.CsrBuffer, string, number, number]> {
-        let [ key, csr ] = await acme.crypto.createCsr({
+        const [ key, csr ] = await acme.crypto.createCsr({
             altNames: [`${subDomain}.${domain}`]
         });
-        let certificate;
-        let validFrom: number;
-        let expiresAt: number;
-        try {
-    
-            // 1. 注册 ACME 账户
-            console.log('Registering ACME account...');
-            await this.registerAccount(email);
-    
-            // 2. 请求一个新的 ACME 订单
-            console.log('Requesting a new ACME order...');
-            let order = await this.client.createOrder({ identifiers: [{ type: 'dns', value: `${subDomain}.${domain}` }] });
-            console.log('Order created:', order);
-    
-            // 3. 获取 Authorization 对象
-            console.log('Getting authorization objects...');
-            const authorizations = await this.client.getAuthorizations(order);
-            const dnsAuthorization = authorizations[0]; // 选择第一个授权对象
-            console.log('Authorization objects:', authorizations);
-            console.log('Selected authorization object:', dnsAuthorization);
-    
-            // 4. 查找并准备 DNS-01 验证信息
-            console.log('Preparing DNS-01 challenge...');
-            const dnsChallenge = dnsAuthorization.challenges.find(
-                (challenge: Challenge) => challenge.type === 'dns-01'
-            );
-            console.log('DNS-01 challenge:', dnsChallenge);
-    
-            if (!dnsChallenge) {
-                throw new Error('DNS-01 challenge not found');
-            }
-    
-            // 5. 生成 DNS TXT 记录值
-            console.log('Generating DNS-01 challenge value...');
-            const keyAuthorization = await this.client.getChallengeKeyAuthorization(dnsChallenge);
-            const txtValue = keyAuthorization;
-            console.log('DNS-01 challenge value:', txtValue);
-
-            // 6. 添加 TXT 记录到 DNS
-            console.log('Adding DNS-01 challenge record to DNS...');
-            await this.dnsManager.addRecord(`_acme-challenge.${subDomain}`, txtValue, "TXT");
-    
-            // 7. 通知 ACME 服务器验证挑战
-            console.log('Notifying ACME server of DNS-01 challenge...');
-            await this.client.verifyChallenge(dnsAuthorization, dnsChallenge); // 添加 dnsAuthorization 参数
-    
-            // 8. 完成 ACME 挑战
-            console.log('Completing ACME challenge...');
-            await this.client.completeChallenge(dnsChallenge); // 添加 dnsAuthorization 参数
-    
-            // 9. 等待订单状态变为 "valid"
-            console.log('Waiting for order to be valid...');
-            order = await this.client.waitForValidStatus(order);
-            console.log('Order is valid:', order);
-            
-            console.log('Finallize order:', order);
-            order = await this.client.finalizeOrder(order, csr);
-            console.log('Order finalized:', order);
-    
-            // 10. 获取证书
-            console.log('Getting certificate...');
-            certificate = await this.client.getCertificate(order);
-            const x509cert = new X509Certificate(certificate)
-            validFrom = new Date(x509cert.validFrom).getTime();
-            expiresAt = new Date(x509cert.validTo).getTime();
-        }
-        catch (error) {
-            console.error('Error:', error);
-            throw error;
-        }
-        finally {
-            // 11. 删除 DNS TXT 记录
-            console.log('Removing DNS-01 challenge record from DNS...');
-            await this.dnsManager.removeRecord(`_acme-challenge.${subDomain}`, "TXT");
-        }
+        const certificate = await this.client.auto({
+            challengeCreateFn: async (authz: acme.Authorization, challenge: Challenge, keyAuthorization: string) => {
+                if (challenge.type !== 'dns-01') {
+                    throw new Error(`Unsupported challenge type: ${challenge.type}`);
+                }
+                const recordValue = keyAuthorization;
+                this.dnsManager.addRecord(`_acme-challenge.${subDomain}`, recordValue, 'TXT');
+            },
+            challengeRemoveFn: async (authz: acme.Authorization, challenge: Challenge, keyAuthorization: string) => {
+                if (challenge.type !== 'dns-01') {
+                    throw new Error(`Unsupported challenge type: ${challenge.type}`);
+                }
+                this.dnsManager.removeRecord(`_acme-challenge.${subDomain}`, 'TXT');
+            },
+            csr,
+            email,
+            termsOfServiceAgreed: true,
+            challengePriority: ['dns-01']
+        });
+        const x509cert = new X509Certificate(certificate);
+        const validFrom = new Date(x509cert.validFrom).getTime();
+        const expiresAt = new Date(x509cert.validTo).getTime();
 
         return [key, csr, certificate, validFrom, expiresAt];
     }
