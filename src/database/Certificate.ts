@@ -1,12 +1,12 @@
 import { Ignore, PrimaryKey, Table } from "../SQLiteHelper.js";
 
-@Table("certificates", `
+@Table("certificateobjects", `
     clusterId TEXT NOT NULL PRIMARY KEY UNIQUE,
     key TEXT,
     csr TEXT,
     certificate TEXT,
-    validFrom INTEGER NOT NULL,
-    expiresAt INTEGER NOT NULL
+    validFrom INTEGER,
+    expiresAt INTEGER
 `)
 @PrimaryKey("clusterId")
 export class CertificateObject {
