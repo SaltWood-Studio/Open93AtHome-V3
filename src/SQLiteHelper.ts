@@ -162,6 +162,18 @@ export class SQLiteHelper {
         });
     }
 
+    public exists<T extends object>(obj: T): boolean {
+        const tableName = this.getTableName(obj);
+        const data = obj as Record<string, any>;
+        const pk = primaryKeyMap.get(obj.constructor as { new (): T }) || 'id';
+
+        const selectSQL = `SELECT 1 FROM ${tableName} WHERE ${pk} = ?`;
+        const stmt = this.db.prepare(selectSQL);
+        const row = stmt.get(data[pk]);
+
+        return row !== undefined;
+    }
+
     public update<T extends object>(obj: T): void {
         const tableName = this.getTableName(obj);
         const data = obj as Record<string, any>;

@@ -1287,7 +1287,7 @@ export class Server {
                                     certificate[3]
                                 );
 
-                                if (this.db.getEntity<CertificateObject>(CertificateObject, cluster.clusterId)) {
+                                if (this.db.exists<CertificateObject>(finalCertificate)) {
                                     this.db.update<CertificateObject>(finalCertificate);
                                 }
                                 else {
