@@ -17,6 +17,8 @@ export class CloudFlare implements DnsManager {
     private async request(method: 'GET' | 'POST' | 'PUT' | 'DELETE', endpoint: string, data: Record<string, any> = {}): Promise<any> {
         const url = `https://api.cloudflare.com/client/v4${endpoint}`;
 
+        console.log(`Cloudflare request: ${method} ${url}`);
+
         try {
             const response = await axios({
                 method,
