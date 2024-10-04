@@ -333,7 +333,7 @@ export class Server {
         this.app.get('/93AtHome/list_clusters', (req: Request, res: Response) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => {
+            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => c.getJson(true, true)).map(c => {
                 const ignoredFields = (c as any).ignoredFields || [];
                 const obj = c as Record<string, any>;
                 const keys = Object.keys(c).filter(k => !ignoredFields.includes(k));
