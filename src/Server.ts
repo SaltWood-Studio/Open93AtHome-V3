@@ -1289,7 +1289,6 @@ export class Server {
                 else {
                     cluster.doOffline("Client disabled");
                     socket.send('Bye. Have a good day!');
-                    cluster.downTime = Math.floor(Date.now() / 1000);
                     ack([null, true]);
                     this.db.update(cluster);
                 }
