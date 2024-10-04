@@ -1178,6 +1178,8 @@ export class Server {
                     ack([{message: "This cluster is banned."}, false]);
                     return;
                 }
+                
+                const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
 
                 if (enableData.byoc) {
                     cluster.endpoint = enableData.host;
@@ -1185,13 +1187,12 @@ export class Server {
                 else if (this.dns) {
                     const domain = Config.instance.dnsDomain;
                     const subDomain = `${cluster.clusterId}.cluster`;
-                    const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
+                    socket.send(`Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the IP address (${address}:${enableData.port}) has changed, please allow a few minutes for the DNS records to update and propagate.`);
 
                     cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dnsDomain}`;
 
                     try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
                     await this.dns.addRecord(subDomain,  address, "A");
-                    socket.send(`Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the IP address (${address}:${enableData.port}) has changed, please allow a few minutes for the DNS records to update and propagate.`);
                     console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
 
                     this.db.update(cluster);
@@ -1217,9 +1218,13 @@ export class Server {
                 //     ack([err.message]);
                 //     console.error(err);
                 // });
+
+                const tip = `Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the IP address (${address}:${enableData.port}) has changed, please allow a few minutes for the DNS records to update and propagate.`;
+
                 if (Config.instance.noWarden){
                     cluster.doOnline(this.files, socket);
                     this.db.update(cluster);
+                    socket.send(tip);
                     ack([null, true]);
                     return;
                 }
@@ -1231,6 +1236,7 @@ export class Server {
                     } else {
                         cluster.doOnline(this.files, socket);
                         this.db.update(cluster);
+                        socket.send(tip);
                         ack([null, true]);
                         cluster.enableHistory = [];
                         return;
