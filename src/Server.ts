@@ -1191,6 +1191,7 @@ export class Server {
 
                     try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
                     await this.dns.addRecord(subDomain,  address, "A");
+                    socket.send(`Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the IP address (${address}:${enableData.port}) has changed, please allow a few minutes for the DNS records to update and propagate.`);
                     console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
 
                     this.db.update(cluster);
