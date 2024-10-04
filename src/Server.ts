@@ -870,6 +870,7 @@ export class Server {
             cluster.downReason = "null";
             cluster.createdAt = Math.floor(Date.now() / 1000);
             this.db.insert(cluster);
+            this.stats.push(new StatsStorage(cluster.clusterId));
             this.clusters.push(cluster);
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(cluster.getJson(false, false));
