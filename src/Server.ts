@@ -1187,7 +1187,6 @@ export class Server {
                 else if (this.dns) {
                     const domain = Config.instance.dnsDomain;
                     const subDomain = `${cluster.clusterId}.cluster`;
-                    socket.send(`Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the IP address (${address}:${enableData.port}) has changed, please allow a few minutes for the DNS records to update and propagate.`);
 
                     cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dnsDomain}`;
 
