@@ -333,7 +333,19 @@ export class Server {
         this.app.get('/93AtHome/list_clusters', (req: Request, res: Response) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => c.getJson(true, true))));
+            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => {
+                const ignoredFields = (c as any).ignoredFields || [];
+                const obj = c as Record<string, any>;
+                const keys = Object.keys(c).filter(k => !ignoredFields.includes(k));
+                const values = keys.map(k => obj[k]);
+                
+                const result = keys.reduce((acc, key) => {
+                    acc[key] = obj[key];
+                    return acc;
+                }, {} as Record<string, any>);
+                
+                return result;
+            })));
         });
         this.app.get('/93AtHome/list_files', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
