@@ -343,7 +343,7 @@ export class Server {
                     acc[key] = obj[key];
                     return acc;
                 }, {} as Record<string, any>);
-                
+
                 return result;
             })));
         });
@@ -1134,7 +1134,7 @@ export class Server {
                 }
             });
 
-            socket.on('enable', (data, callback: Function) => {
+            socket.on('enable', async (data, callback: Function) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
                 const enableData = data as {
                     host: string,
@@ -1149,7 +1149,7 @@ export class Server {
                 };
 
                 if (this.isUpdating) {
-                    ack(["File list is updating, please try again later."]);
+                    ack([{message: "File list is updating, please try again later."}, false]);
                     return;
                 }
 
@@ -1158,7 +1158,7 @@ export class Server {
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (!cluster) {
-                    ack(["Cluster not found."]);
+                    ack([{message: "Cluster not found."}, false]);
                     return;
                 }
 
@@ -1175,16 +1175,29 @@ export class Server {
                 }
 
                 if (cluster.isBanned) {
-                    ack(["This cluster is banned."]);
+                    ack([{message: "This cluster is banned."}, false]);
                     return;
                 }
 
                 if (enableData.byoc) {
                     cluster.endpoint = enableData.host;
                 }
-                else {
+                else if (this.dns) {
+                    const domain = Config.instance.dnsDomain;
+                    const subDomain = `${cluster.clusterId}.cluster`;
+                    const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
+
                     cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dnsDomain}`;
+
+                    try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
+                    await this.dns.addRecord(subDomain,  address, "A");
+                    console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
+
                     this.db.update(cluster);
+                }
+                else {
+                    ack([{message: "DNS is not enabled, so you must enable \"Bring Your Own Certificate\" and provide the endpoint."}, false]);
+                    return;
                 }
                 cluster.port = enableData.port;
                 cluster.version = enableData.version;
@@ -1325,14 +1338,9 @@ export class Server {
 
                             console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
                             try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) {}
-                            try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
                         
                             console.log('Requesting certificate for', domain, subDomain, Config.instance.domainContactEmail);
                             const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.domainContactEmail);
-                            
-                            const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
-                            console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
-                            await this.dns.addRecord(subDomain,  address, "A");
 
                             const finalCertificate = CertificateObject.create(
                                 cluster.clusterId,
