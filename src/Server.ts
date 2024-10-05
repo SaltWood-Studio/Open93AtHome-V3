@@ -1193,10 +1193,17 @@ export class Server {
                     try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
                     try { await this.dns.removeRecord(subDomain, "CNAME"); } catch (error) {}
 
-                    if (enableData.host) {
-                        await this.dns.addRecord(subDomain, enableData.host, "CNAME");
+                    try {
+                        if (enableData.host) {
+                            await this.dns.addRecord(subDomain, enableData.host, "CNAME");
+                        }
+                        else await this.dns.addRecord(subDomain,  address, "A");
                     }
-                    else await this.dns.addRecord(subDomain,  address, "A");
+                    catch (error) {
+                        console.error(error);
+                        ack([{message: `Failed to add DNS record for "${enableData.host || address}". Please contact admin.`}, false]);
+                        return;
+                    }
                     console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
 
                     this.db.update(cluster);
