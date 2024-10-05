@@ -32,7 +32,7 @@ export class PluginLoader {
                                 }
                             }
 
-                            if (pluginInstance) {
+                            if (pluginInstance && (pluginInstance.isFilePlugin || false)) {
                                 this.pluginInstances.push(pluginInstance);
                             }
                         }

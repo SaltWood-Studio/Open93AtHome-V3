@@ -2,6 +2,8 @@ import { File } from '../database/File.js';
 import { Request, Response } from "express";
 
 export abstract class Plugin {
+    public abstract get isFilePlugin(): boolean;
+
     public abstract init(): void;
     public abstract getName(): string;
 

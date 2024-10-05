@@ -68,6 +68,7 @@ export class Server {
     protected sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
     protected dns: DnsManager | null = null;
     protected acme: ACME | null = null;
+    public startAt: Date;
     
     protected get files(): File[] {
         return this.fileList.files;
@@ -86,6 +87,7 @@ export class Server {
     }
 
     public constructor() {
+        this.startAt = new Date();
         this.plugins = [];
         this.pluginLoader = new PluginLoader();
 
