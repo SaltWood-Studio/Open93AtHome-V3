@@ -1191,7 +1191,12 @@ export class Server {
                     cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dnsDomain}`;
 
                     try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
-                    await this.dns.addRecord(subDomain,  address, "A");
+                    try { await this.dns.removeRecord(subDomain, "CNAME"); } catch (error) {}
+
+                    if (enableData.host) {
+                        await this.dns.addRecord(subDomain, enableData.host, "CNAME");
+                    }
+                    else await this.dns.addRecord(subDomain,  address, "A");
                     console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
 
                     this.db.update(cluster);
@@ -1218,7 +1223,7 @@ export class Server {
                 //     console.error(err);
                 // });
 
-                const tip = `Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the IP address (${address}:${enableData.port}) has changed, please allow a few minutes for the DNS records to update and propagate.`;
+                const tip = `Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the ${enableData.byoc ? "domain's record" : (!enableData.byoc && enableData.host ? `CNAME destination (${enableData.host})` : `IP address (${address}:${enableData.port})`)} has changed, please allow a few minutes for the DNS records to update and propagate.`;
 
                 if (Config.instance.noWarden){
                     cluster.doOnline(this.files, socket);
