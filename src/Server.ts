@@ -137,9 +137,9 @@ export class Server {
     }
 
     public async init(): Promise<void> {
-        await this.updateFiles();
         this.setupRoutes();
         await this.loadPlugins();
+        await this.updateFiles();
 
         // 加载证书管理器
         if (Config.instance.enableRequestCertificate) {
