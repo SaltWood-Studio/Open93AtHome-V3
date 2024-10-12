@@ -2,7 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import http from 'http';
 import fs from 'fs';
 import path, { resolve } from 'path';
-import { Server as SocketIOServer } from 'socket.io';
+import { ExtendedError, Server as SocketIOServer } from 'socket.io';
 // import cors from 'cors';
 import JwtHelper from './JwtHelper.js';
 import { SQLiteHelper } from './SQLiteHelper.js';
@@ -1101,7 +1101,7 @@ export class Server {
                 }
 
                 if (Config.instance.debug && adminToken) {
-                    if (!JwtHelper.instance.verifyToken(adminToken, 'admin')) {
+                    if (!(JwtHelper.instance.verifyToken(adminToken, 'admin') instanceof Object)) {
                         throw new Error('Invalid admin token');
                     }
                     if (socket.handshake.auth.clientId) {
@@ -1138,9 +1138,9 @@ export class Server {
                     throw new Error('Token payload invalid');
                 }
             } catch (err) {
-                console.error('Authentication error');
+                console.error(err);
                 socket.disconnect(true);
-                return next(new Error('Authentication error')); // 验证失败，拒绝连接
+                return next(err as ExtendedError); // 验证失败，拒绝连接
             }
         });
 
