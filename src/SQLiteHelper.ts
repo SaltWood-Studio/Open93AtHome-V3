@@ -3,11 +3,13 @@ import { ClusterEntity } from './database/Cluster.js';
 
 // 表的定义映射
 const tableSchemaMap = new Map<Function, string>();
+const tableNameMap = new Map<Function, string>();
 
 // 装饰器用于指定表名和表结构
 function Table(tableName: string, schema: string) {
     return function (constructor: Function) {
         tableSchemaMap.set(constructor, schema);
+        tableNameMap.set(constructor, tableName);
     };
 }
 
@@ -44,7 +46,7 @@ export class SQLiteHelper {
     }
 
     // 创建或更新表
-    public createTable<T>(type: { new (): T }): void {
+    public createTable<T extends object>(type: { new (): T }): void {
         const tableName = this.getTableNameByConstructor(type);
         const schema = tableSchemaMap.get(type);
     
@@ -130,7 +132,7 @@ export class SQLiteHelper {
     }
 
     // 查询数据
-    public select<T>(type: { new (): T }, columns: string[], whereClause?: string, params?: any[]): T[] {
+    public select<T extends object>(type: { new (): T }, columns: string[], whereClause?: string, params?: any[]): T[] {
         const tableName = this.getTableNameByConstructor(type);
         const selectSQL = `SELECT ${columns.join(', ')} FROM ${tableName} ${whereClause ? `WHERE ${whereClause}` : ''}`;
         const stmt = this.db.prepare(selectSQL);
@@ -213,15 +215,19 @@ export class SQLiteHelper {
         stmt.run(data[pk]);
     }
 
-    private getTableName<T>(obj: T): string {
+    private getTableName<T extends object>(obj: T): string {
         const constructor = (obj as Object).constructor;
         return this.getTableNameByConstructor(constructor as { new (): T });
     }
 
     // 根据类型推断表名
-    private getTableNameByConstructor<T>(type: { new (): T }): string {
-        const constructor = type;
-        return constructor.name.toLowerCase() + 's';
+    private getTableNameByConstructor<T extends object>(type: { new (): T }): string {
+        const instance = new type();
+        const tableName = tableNameMap.get(instance.constructor as any);
+        if (!tableName) {
+            throw new Error(`Table name for type ${type.name} not defined`);
+        }
+        return tableName;
     }
 
     // 关闭数据库连接

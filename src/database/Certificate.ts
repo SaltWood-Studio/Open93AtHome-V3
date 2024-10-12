@@ -1,6 +1,6 @@
 import { Ignore, PrimaryKey, Table } from "../SQLiteHelper.js";
 
-@Table("certificateobjects", `
+@Table("certificates", `
     clusterId TEXT NOT NULL PRIMARY KEY UNIQUE,
     key TEXT,
     csr TEXT,
