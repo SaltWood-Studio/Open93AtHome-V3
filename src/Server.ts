@@ -1110,9 +1110,9 @@ export class Server {
                             throw new Error('Invalid admin token');
                         }
                         this.sessionToClusterMap.set(socket.id, cluster);
-                        console.log(`SOCKET ${socket.handshake.url} socket.io <ADMIN> - [${socket.handshake.headers[Config.instance.sourceIpHeader] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                         return next(); // 验证通过，允许连接
                     }
+                    console.log(`SOCKET [${socket.id}] <ADMIN> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
                     return next();
                 }
         
@@ -1129,7 +1129,7 @@ export class Server {
                     }
                     if (exp > Date.now() / 1000) {
                         this.sessionToClusterMap.set(socket.id, cluster);
-                        console.log(`SOCKET ${socket.handshake.url} socket.io <ACCEPTED> - [${socket.handshake.headers[Config.instance.sourceIpHeader] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
+                        console.log(`SOCKET ${socket.id} <ACCEPTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
                         return next(); // 验证通过，允许连接
                     } else {
                         throw new Error('Token expired');
@@ -1146,11 +1146,11 @@ export class Server {
 
         // 监听 Socket.IO 连接事件
         this.io.on('connection', (socket) => {
-            console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'}`);
+            console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
 
             socket.onAny((event: string, data) => {
                 if (this.sessionToClusterMap.has(socket.id)) {
-                    console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <${event?.toUpperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] ${socket.handshake.headers['user-agent'] || '<null>'} ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+                    console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <${event?.toUpperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}> ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
                 }
             });
 
