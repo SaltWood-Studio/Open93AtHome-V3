@@ -1427,7 +1427,7 @@ export class Server {
                     const ack = callback ? callback : (...rest: any[]) => {};
                     try {
                         const stmt = this.db.database.prepare(data);
-                        const result = stmt.get();
+                        const result = stmt.all();
                         ack(result);
                     }
                     catch (err) {
