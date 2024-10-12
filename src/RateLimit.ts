@@ -7,36 +7,23 @@ interface RateLimitRecord {
     lastRequest: number;   // 最后一次请求的时间戳（用于清理过期记录）
 }
 
-class RateLimiter {
-    private static _instance: RateLimiter;
+export class RateLimiter {
     private rateLimitMap: Map<string, RateLimitRecord>;
-    public static RATE_LIMIT: number = 10;
-    public static REFILL_INTERVAL: number = 1000;
-    public static CLEANUP_INTERVAL: number = 60000;
-    public static EXPIRATION_TIME: number = 300000;
+    public RATE_LIMIT: number = 10;
+    public REFILL_INTERVAL: number = 1000;
+    public CLEANUP_INTERVAL: number = 60000;
+    public EXPIRATION_TIME: number = 300000;
 
-    private constructor() {
+    public constructor() {
         this.rateLimitMap = new Map();
 
         // 设置定期清理任务
-        setInterval(this.cleanupRateLimitMap.bind(this), RateLimiter.CLEANUP_INTERVAL);
-    }
-
-    public static get instance(): RateLimiter {
-        return RateLimiter.getInstance();
-    }
-
-    // 获取单例实例
-    public static getInstance(): RateLimiter {
-        if (!RateLimiter._instance) {
-            RateLimiter._instance = new RateLimiter();
-        }
-        return RateLimiter._instance;
+        setInterval(this.cleanupRateLimitMap.bind(this), this.CLEANUP_INTERVAL);
     }
 
     // 速率限制中间件
     public rateLimiterMiddleware(req: Request, res: Response, next: NextFunction): void {
-        if (RateLimiter.RATE_LIMIT <= 0) {
+        if (this.RATE_LIMIT <= 0) {
             next(); // 速率限制功能关闭，直接处理请求
             return;
         }
@@ -49,7 +36,7 @@ class RateLimiter {
 
         if (!record) {
             // 如果该IP地址没有记录，初始化令牌桶
-            record = { tokens: RateLimiter.RATE_LIMIT, lastRefill: currentTime, lastRequest: currentTime };
+            record = { tokens: this.RATE_LIMIT, lastRefill: currentTime, lastRequest: currentTime };
             this.rateLimitMap.set(ip, record);
         }
 
@@ -60,9 +47,9 @@ class RateLimiter {
         const timeSinceLastRefill = currentTime - record.lastRefill;
 
         // 根据时间间隔填充令牌桶
-        if (timeSinceLastRefill > RateLimiter.REFILL_INTERVAL) {
-            const tokensToAdd = Math.floor(timeSinceLastRefill / RateLimiter.REFILL_INTERVAL) * RateLimiter.RATE_LIMIT;
-            record.tokens = Math.min(record.tokens + tokensToAdd, RateLimiter.RATE_LIMIT);
+        if (timeSinceLastRefill > this.REFILL_INTERVAL) {
+            const tokensToAdd = Math.floor(timeSinceLastRefill / this.REFILL_INTERVAL) * this.RATE_LIMIT;
+            record.tokens = Math.min(record.tokens + tokensToAdd, this.RATE_LIMIT);
             record.lastRefill = currentTime;
         }
 
@@ -80,13 +67,13 @@ class RateLimiter {
     private cleanupRateLimitMap(): void {
         const currentTime = Date.now();
         this.rateLimitMap.forEach((record, ip) => {
-            if (currentTime - record.lastRequest > RateLimiter.EXPIRATION_TIME) {
+            if (currentTime - record.lastRequest > this.EXPIRATION_TIME) {
                 this.rateLimitMap.delete(ip); // 移除过期记录
             }
         });
     }
 }
 
-// 导出单例实例的中间件方法
-export const rateLimiter = RateLimiter.instance.rateLimiterMiddleware.bind(RateLimiter.instance);
-export default RateLimiter;
+// 导出默认实例的中间件方法
+export const defaultInstance = new RateLimiter();
+export const rateLimiter = defaultInstance.rateLimiterMiddleware.bind(defaultInstance);
