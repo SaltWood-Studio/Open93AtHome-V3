@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import env from 'env-var'
 import { Utilities } from './Utilities.js'
-import RateLimiter, { defaultInstance } from './RateLimit.js'
+import RateLimiter, { defaultInstance } from './RateLimiter.js'
 
 export class Config {
     public static instance: Config

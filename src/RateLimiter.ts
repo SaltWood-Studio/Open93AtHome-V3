@@ -7,7 +7,7 @@ interface RateLimitRecord {
     lastRequest: number;   // 最后一次请求的时间戳（用于清理过期记录）
 }
 
-export class RateLimiter {
+class RateLimiter {
     private rateLimitMap: Map<string, RateLimitRecord>;
     public RATE_LIMIT: number = 10;
     public REFILL_INTERVAL: number = 1000;
@@ -77,3 +77,4 @@ export class RateLimiter {
 // 导出默认实例的中间件方法
 export const defaultInstance = new RateLimiter();
 export const rateLimiter = defaultInstance.rateLimiterMiddleware.bind(defaultInstance);
+export default RateLimiter;

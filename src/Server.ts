@@ -20,7 +20,7 @@ import { PluginLoader } from './plugin/PluginLoader.js';
 import {type Got} from 'got'
 import acme from 'acme-client'
 import { FileList } from './FileList.js';
-import { rateLimiter } from './RateLimit.js';
+import { rateLimiter } from './RateLimiter.js';
 import { CertificateObject } from './database/Certificate.js';
 import { DnsManager } from './certificate-manager/DnsManager.js';
 import { CloudFlare } from './certificate-manager/CloudFlare.js';
