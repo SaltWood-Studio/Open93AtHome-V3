@@ -1427,14 +1427,17 @@ export class Server {
                     const ack = callback ? callback : (...rest: any[]) => {};
                     try {
                         const stmt = this.db.database.prepare(data);
-                        const result = stmt.all();
+                        let result = null;
+                        if (stmt.reader) result = stmt.all();
+                        else result = stmt.run();
                         ack(result);
                     }
                     catch (err) {
                         console.error(err);
                         ack({ error: err });
                     }
-                });}
+                });
+            }
         });
     }
 }
