@@ -619,7 +619,7 @@ export class Server {
                 sourceCount: this.sources.length,
                 totalFiles: this.files.length,
                 totalSize: this.files.reduce((acc, f) => acc + f.size, 0),
-                startTime: this.startAt
+                startTime: this.startAt.getTime()
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
