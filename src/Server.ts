@@ -248,7 +248,7 @@ export class Server {
     public setupRoutes(): void {
         this.setupHttp();
         this.setupSocketIO();
-        if (Config.instance.enableDebugRoutes) this.setupDebugRoutes();
+        if (Config.instance.debug) this.setupDebugRoutes();
     }
 
     public setupDebugRoutes(): void {
@@ -1095,8 +1095,25 @@ export class Server {
         this.io.use((socket, next) => {
             try {
                 const token = socket.handshake.auth?.token;
-                if (!token) {
+                const adminToken = socket.handshake.auth?.adminToken;
+                if (!token && !adminToken) {
                     throw new Error('No token provided');
+                }
+
+                if (Config.instance.debug && adminToken) {
+                    if (!JwtHelper.instance.verifyToken(adminToken, 'admin')) {
+                        throw new Error('Invalid admin token');
+                    }
+                    if (socket.handshake.auth.clientId) {
+                        const cluster = this.clusters.find(c => c.clusterSecret === adminToken);
+                        if (!cluster) {
+                            throw new Error('Invalid admin token');
+                        }
+                        this.sessionToClusterMap.set(socket.id, cluster);
+                        console.log(`SOCKET ${socket.handshake.url} socket.io <ADMIN> - [${socket.handshake.headers[Config.instance.sourceIpHeader] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
+                        return next(); // 验证通过，允许连接
+                    }
+                    return next();
                 }
         
                 // 验证 token
@@ -1112,7 +1129,7 @@ export class Server {
                     }
                     if (exp > Date.now() / 1000) {
                         this.sessionToClusterMap.set(socket.id, cluster);
-                        console.log(`SOCKET ${socket.handshake.url} socket.io <ACCEPTED> - [${socket.handshake.headers["x-real-ip"] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
+                        console.log(`SOCKET ${socket.handshake.url} socket.io <ACCEPTED> - [${socket.handshake.headers[Config.instance.sourceIpHeader] || socket.handshake.address}] ${socket.handshake.headers['user-agent']}`);
                         return next(); // 验证通过，允许连接
                     } else {
                         throw new Error('Token expired');
@@ -1404,6 +1421,14 @@ export class Server {
                     }
                 }
             });
+
+            if (Config.instance.debug) {
+                socket.on('run-sql', (data, callback: Function) => {
+                    const ack = callback ? callback : (...rest: any[]) => {};
+                    const stmt = this.db.database.prepare(data);
+                    const result = stmt.all();
+                    ack(result);
+                });}
         });
     }
 }

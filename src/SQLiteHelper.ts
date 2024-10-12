@@ -34,6 +34,10 @@ export { Table, Ignore, PrimaryKey };
 export class SQLiteHelper {
     private db: Database.Database;
 
+    public get database(): Database.Database {
+        return this.db;
+    }
+
     constructor(private dbFilePath: string) {
         // 打开数据库连接
         this.db = new Database(dbFilePath, { verbose: console.log });

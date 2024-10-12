@@ -35,7 +35,7 @@ export class Config {
 
     // 开发变量
     public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();
-    public readonly enableDebugRoutes: boolean = env.get('ENABLE_DEBUG_ROUTES').default("false").asBool();
+    public readonly debug: boolean = env.get('DEBUG').default("false").asBool();
 
     public static readonly version: string = "3.1.0";
 
