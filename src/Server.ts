@@ -137,9 +137,9 @@ export class Server {
     }
 
     public async init(): Promise<void> {
-        await this.loadPlugins();
         await this.updateFiles();
         this.setupRoutes();
+        await this.loadPlugins();
 
         // 加载证书管理器
         if (Config.instance.enableRequestCertificate) {
@@ -618,7 +618,8 @@ export class Server {
                 onlines: this.clusters.filter(c => c.isOnline).length,
                 sourceCount: this.sources.length,
                 totalFiles: this.files.length,
-                totalSize: this.files.reduce((acc, f) => acc + f.size, 0)
+                totalSize: this.files.reduce((acc, f) => acc + f.size, 0),
+                startTime: this.startAt
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
