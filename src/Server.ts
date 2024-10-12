@@ -1425,9 +1425,15 @@ export class Server {
             if (Config.instance.debug) {
                 socket.on('run-sql', (data, callback: Function) => {
                     const ack = callback ? callback : (...rest: any[]) => {};
-                    const stmt = this.db.database.prepare(data);
-                    const result = stmt.all();
-                    ack(result);
+                    try {
+                        const stmt = this.db.database.prepare(data);
+                        const result = stmt.all();
+                        ack(result);
+                    }
+                    catch (err) {
+                        console.error(err);
+                        ack({ error: err });
+                    }
                 });}
         });
     }
