@@ -137,6 +137,12 @@ export class Server {
     }
 
     public async init(): Promise<void> {
+        // 设置中间件
+        this.app.use(logMiddleware);
+        if (Config.instance.requestRateLimit > 0) this.app.use(rateLimiter);
+        this.app.use(express.json());
+        this.app.use(express.urlencoded({ extended: true }));
+        this.app.use(cookieParser());
         await this.loadPlugins();
         await this.updateFiles();
         this.setupRoutes();
@@ -319,12 +325,6 @@ export class Server {
     }
 
     public setupHttp(): void {
-        // 设置中间件
-        this.app.use(logMiddleware);
-        if (Config.instance.requestRateLimit > 0) this.app.use(rateLimiter);
-        this.app.use(express.json());
-        this.app.use(express.urlencoded({ extended: true }));
-        this.app.use(cookieParser());
 
         this.app.use('/assets', express.static(path.resolve('./assets')));
 
