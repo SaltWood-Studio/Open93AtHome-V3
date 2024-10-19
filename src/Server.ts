@@ -581,7 +581,7 @@ export class Server {
                         this.sendFile(req, res, file);
                         return;
                     }
-                    let cluster = await this.fileList.randomAvailableCluster(file);
+                    let cluster = await this.fileList.randomAvailableCluster(file, undefined, getRealIP(req.headers) || req.ip);
                     if (!cluster) {
                         this.sendFile(req, res, file);
                         return;
