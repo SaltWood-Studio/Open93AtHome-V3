@@ -7,6 +7,7 @@ services:
       - ./stats:/app/stats
       - ./plugins:/app/plugins
       - ./assets:/app/assets
+      - ./plugin-dependencies:/app/plugin-dependencies
     env_file:
       - .env
     environment:

@@ -568,31 +568,36 @@ export class Server {
                 res.status(404).send();
             }
         });
-        this.app.get('/files/*', (req: Request, res: Response) => {
-            if (this.isUpdating) {
-                res.status(503).send('File list update in progress');
-                return;
-            }
-            const p = decodeURI(req.path);
-            const file = this.fileList.getFile("path", p);
-            if (file) {
-                if (Config.instance.forceNoOpen) {
-                    this.sendFile(req, res, file);
+        this.app.get('/files/*', async (req: Request, res: Response) => {
+            try {
+                if (this.isUpdating) {
+                    res.status(503).send('File list update in progress');
                     return;
                 }
-                let cluster = this.fileList.randomAvailableCluster(file);
-                if (!cluster) {
-                    this.sendFile(req, res, file);
-                    return;
-                }
+                const p = decodeURI(req.path);
+                const file = this.fileList.getFile("path", p);
+                if (file) {
+                    if (Config.instance.forceNoOpen) {
+                        this.sendFile(req, res, file);
+                        return;
+                    }
+                    let cluster = await this.fileList.randomAvailableCluster(file);
+                    if (!cluster) {
+                        this.sendFile(req, res, file);
+                        return;
+                    }
 
-                res.status(302)
-                .header('Location', Utilities.getUrl(file, cluster))
-                .send();
-                cluster.pendingHits++;
-                cluster.pendingTraffic += file.size;
-            } else {
-                res.status(404).send();
+                    res.status(302)
+                    .header('Location', Utilities.getUrl(file, cluster))
+                    .send();
+                    cluster.pendingHits++;
+                    cluster.pendingTraffic += file.size;
+                } else {
+                    res.status(404).send();
+                }
+            } catch (error) {
+                console.error(error);
+                res.status(500).json(error);
             }
         });
         this.app.get('/93AtHome/centerStatistics', (req: Request, res: Response) => {
