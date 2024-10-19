@@ -105,3 +105,4 @@ database.sqlite
 /files
 /assets
 /plugins
+/plugin-dependencies/node_modules
