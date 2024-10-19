@@ -12,9 +12,9 @@ export class ACME {
     constructor(dnsManager: DnsManager, privateKey: acme.PrivateKeyBuffer) {
         this.dnsManager = dnsManager;
 
-        // 初始化 ACME 客户端，使用 Let's Encrypt 的 staging 环境测试
+        // 初始化 ACME 客户端，使用 ZeroSSL 的 staging 环境测试
         this.client = new Client({
-            directoryUrl: acme.directory.zerossl.production, // 换成 production 用于生产环境
+            directoryUrl: acme.directory.zerossl.production,
             accountKey: privateKey,
             externalAccountBinding: {
                 kid: Config.instance.zerosslKid,
@@ -23,9 +23,7 @@ export class ACME {
         });
     }
 
-    // 注册账户并更新账户密钥
     public async registerAccount(email: string) {
-        // 注册一个新的账户
         const account = await this.client.createAccount({
             contact: [`mailto:${email}`],
             termsOfServiceAgreed: true
