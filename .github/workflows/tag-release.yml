@@ -1,0 +1,67 @@
+name: "Release Binary"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-tar-ball:
+    name: "Build and Tar Ball"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: "open93athome-linux.tar.xz"
+          - os: windows-latest
+            artifact_name: "open93athome-windows.tar.gz"
+          - os: macos-latest
+            artifact_name: "open93athome-macos.tar.xz"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      ## linux & macos
+      - run: npm run build
+      - run: |
+          cp $(which node) .
+          cp platforms/linux/run.sh .
+          tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules node run.sh
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+
+      ## windows
+      - run: |
+          $SRC = (Get-Command node.exe).Path
+          copy $SRC node.exe
+          copy platforms/windows/run.ps1 .
+          tar -caf ${{ matrix.artifact_name }} dist package.json node_modules node.exe run.ps1
+        if: matrix.os == 'windows-latest'
+
+      - name: "Upload Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+  create-release:
+    runs-on: "ubuntu-latest"
+    name: "Create Release"
+    needs: "build-tar-ball"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: ${{ contains(github.ref, '-') }}
+          files: |
+              open93athome-linux.tar.xz
+              open93athome-windows.tar.gz
+              open93athome-macos.tar.xz
