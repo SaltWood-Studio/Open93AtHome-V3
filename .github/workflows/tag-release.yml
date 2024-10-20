@@ -31,7 +31,7 @@ jobs:
       - run: |
           cp $(which node) .
           cp platforms/linux/run.sh .
-          tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules node run.sh
+          tar -caf ${{ matrix.artifact_name }} dist package.json node_modules node run.sh
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
 
       ## windows
