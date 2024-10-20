@@ -1,12 +1,10 @@
-import dotenv from 'dotenv';
-import env from 'env-var';
-import { Utilities } from './Utilities.js';
-import RateLimiter, { defaultInstance } from './RateLimiter.js';
-import fs from 'fs';
+import dotenv from 'dotenv'
+import env from 'env-var'
+import { Utilities } from './Utilities.js'
+import RateLimiter, { defaultInstance } from './RateLimiter.js'
 
 export class Config {
-    public static instance: Config;
-    private static watcher: fs.FSWatcher | null = null;
+    public static instance: Config
 
     public readonly enableRequestCertificate: boolean = env.get('ENABLE_REQUEST_CERTIFICATE').default("false").asBool();
     public readonly dnsType: string = env.get('DNS_TYPE').default("cloudflare").asString();
@@ -14,6 +12,7 @@ export class Config {
     public readonly dnsSecretToken: string = env.get('DNS_SECRET_TOKEN').default("").asString();
     public readonly dnsDomain: string = env.get('DNS_DOMAIN').default("").asString();
     public readonly domainContactEmail: string = env.get('DOMAIN_CONTACT_EMAIL').default("").asString();
+    // public readonly acmeStaging: boolean = env.get('ACME_STAGING').default("false").asBool();
 
     public readonly zerosslKid: string = env.get('ZEROSSL_KID').default("").asString();
     public readonly zerosslHmacKey: string = env.get('ZEROSSL_HMAC_KEY').default("").asString();
@@ -37,7 +36,6 @@ export class Config {
     // 开发变量
     public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();
     public readonly debug: boolean = env.get('DEBUG').default("false").asBool();
-    public readonly autoReloadEnv: boolean = env.get('AUTO_RELOAD_ENV').default("false").asBool();
 
     public static readonly version: string = "3.1.5";
 
@@ -56,25 +54,10 @@ export class Config {
 
     public static init() {
         if (!Config.instance) {
-            Config.reloadConfig();
-        }
-    }
-
-    public static reloadConfig() {
-        dotenv.config(); // 重新加载 .env 文件
-        Config.instance = new Config(); // 更新配置实例
-        defaultInstance.RATE_LIMIT = Config.instance.requestRateLimit; // 更新限流器配置
-        console.log("Config reloaded");
-        if (Config.instance.autoReloadEnv && !Config.watcher) {
-            Config.watcher = fs.watch('.env', (eventType) => {
-                if (eventType === 'change') {
-                    console.log('[Reload] .env file changed, reloading config');
-                    Config.reloadConfig();
-                }
-            });
+            Config.instance = new Config();
+            defaultInstance.RATE_LIMIT = Config.instance.requestRateLimit;
         }
     }
 }
 
-// 初始化配置
-dotenv.config();
+dotenv.config()
