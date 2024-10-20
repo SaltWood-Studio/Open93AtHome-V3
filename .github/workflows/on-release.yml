@@ -40,7 +40,10 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Set environment
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
         
@@ -65,3 +68,5 @@ jobs:
           push: true
           tags: saltwood233/open93athome:dev
           platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
