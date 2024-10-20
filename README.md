@@ -6,6 +6,30 @@
 > [!TIP]
 > 本项目实际可被用于分发任何有效 Git 仓库内的文件，因此并不与 bangbang93HUB 有任何关联
 
+## 主控部署
+
+### Docker Compose 部署
+``` shell
+docker-compose up -d
+```
+
+### 手动部署
+
+1. 安装 Node.js 环境
+2. 克隆项目到本地
+3. 安装依赖
+``` shell
+npm install
+```
+4. 编译项目
+``` shell
+npm run build
+```
+5. 启动项目
+``` shell
+node --enable-source-maps dist/index.js
+```
+
 ## 节点部署
 
 以下是基于修改现有 OpenBMCLAPI 节点端的办法
