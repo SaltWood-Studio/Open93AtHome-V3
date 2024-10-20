@@ -50,6 +50,7 @@ jobs:
 
   create-release:
     runs-on: "ubuntu-latest"
+    permissions: write-all
     name: "Create Release"
     needs: "build-tar-ball"
     steps:
