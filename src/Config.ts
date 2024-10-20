@@ -37,7 +37,7 @@ export class Config {
     public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();
     public readonly debug: boolean = env.get('DEBUG').default("false").asBool();
 
-    public static readonly version: string = "3.1.5";
+    public static readonly version: string = "3.1.6";
 
     private constructor() { }
 
