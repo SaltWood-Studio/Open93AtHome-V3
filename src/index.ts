@@ -2,6 +2,11 @@ import { exec } from "child_process";
 import { Config } from './Config.js';
 import { Server } from './Server.js';
 import { Utilities } from './Utilities.js';
+import fs from 'fs';
+
+function createFolderIfNotExist(folder: string) {
+    if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
+}
 
 function onStop(signal: string) {
     server.db.close();
@@ -9,6 +14,18 @@ function onStop(signal: string) {
     server.centerStats.stopAutoSave();
     console.log(`Received ${signal}. Shutting down...`);
     process.exit(0);
+}
+
+const requiredFolders = [
+    "plugins",
+    "stats",
+    "data",
+    "files",
+    "assets"
+];
+
+for (const folder of requiredFolders) {
+    createFolderIfNotExist(folder);
 }
 
 // 初始化配置

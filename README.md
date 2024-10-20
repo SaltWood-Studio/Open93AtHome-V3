@@ -6,7 +6,7 @@
 > [!TIP]
 > 本项目实际可被用于分发任何有效 Git 仓库内的文件，因此并不与 bangbang93HUB 有任何关联
 
-## 部署
+## 节点部署
 
 以下是基于修改现有 OpenBMCLAPI 节点端的办法
 > [!IMPORTANT]
