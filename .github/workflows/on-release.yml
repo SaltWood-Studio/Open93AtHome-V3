@@ -63,4 +63,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: saltwood233/open93athome
+          tags: saltwood233/open93athome:dev
