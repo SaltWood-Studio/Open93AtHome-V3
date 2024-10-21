@@ -626,7 +626,7 @@ export class Server {
                 totalFiles: this.files.length,
                 totalSize: this.files.reduce((acc, f) => acc + f.size, 0),
                 startTime: this.startAt.getTime(),
-                rejectedRequests: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(0)?.map(hour => hour.hits) || [];
+                rejectedRequests: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(0)?.map(hour => hour.hits) || []
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
