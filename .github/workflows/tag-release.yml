@@ -61,7 +61,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: ${{ contains(github.ref, '-') }}
+          prerelease: ${{ contains(github.ref, 'pre') }}
           files: |
               open93athome-linux.tar.xz
               open93athome-windows.tar.gz
