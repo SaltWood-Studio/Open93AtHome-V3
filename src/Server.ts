@@ -616,15 +616,6 @@ export class Server {
                 dailyBytes.push(bytes);
             });
 
-            const rejected = RateLimiter.rejectedRequest.getLast30DaysHourlyStats();
-            let rejectedRequests: number[] = [];
-            rejected.forEach(d => {
-                let hits = 0;
-                d.filter(h => h !== null).forEach(h => {
-                    hits += h.hits;
-                });
-                rejectedRequests.push(hits);
-            });
             res.status(200).json({
                 dailyHits,
                 dailyBytes,
@@ -635,7 +626,7 @@ export class Server {
                 totalFiles: this.files.length,
                 totalSize: this.files.reduce((acc, f) => acc + f.size, 0),
                 startTime: this.startAt.getTime(),
-                rejectedRequests: rejectedRequests
+                rejectedRequests: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(0)?.map(hour => hour.hits) || [];
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
