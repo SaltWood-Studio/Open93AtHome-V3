@@ -10,11 +10,18 @@ interface RateLimitRecord {
 
 class RateLimiter {
     private rateLimitMap: Map<string, RateLimitRecord>;
-    public static rejectedRequest: HourlyStatsStorage = new HourlyStatsStorage('rejected_requests');
+    private static _rejectedRequest: HourlyStatsStorage | null = null;
     public RATE_LIMIT: number = 10;
     public REFILL_INTERVAL: number = 1000;
     public CLEANUP_INTERVAL: number = 60000;
     public EXPIRATION_TIME: number = 300000;
+
+    public static get rejectedRequest(): HourlyStatsStorage {
+        if (!RateLimiter._rejectedRequest) {
+            RateLimiter._rejectedRequest = new HourlyStatsStorage('rejected_requests');
+        }
+        return RateLimiter._rejectedRequest;
+    }
 
     public constructor() {
         this.rateLimitMap = new Map();
