@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Config } from './Config.js';
+import { HourlyStatsStorage } from './statistics/HourlyStats.js';
 
 interface RateLimitRecord {
     tokens: number;        // 令牌数量
@@ -9,6 +10,7 @@ interface RateLimitRecord {
 
 class RateLimiter {
     private rateLimitMap: Map<string, RateLimitRecord>;
+    public static rejectedRequest: HourlyStatsStorage = new HourlyStatsStorage('rejected_requests');
     public RATE_LIMIT: number = 10;
     public REFILL_INTERVAL: number = 1000;
     public CLEANUP_INTERVAL: number = 60000;
@@ -58,6 +60,7 @@ class RateLimiter {
             record.tokens--;  // 消耗一个令牌
             next();           // 继续处理请求
         } else {
+            RateLimiter.rejectedRequest.addData({ hits:1, bytes: 0 })
             // 如果没有令牌了，返回429状态码 (Too Many Requests)
             res.status(429).send('Too Many Requests - try again later');
         }

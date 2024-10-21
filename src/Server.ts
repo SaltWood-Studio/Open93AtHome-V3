@@ -20,7 +20,7 @@ import { PluginLoader } from './plugin/PluginLoader.js';
 import {type Got} from 'got'
 import acme from 'acme-client'
 import { FileList } from './FileList.js';
-import { rateLimiter } from './RateLimiter.js';
+import RateLimiter, { rateLimiter } from './RateLimiter.js';
 import { CertificateObject } from './database/Certificate.js';
 import { DnsManager } from './certificate-manager/DnsManager.js';
 import { CloudFlare } from './certificate-manager/CloudFlare.js';
@@ -615,6 +615,16 @@ export class Server {
                 dailyHits.push(hits);
                 dailyBytes.push(bytes);
             });
+
+            const rejected = RateLimiter.rejectedRequest.getLast30DaysHourlyStats();
+            let rejectedRequests: number[] = [];
+            rejected.forEach(d => {
+                let hits = 0;
+                d.filter(h => h !== null).forEach(h => {
+                    hits += h.hits;
+                });
+                rejectedRequests.push(hits);
+            });
             res.status(200).json({
                 dailyHits,
                 dailyBytes,
@@ -624,7 +634,8 @@ export class Server {
                 sourceCount: this.sources.length,
                 totalFiles: this.files.length,
                 totalSize: this.files.reduce((acc, f) => acc + f.size, 0),
-                startTime: this.startAt.getTime()
+                startTime: this.startAt.getTime(),
+                rejectedRequests: rejectedRequests
             });
         });
         this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {

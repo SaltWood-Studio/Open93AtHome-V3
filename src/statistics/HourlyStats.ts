@@ -9,8 +9,8 @@ export class HourlyStatsStorage {
     private saveInterval: NodeJS.Timeout;
     private dataUpdated: boolean;
 
-    constructor() {
-        this.filePath = path.join(Config.instance.statsDir, `center.stats.json`);
+    constructor(id: string = 'center') {
+        this.filePath = path.join(Config.instance.statsDir, `${id}.stats.json`);
         this.data = [];
         this.dataUpdated = false;
 
