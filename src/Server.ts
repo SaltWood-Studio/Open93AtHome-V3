@@ -287,7 +287,11 @@ export class Server {
         this.app.get('/93AtHome/debug/list_sessions', (req: Request, res: Response) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(Array.from(this.sessionToClusterMap.entries())));
+            res.end(JSON.stringify(Array.from(this.io.sockets.sockets).map(([id, socket]) => ({
+                session: id,
+                ip: getRealIP(socket.handshake.headers) || socket.handshake.address,
+                cluster: this.sessionToClusterMap.get(id)?.getJson(true, true)
+            }))));
         });
         this.app.post('/93AtHome/debug/test_all_cluster', (req: Request, res: Response) => {
             const hash = req.body.hash as string;
@@ -1426,6 +1430,7 @@ export class Server {
                         cluster.doOffline("Client disconnected")
                         this.db.update(cluster);
                     }
+                    this.sessionToClusterMap.delete(socket.id);
                 }
             });
 
