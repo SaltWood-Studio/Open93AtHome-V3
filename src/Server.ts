@@ -44,6 +44,9 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
 
 const bannedUaList = [
     "milu-dick",
+    "apachebench",
+    "jmeter",
+    "loadtest"
 ]
 
 const banUaMiddleware = (req: Request, res: Response, next: NextFunction) => {
