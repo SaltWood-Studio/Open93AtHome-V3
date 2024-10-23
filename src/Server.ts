@@ -899,8 +899,8 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/create', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterName = req.body.clusterName as string;
-            const bandwidth = req.body.bandwidth as number;
+            const clusterName = req.body.clusterName as string || "";
+            const bandwidth = req.body.bandwidth as number || 0;
 
             if (bandwidth < 10 || bandwidth > 500) {
                 res.status(400).send({
