@@ -830,7 +830,7 @@ export class Server {
             }
             res.setHeader('Content-Type', 'application/json');
             const clusterName = req.body.clusterName as string || null;
-            const bandwidth = req.body.bandwidth as number || null;
+            const bandwidth = req.body.bandwidth as number || 0;
             const sponsor = req.body.sponsor as string || null;
             const sponsorUrl = req.body.sponsorUrl as string || null;
 
