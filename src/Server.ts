@@ -902,7 +902,7 @@ export class Server {
             const clusterName = req.body.clusterName as string;
             const bandwidth = req.body.bandwidth as number;
 
-            if (bandwidth < 10 || bandwidth > 1000) {
+            if (bandwidth < 10 || bandwidth > 500) {
                 res.status(400).send({
                     message: "Bandwidth must be between 10 and 1000"
                 });
