@@ -42,6 +42,19 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
+const bannedUaList = [
+    "milu-dick",
+]
+
+const banUaMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    const userAgent = req.headers['user-agent'] || '';
+    if (bannedUaList.some(ua => userAgent.toLowerCase().includes(ua))) {
+        res.status(403).send("Forbidden");
+        return;
+    }
+    next();
+}
+
 const getRealIP = (obj: Indexable<any>): string => {
     return (obj[Config.instance.sourceIpHeader] as string).split(',')[0];
 }
@@ -140,6 +153,7 @@ export class Server {
         // 设置中间件
         this.app.use(logMiddleware);
         if (Config.instance.requestRateLimit > 0) this.app.use(rateLimiter);
+        if (Config.instance.allowBanUserAgent) this.app.use(banUaMiddleware);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
