@@ -902,6 +902,13 @@ export class Server {
             const clusterName = req.body.clusterName as string;
             const bandwidth = req.body.bandwidth as number;
 
+            if (bandwidth < 10 || bandwidth > 1000) {
+                res.status(400).send({
+                    message: "Bandwidth must be between 10 and 1000"
+                });
+                return;
+            }
+
             let cluster = new ClusterEntity();
             cluster.clusterId = Utilities.generateRandomString(24);
             cluster.clusterSecret = Utilities.generateRandomString(32);
