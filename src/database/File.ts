@@ -6,6 +6,7 @@ export class File {
     public size: number;
     public lastModified: number;
     public encodedPath: string;
+    public url: string | null = null;
 
     public constructor() {
         this.path = "/path/to/file";

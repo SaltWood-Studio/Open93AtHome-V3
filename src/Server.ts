@@ -585,17 +585,25 @@ export class Server {
                         this.sendFile(req, res, file);
                         return;
                     }
-                    let cluster = await this.fileList.randomAvailableCluster(file, undefined, getRealIP(req.headers) || req.ip);
+                    let cluster = await this.fileList.randomAvailableCluster(file, file.url ? undefined : this.fileList.clusters.filter(c => !c.isProxyCluster), getRealIP(req.headers) || req.ip);
                     if (!cluster) {
                         this.sendFile(req, res, file);
                         return;
                     }
 
-                    res.status(302)
-                    .header('Location', Utilities.getUrl(file, cluster))
-                    .send();
-                    cluster.pendingHits++;
-                    cluster.pendingTraffic += file.size;
+                    if (file.url && cluster.isProxyCluster) {
+                        const url = `${Utilities.getUrlByPath(file.url, `/download`, cluster)}&origin=${encodeURIComponent(file.url)}`;
+                        res.redirect(url);
+                    }
+                    else res.redirect(Utilities.getUrl(file, cluster));
+
+                    if (cluster.masterStatsMode) {
+                        this.stats.filter(s => s.id === cluster.clusterId).forEach(s => s.addData({ hits: 1, bytes: file.size }));
+                    }
+                    else {
+                        cluster.pendingHits++;
+                        cluster.pendingTraffic += file.size;
+                    }
                 } else {
                     res.status(404).send();
                 }
@@ -997,6 +1005,8 @@ export class Server {
             const bandwidth = Number(req.body.bandwidth) || null;
             const sponsor = String(req.body.sponsor) || null;
             const sponsorUrl = String(req.body.sponsorUrl) || null;
+            const isProxy = Boolean(req.body.isProxy) || false;
+            const isMasterStats = Boolean(req.body.isMasterStats) || false;
 
             const cluster = this.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
@@ -1016,6 +1026,9 @@ export class Server {
             }
             if (sponsor) cluster.sponsor = sponsor;
             if (sponsorUrl) cluster.sponsorUrl = sponsorUrl;
+
+            cluster.isProxyCluster = isProxy;
+            cluster.masterStatsMode = isMasterStats;
 
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');
