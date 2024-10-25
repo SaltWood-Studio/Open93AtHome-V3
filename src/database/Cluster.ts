@@ -57,7 +57,7 @@ export class ClusterEntity {
     public isOnline: boolean = false;
 
     private banned: number = 0;
-    public get isBanned(): boolean { return Boolean(this.isBanned); }
+    public get isBanned(): boolean { return Boolean(this.banned); }
     public set isBanned(value: boolean) { this.banned = Number(value); }
 
     public createdAt: number = 0;
