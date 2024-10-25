@@ -599,6 +599,7 @@ export class Server {
 
                     if (cluster.masterStatsMode) {
                         this.stats.filter(s => s.id === cluster.clusterId).forEach(s => s.addData({ hits: 1, bytes: file.size }));
+                        this.centerStats.addData({ hits: 1, bytes: file.size });
                     }
                     else {
                         cluster.pendingHits++;
@@ -1333,6 +1334,10 @@ export class Server {
                     ack([null, false]);
                 }
                 else {
+                    if (cluster.masterStatsMode) {
+                        ack([null, new Date(Date.now()).toISOString()]);
+                        return;
+                    }
                     const hits = Math.min(keepAliveData.hits, cluster.pendingHits);
                     const traffic = Math.min(keepAliveData.bytes, cluster.pendingTraffic);
                     this.centerStats.addData({ hits: hits, bytes: traffic });
