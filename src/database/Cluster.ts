@@ -131,7 +131,7 @@ export class ClusterEntity {
             return {
                 ...rest,
                 fullsize: Utilities.intToBooleans(this.availShards, FileList.SHARD_COUNT).every(Boolean),
-                isMasterStats: isMasterStats,
+                isMasterStats: Boolean(isMasterStats),
                 isProxy: Boolean(isProxy),
                 isBanned: Boolean(banned),
             }
