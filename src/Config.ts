@@ -22,7 +22,6 @@ export class Config {
     public readonly githubOAuthCallbackUrl: string = env.get('GITHUB_OAUTH_CALLBACK_URL').default("").asString();
     public readonly githubUrl: string = env.get('GITHUB_URL').default("github.com").asString();
     public readonly githubApiUrl: string = env.get('GITHUB_API_URL').default("api.github.com").asString();
-    public readonly statsDir: string = env.get('STATISTICS_DIRECTORY').default("./stats").asString();
     public readonly port: number = env.get('PORT').default(9388).asPortNumber();
     public readonly updateToken: string = env.get('UPDATE_TOKEN').default(Utilities.generateRandomString(24)).asString();
     public readonly concurrency: number = env.get('CONCURRENCY').default(10).asIntPositive();
@@ -32,8 +31,6 @@ export class Config {
     public readonly failAttemptsToBan: number = env.get('FAIL_ATTEMPTS_TO_BAN').default(0).asIntPositive();
     public readonly failAttemptsDuration: number = env.get('FAIL_ATTEMPTS_DURATION').default(0).asIntPositive();
     public readonly requestRateLimit: number = env.get('REQUEST_RATE_LIMIT').default(0).asIntPositive();
-    
-    public readonly allowBanUserAgent: boolean = env.get('ALLOW_BAN_USER_AGENT').default("false").asBool();
 
     // 开发变量
     public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();
