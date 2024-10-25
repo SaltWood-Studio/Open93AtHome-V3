@@ -780,14 +780,14 @@ export class Server {
         });
         this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
             const token = req.cookies.token;
-            const clusterId = String(req.query.clusterId);
+            const clusterId = req.query.clusterId as string || null;
             if (!token) {
                 res.status(401).send(); // 未登录
                 return;
             }
             const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send(); // 用户不存在
+                res.status(404).send("User not found."); // 用户不存在
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
@@ -814,17 +814,17 @@ export class Server {
                 res.status(404).send(); // 用户不存在
                 return;
             }
-            const clusterId = String(req.query.clusterId);
+            const clusterId = req.query.clusterId as string || null;
             const cluster = this.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
             if (!cluster) {
                 res.status(404).send(); // 集群不存在
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            const clusterName = String(req.body.clusterName) || null;
+            const clusterName = req.body.clusterName as string || null;
             const bandwidth = Number(req.body.bandwidth) || 0;
-            const sponsor = String(req.body.sponsor) || null;
-            const sponsorUrl = String(req.body.sponsorUrl) || null;
+            const sponsor = req.body.sponsor as string || null;
+            const sponsorUrl = req.body.sponsorUrl as string || null;
 
             // 将以上四个可选项目更新到集群，如果为null说明不进行更改
             if (clusterName) {
@@ -891,7 +891,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/create', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterName = String(req.body.clusterName) || "";
+            const clusterName = req.body.clusterName as string || "";
             const bandwidth = Number(req.body.bandwidth) || 0;
 
             if (bandwidth < 10 || bandwidth > 500) {
@@ -919,7 +919,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/remove', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterId = String(req.body.clusterId) || "";
+            const clusterId = req.body.clusterId as string || "";
 
             if (clusterId) {
                 const cluster = this.clusters.find(c => c.clusterId === clusterId);
@@ -974,7 +974,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/ban', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterId = String(req.body.clusterId) || "";
+            const clusterId = req.body.clusterId as string || "";
             const ban = Boolean(req.body.ban) || false;
             const cluster = this.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
@@ -989,7 +989,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/kick', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterId = String(req.query.clusterId) || "";
+            const clusterId = req.query.clusterId as string || "";
             const cluster = this.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
                 res.status(404).send(); // 集群不存在
@@ -1001,11 +1001,11 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/profile', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterId = String(req.query.clusterId);
-            const clusterName = String(req.body.clusterName) || null;
+            const clusterId = req.query.clusterId as string || null;
+            const clusterName = req.body.clusterName as string || null;
             const bandwidth = Number(req.body.bandwidth) || null;
-            const sponsor = String(req.body.sponsor) || null;
-            const sponsorUrl = String(req.body.sponsorUrl) || null;
+            const sponsor = req.body.sponsor as string || null;
+            const sponsorUrl = req.body.sponsorUrl as string || null;
             const isProxy = Boolean(req.body.isProxy) || false;
             const isMasterStats = Boolean(req.body.isMasterStats) || false;
 
