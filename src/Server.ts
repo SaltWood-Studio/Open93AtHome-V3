@@ -138,7 +138,7 @@ export class Server {
 
     public async init(): Promise<void> {
         // 设置中间件
-        this.app.use(logMiddleware);
+        if (Config.instance.disableAccessLog) this.app.use(logMiddleware);
         if (Config.instance.requestRateLimit > 0) this.app.use(rateLimiter);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
