@@ -771,7 +771,7 @@ export class Server {
         });
         this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
             const token = req.cookies.token;
-            const clusterId = req.query.clusterId as string;
+            const clusterId = String(req.query.clusterId);
             if (!token) {
                 res.status(401).send(); // 未登录
                 return;
@@ -805,17 +805,17 @@ export class Server {
                 res.status(404).send(); // 用户不存在
                 return;
             }
-            const clusterId = req.query.clusterId as string;
+            const clusterId = String(req.query.clusterId);
             const cluster = this.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
             if (!cluster) {
                 res.status(404).send(); // 集群不存在
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            const clusterName = req.body.clusterName as string || null;
-            const bandwidth = req.body.bandwidth as number || 0;
-            const sponsor = req.body.sponsor as string || null;
-            const sponsorUrl = req.body.sponsorUrl as string || null;
+            const clusterName = String(req.body.clusterName) || null;
+            const bandwidth = Number(req.body.bandwidth) || 0;
+            const sponsor = String(req.body.sponsor) || null;
+            const sponsorUrl = String(req.body.sponsorUrl) || null;
 
             // 将以上四个可选项目更新到集群，如果为null说明不进行更改
             if (clusterName) {
@@ -882,8 +882,8 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/create', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterName = req.body.clusterName as string || "";
-            const bandwidth = req.body.bandwidth as number || 0;
+            const clusterName = String(req.body.clusterName) || "";
+            const bandwidth = Number(req.body.bandwidth) || 0;
 
             if (bandwidth < 10 || bandwidth > 500) {
                 res.status(400).send({
@@ -910,7 +910,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/remove', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterId = req.body.clusterId as string;
+            const clusterId = String(req.body.clusterId) || "";
 
             if (clusterId) {
                 const cluster = this.clusters.find(c => c.clusterId === clusterId);
@@ -931,6 +931,13 @@ export class Server {
             }
 
             const clusterIds = req.body.clusterIds as string[];
+            if (!Array.isArray(clusterIds)) {
+                res.status(400).send({
+                    success: false,
+                    message: "Bad request"
+                });
+                return;
+            }
             if (clusterIds) {
                 const clusters = this.clusters.filter(c => clusterIds.includes(c.clusterId));
                 if (clusters.length === 0) {
@@ -958,16 +965,14 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/ban', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const data = req.body as {
-                clusterId: string,
-                ban: boolean
-            };
-            const cluster = this.clusters.find(c => c.clusterId === data.clusterId);
+            const clusterId = String(req.body.clusterId) || "";
+            const ban = Boolean(req.body.ban) || false;
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
                 res.status(404).send(); // 集群不存在
                 return;
             }
-            cluster.isBanned = Number(data.ban);
+            cluster.isBanned = Boolean(ban);
             cluster.doOffline("This cluster is banned.");
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');
@@ -975,7 +980,7 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/kick', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const clusterId = req.query.clusterId as string || "";
+            const clusterId = String(req.query.clusterId) || "";
             const cluster = this.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
                 res.status(404).send(); // 集群不存在
@@ -987,12 +992,11 @@ export class Server {
         });
         this.app.post('/93AtHome/super/cluster/profile', (req: Request, res: Response) => {
             if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const userId = JwtHelper.instance.verifyToken(req.cookies.token, 'user') as { userId: number };
-            const clusterId = req.query.clusterId as string;
-            const clusterName = req.body.clusterName as string || null;
-            const bandwidth = req.body.bandwidth as number || null;
-            const sponsor = req.body.sponsor as string || null;
-            const sponsorUrl = req.body.sponsorUrl as string || null;
+            const clusterId = String(req.query.clusterId);
+            const clusterName = String(req.body.clusterName) || null;
+            const bandwidth = Number(req.body.bandwidth) || null;
+            const sponsor = String(req.body.sponsor) || null;
+            const sponsorUrl = String(req.body.sponsorUrl) || null;
 
             const cluster = this.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
@@ -1027,10 +1031,8 @@ export class Server {
                 res.status(401).send();
                 return;
             }
-            const data = req.body as {
-                id: number
-            };
-            const targetUser = this.db.getEntity<UserEntity>(UserEntity, data.id);
+            const id = Number(req.body.id)
+            const targetUser = this.db.getEntity<UserEntity>(UserEntity, id);
             if (!targetUser) {
                 res.status(404).send(); // 用户不存在
                 return;
@@ -1095,7 +1097,7 @@ export class Server {
                 return;
             }
             // 判断 shards 是不是在 int 范围内
-            const shards = req.body.shards as number;
+            const shards = Number(req.body.shards);
             if (shards < -2147483648 || shards > 2147483647) {
                 res.status(400).send({
                     message: "Shards must be between -2147483648 and 2147483647"
@@ -1204,7 +1206,7 @@ export class Server {
                     Utilities.filterMinutes(cluster.enableHistory, Config.instance.failAttemptsDuration);
                     if (cluster.enableHistory.length >= Config.instance.failAttemptsToBan) {
                         ack(["Error: Too many failed enable requests. This cluster is now banned."]);
-                        cluster.isBanned = 1;
+                        cluster.isBanned = true;
                         cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
                         this.db.update(cluster);
                         return;

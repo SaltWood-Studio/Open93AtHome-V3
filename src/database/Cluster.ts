@@ -16,13 +16,15 @@ import { FileList } from '../FileList.js';
     downReason TEXT,
     clusterName TEXT,
     bandwidth INTEGER,
-    isBanned INTEGER,
+    banned INTEGER,
     createdAt INTEGER,
     sponsor TEXT,
     sponsorUrl TEXT,
     version TEXT,
     downTime INTEGER,
-    availShards INTEGER
+    availShards INTEGER, 
+    isProxy INTEGER,
+    isMasterStats INTEGER
 `)
 @PrimaryKey('clusterId')
 export class ClusterEntity {
@@ -54,7 +56,9 @@ export class ClusterEntity {
     @Ignore()
     public isOnline: boolean = false;
 
-    public isBanned: number = 0;
+    private banned: number = 0;
+    public get isBanned(): boolean { return Boolean(this.isBanned); }
+    public set isBanned(value: boolean) { this.banned = Number(value); }
 
     public createdAt: number = 0;
 
@@ -73,6 +77,16 @@ export class ClusterEntity {
 
     @Ignore()
     private interval: NodeJS.Timeout | null = null;
+
+    private isProxy: number = 0;
+
+    public get isProxyCluster(): boolean { return Boolean(this.isProxy); }
+    public set isProxyCluster(value: boolean) { this.isProxy = Number(value); }
+
+    private isMasterStats: number = 0;
+
+    public get masterStatsMode(): boolean { return Boolean(this.isMasterStats); }
+    public set masterStatsMode(value: boolean) { this.isMasterStats = Number(value); }
 
     public doOffline(reason: string = "Unspecfied"): void {
         this.isOnline = false;
@@ -113,10 +127,9 @@ export class ClusterEntity {
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
         const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, availShards, ...rest }: any) => rest;
         const removeSecretInfo = ({ clusterSecret, ...rest }: any) => rest;
-        const optimizeJsonObject = ({ interval, isBanned, enableHistory, ...rest }: ClusterEntity) => {
+        const optimizeJsonObject = ({ interval, banned, enableHistory, ...rest }: ClusterEntity) => {
             return {
                 ...rest,
-                isBanned: Boolean(this.isBanned),
                 fullsize: Utilities.intToBooleans(this.availShards, FileList.SHARD_COUNT).every(Boolean)
             }
         };
