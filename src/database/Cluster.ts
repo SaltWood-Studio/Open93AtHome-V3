@@ -132,7 +132,7 @@ export class ClusterEntity {
                 ...rest,
                 fullsize: Utilities.intToBooleans(this.availShards, FileList.SHARD_COUNT).every(Boolean),
                 isMasterStats: masterStatsMode,
-                isProxy,
+                isProxy: isProxyCluster,
             }
         };
         let json: any = optimizeJsonObject(this);
