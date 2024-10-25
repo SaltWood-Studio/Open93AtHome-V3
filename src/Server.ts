@@ -981,7 +981,7 @@ export class Server {
                 res.status(404).send(); // 集群不存在
                 return;
             }
-            cluster.isBanned = Boolean(ban);
+            cluster.isBanned = ban;
             cluster.doOffline("This cluster is banned.");
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');

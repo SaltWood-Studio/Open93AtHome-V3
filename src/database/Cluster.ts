@@ -127,12 +127,13 @@ export class ClusterEntity {
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
         const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, availShards, ...rest }: any) => rest;
         const removeSecretInfo = ({ clusterSecret, ...rest }: any) => rest;
-        const optimizeJsonObject = ({ interval, banned, isProxy, isMasterStats, isProxyCluster, masterStatsMode, enableHistory, ...rest }: ClusterEntity) => {
+        const optimizeJsonObject = ({ interval, banned, isProxy, isMasterStats, enableHistory, ...rest }: ClusterEntity) => {
             return {
                 ...rest,
                 fullsize: Utilities.intToBooleans(this.availShards, FileList.SHARD_COUNT).every(Boolean),
-                isMasterStats: masterStatsMode,
-                isProxy: isProxyCluster,
+                isMasterStats: isMasterStats,
+                isProxy: Boolean(isProxy),
+                isBanned: Boolean(banned),
             }
         };
         let json: any = optimizeJsonObject(this);
