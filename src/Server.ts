@@ -1128,14 +1128,29 @@ export class Server {
 
     public setupSocketIO(): void {
         const wrapper = function (socket: any, event: string, fn: Function) {
-            socket.on(event, (...rest: any[]) => {
-                let callback = rest.find((item) => typeof item === "function");
-                if (!callback) {
-                    console.warn("No callback found in arguments");
+            socket.on(event, async (...rest: any[]) => {
+                try {
+                    console.log(rest);
+                    let callback = rest.find((item) => typeof item === "function");
+                    if (!callback) {
+                        console.warn("No callback found in arguments");
+                    }
+                    callback = callback || ((...args: any[]) => {});
+                    const data = callback ? rest.slice(0, rest.indexOf(callback)) : rest;
+                    if (Config.instance.debug) {
+                        console.log(`Received event "${event}" with data ${JSON.stringify(data)}${callback ? ` and callback ${callback}` : ""}`);
+                    }
+                    try {
+                        await fn(callback, ...data);
+                    }
+                    catch (error) {
+                        try {
+                            socket.emit("error", error);
+                        } catch (e) { }
+                    }
+                } catch (error) {
+                    console.error(error);
                 }
-                callback = callback || ((...args: any[]) => {});
-                const data = callback ? rest.slice(0, rest.indexOf(callback)) : rest;
-                fn(callback, ...data);
             });
         };
 
