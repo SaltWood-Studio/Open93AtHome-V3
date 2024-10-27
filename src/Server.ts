@@ -1137,7 +1137,7 @@ export class Server {
                     callback = callback || ((...args: any[]) => {});
                     const data = callback ? rest.slice(0, rest.indexOf(callback)) : rest;
                     if (Config.instance.debug) {
-                        console.debug(`Received event "${event}" with data ${JSON.stringify(data)}${callback ? ` and callback ${callback}` : ""}`);
+                        console.debug(`Received event "${event}" with data ${JSON.stringify(data)}.`);
                     }
                     try {
                         await fn(callback, ...data);
