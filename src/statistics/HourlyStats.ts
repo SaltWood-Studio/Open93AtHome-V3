@@ -56,6 +56,8 @@ export class HourlyStatsStorage {
             }
         }
 
+        if (!hourData.hits) hourData.hits = 0;
+        if (!hourData.bytes) hourData.bytes = 0;
         hourData.hits += hits;
         hourData.bytes += bytes;
         this.dataUpdated = true;
