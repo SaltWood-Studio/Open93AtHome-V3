@@ -1367,7 +1367,9 @@ export class Server {
 
             if (Config.instance.enableRequestCertificate) {
                 socket.on('request-cert', async (callback: Function) => {
+                    console.log(callback);
                     const ack = callback ? callback : (...rest: any[]) => {};
+                    console.log(ack);
 
                     const cluster = this.sessionToClusterMap.get(socket.id);
 
