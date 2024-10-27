@@ -1127,6 +1127,19 @@ export class Server {
     }
 
     public setupSocketIO(): void {
+        const wrapper = function (socket: any, event: string, fn: Function) {
+            socket.on(event, (...rest: any[]) => {
+                console.log(rest);
+                let callback = rest.find((item) => typeof item === "function");
+                if (!callback) {
+                    console.warn("No callback found in arguments");
+                }
+                callback = callback || ((...args: any[]) => {});
+                const data = callback ? rest.slice(0, rest.indexOf(callback)) : rest;
+                fn(callback, ...data);
+            });
+        };
+
         this.io.use((socket, next) => {
             try {
                 const token = socket.handshake.auth?.token;
@@ -1189,7 +1202,7 @@ export class Server {
                 }
             });
 
-            socket.on('enable', async (data, callback: Function) => {
+            wrapper(socket, "enable", async (callback: Function, ...data: any) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
                 const enableData = data as {
                     host: string,
@@ -1314,7 +1327,7 @@ export class Server {
                 });
             });
 
-            socket.on('keep-alive', (data, callback: Function) => {
+            wrapper(socket, "keep-alive", (callback: Function, ...data: any) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
                 const keepAliveData = data as  {
                     time: string,
@@ -1350,7 +1363,7 @@ export class Server {
                 }
             });
 
-            socket.on('disable', (data, callback: Function) => {
+            wrapper(socket, "disable", (callback: Function, ...data: any) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
@@ -1366,7 +1379,7 @@ export class Server {
             });
 
             if (Config.instance.enableRequestCertificate) {
-                socket.on('request-cert', async (callback: Function) => {
+                wrapper(socket, "request-cert", async (callback: Function) => {
                     console.log(callback);
                     const ack = callback ? callback : (...rest: any[]) => {};
                     console.log(ack);
