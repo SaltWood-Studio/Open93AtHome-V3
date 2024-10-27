@@ -1130,7 +1130,6 @@ export class Server {
         const wrapper = function (socket: any, event: string, fn: Function) {
             socket.on(event, async (...rest: any[]) => {
                 try {
-                    console.log(rest);
                     let callback = rest.find((item) => typeof item === "function");
                     if (!callback) {
                         console.warn("No callback found in arguments");
@@ -1138,7 +1137,7 @@ export class Server {
                     callback = callback || ((...args: any[]) => {});
                     const data = callback ? rest.slice(0, rest.indexOf(callback)) : rest;
                     if (Config.instance.debug) {
-                        console.log(`Received event "${event}" with data ${JSON.stringify(data)}${callback ? ` and callback ${callback}` : ""}`);
+                        console.debug(`Received event "${event}" with data ${JSON.stringify(data)}${callback ? ` and callback ${callback}` : ""}`);
                     }
                     try {
                         await fn(callback, ...data);
