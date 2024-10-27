@@ -1215,7 +1215,7 @@ export class Server {
                 }
             });
 
-            wrapper(socket, "enable", async (callback: Function, ...data: any) => {
+            wrapper(socket, "enable", async (callback: Function, data: any) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
                 const enableData = data as {
                     host: string,
@@ -1340,7 +1340,7 @@ export class Server {
                 });
             });
 
-            wrapper(socket, "keep-alive", (callback: Function, ...data: any) => {
+            wrapper(socket, "keep-alive", (callback: Function, data: any) => {
                 const ack = callback ? callback : (...rest: any[]) => {};
                 const keepAliveData = data as  {
                     time: string,
