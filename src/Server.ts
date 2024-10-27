@@ -1372,7 +1372,7 @@ export class Server {
                     cluster.pendingTraffic = 0;
                     ack([null, keepAliveData.time]);
                     this.db.update(cluster);
-                    this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: hits, bytes: traffic }));
+                    this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: Number(hits), bytes: Number(traffic) }));
                 }
             });
 
