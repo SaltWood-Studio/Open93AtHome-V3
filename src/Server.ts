@@ -1215,8 +1215,7 @@ export class Server {
                 }
             });
 
-            wrapper(socket, "enable", async (callback: Function, data: any) => {
-                const ack = callback ? callback : (...rest: any[]) => {};
+            wrapper(socket, "enable", async (ack: Function, data: any) => {
                 const enableData = data as {
                     host: string,
                     port: number,
@@ -1340,8 +1339,7 @@ export class Server {
                 });
             });
 
-            wrapper(socket, "keep-alive", (callback: Function, data: any) => {
-                const ack = callback ? callback : (...rest: any[]) => {};
+            wrapper(socket, "keep-alive", (ack: Function, data: any) => {
                 const keepAliveData = data as  {
                     time: string,
                     hits: number,
@@ -1376,8 +1374,7 @@ export class Server {
                 }
             });
 
-            wrapper(socket, "disable", (callback: Function, ...data: any) => {
-                const ack = callback ? callback : (...rest: any[]) => {};
+            wrapper(socket, "disable", (ack: Function, ...data: any) => {
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (!cluster || !cluster.isOnline) {
@@ -1392,10 +1389,7 @@ export class Server {
             });
 
             if (Config.instance.enableRequestCertificate) {
-                wrapper(socket, "request-cert", async (callback: Function) => {
-                    console.log(callback);
-                    const ack = callback ? callback : (...rest: any[]) => {};
-                    console.log(ack);
+                wrapper(socket, "request-cert", async (ack: Function) => {
 
                     const cluster = this.sessionToClusterMap.get(socket.id);
 
