@@ -125,7 +125,7 @@ export class ClusterEntity {
     }
 
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
-        const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, availShards, ...rest }: any) => rest;
+        const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, shards, ...rest }: any) => rest;
         const removeSecretInfo = ({ clusterSecret, ...rest }: any) => rest;
         const optimizeJsonObject = ({ interval, banned, isProxy, isMasterStats, enableHistory, ...rest }: ClusterEntity) => {
             return {
