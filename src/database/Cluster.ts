@@ -22,7 +22,7 @@ import { FileList } from '../FileList.js';
     sponsorUrl TEXT,
     version TEXT,
     downTime INTEGER,
-    availShards INTEGER, 
+    shards INTEGER, 
     isProxy INTEGER,
     isMasterStats INTEGER
 `)
@@ -70,7 +70,7 @@ export class ClusterEntity {
 
     public downTime: number = 0;
 
-    public availShards: number = -1;
+    public shards: number = 1000;
 
     @Ignore()
     public enableHistory: Date[] = [];
@@ -130,7 +130,7 @@ export class ClusterEntity {
         const optimizeJsonObject = ({ interval, banned, isProxy, isMasterStats, enableHistory, ...rest }: ClusterEntity) => {
             return {
                 ...rest,
-                fullsize: Utilities.intToBooleans(this.availShards, FileList.SHARD_COUNT).every(Boolean),
+                fullsize: this.shards >= 1000,
                 isMasterStats: Boolean(isMasterStats),
                 isProxy: Boolean(isProxy),
                 isBanned: Boolean(banned),

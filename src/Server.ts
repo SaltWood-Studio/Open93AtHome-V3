@@ -532,7 +532,7 @@ export class Server {
             
             let lastModified = Number(req.query.lastModified);
             lastModified = Number.isNaN(lastModified)? 0 : lastModified;
-            console.log(`Available files for cluster ${clusterId}: ${cluster.availShards} shards, ${this.fileList.getAvailableFiles(cluster).length}`);
+            console.log(`Available files for cluster ${clusterId}: ${cluster.shards} shards.`);
 
             if (lastModified === 0) {
                 res.status(200).send(await Utilities.getAvroBytes(this.fileList.getAvailableFiles(cluster)));
@@ -1112,13 +1112,13 @@ export class Server {
             }
             // 判断 shards 是不是在 int 范围内
             const shards = Number(req.body.shards);
-            if (shards < -2147483648 || shards > 2147483647) {
+            if (shards < 0 || shards > 1000) {
                 res.status(400).send({
-                    message: "Shards must be between -2147483648 and 2147483647"
+                    message: "Shards must be between 0 and 1000"
                 });
                 return;
             }
-            cluster.availShards = shards;
+            cluster.shards = shards;
             this.db.update(cluster);
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(cluster.getJson(true, false));

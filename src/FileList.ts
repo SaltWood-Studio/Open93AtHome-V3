@@ -4,8 +4,7 @@ import crc32 from 'crc-32';
 import { Utilities } from './Utilities.js';
 
 export class FileList {
-    // 不能大于 number 的安全范围 MAX_SAFE_INTEGER = 2 ^ 53 - 1
-    public static readonly SHARD_COUNT = 32; // 最大 53
+    public static readonly SHARD_COUNT = 1000;
 
     private _files: File[] = [];
     private _clusters: ClusterEntity[] = [];
@@ -21,8 +20,7 @@ export class FileList {
         this._shards = FileList.splitIntoShards(this._files, FileList.SHARD_COUNT);
         console.log(`File shards updated: ${this._shards.map(s => s.length)}`);
         for (const cluster of this._clusters) {
-            const availableShards = Utilities.intToBooleans(cluster.availShards, FileList.SHARD_COUNT);
-            console.log(`Cluster ${cluster.clusterId}, shards: ${cluster.availShards}, available shards: ${availableShards.filter(b => b).length}`);
+            console.log(`Cluster ${cluster.clusterId}, shards: ${cluster.shards}`);
         }
     }
 
@@ -70,9 +68,7 @@ export class FileList {
     }
 
     public getAvailableFiles(cluster: ClusterEntity): File[] {
-        const availableShards = Utilities.intToBooleans(cluster.availShards, FileList.SHARD_COUNT);
-
-        return this._shards.filter((_, index) => availableShards[index]).flat();
+        return this._shards.filter((_, index) => cluster.shards >= index).flat();
     }
 
     public getAvailableClusters(file: File | null = null, clusters: ClusterEntity[] | undefined = undefined): ClusterEntity[] {
@@ -96,7 +92,7 @@ export class FileList {
 
     public static availableInCluster(file: File, cluster: ClusterEntity): boolean {
         const index = FileList.getShardIndex(file.path, FileList.SHARD_COUNT);
-        return (cluster.availShards & (1 << index)) !== 0;
+        return index <= cluster.shards;
     }
 
     // 计算对象的分片索引
