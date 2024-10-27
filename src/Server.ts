@@ -1362,7 +1362,7 @@ export class Server {
                 }
                 else {
                     if (cluster.masterStatsMode) {
-                        ack([null, new Date(Date.now()).toISOString()]);
+                        ack([null, keepAliveData.time]);
                         return;
                     }
                     const hits = Math.min(keepAliveData.hits, cluster.pendingHits);
@@ -1370,7 +1370,7 @@ export class Server {
                     this.centerStats.addData({ hits: hits, bytes: traffic });
                     cluster.pendingHits = 0;
                     cluster.pendingTraffic = 0;
-                    ack([null, new Date(Date.now()).toISOString()]);
+                    ack([null, keepAliveData.time]);
                     this.db.update(cluster);
                     this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: hits, bytes: traffic }));
                 }
