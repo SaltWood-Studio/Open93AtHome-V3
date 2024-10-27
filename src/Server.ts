@@ -1129,7 +1129,6 @@ export class Server {
     public setupSocketIO(): void {
         const wrapper = function (socket: any, event: string, fn: Function) {
             socket.on(event, (...rest: any[]) => {
-                console.log(rest);
                 let callback = rest.find((item) => typeof item === "function");
                 if (!callback) {
                     console.warn("No callback found in arguments");
