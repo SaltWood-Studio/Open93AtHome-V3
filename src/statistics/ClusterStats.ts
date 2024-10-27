@@ -39,6 +39,8 @@ export class StatsStorage {
             }
         }
 
+        if (!todayData.hits) todayData.hits = 0;
+        if (!todayData.bytes) todayData.bytes = 0;
         todayData.hits += hits;
         todayData.bytes += bytes;
         this.dataUpdated = true;  // 数据已更新
