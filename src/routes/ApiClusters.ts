@@ -8,11 +8,11 @@ export class ApiClusters {
         inst.app.get("/api/clusters", async (req, res) => { res.json(inst.clusters.map(cluster => cluster.getJson(true, true))) });
         inst.app.get("/api/clusters/:id", async (req, res) => {
             const cluster = inst.clusters.find(cluster => cluster.clusterId === req.params.id);
-            if (cluster) {
-                res.json(cluster.getJson(true, true));
-            } else {
+            if (!cluster) {
                 res.status(404).json({ error: "Cluster not found" });
+                return;
             }
+            res.json(cluster.getJson(true, true));
         });
 
         inst.app.post("/api/clusters", async (req, res) => {

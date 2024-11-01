@@ -331,6 +331,11 @@ export class Server {
     }
 
     public setupHttp(): void {
+        this.app.get('/', (req: Request, res: Response) => {
+            res.status(302).setHeader('Location', '/dashboard').send();
+        });
+        this.app.use('/assets', express.static(path.resolve('./assets')));
+
         const factory = new ApiFactory(this, this.fileList, this.db, this.dns, this.acme, this.app);
         factory.factory();
 
@@ -360,8 +365,6 @@ export class Server {
         });
         this.app.post('/openbmclapi-agent/token', (req: Request, res: Response) => {
             res.setHeader('Content-Type', 'application/json');
-            
-        
             // 从请求体中获取参数
             const clusterId = req.body.clusterId as string;
             const signature = req.body.signature as string;
@@ -447,6 +450,13 @@ export class Server {
             } else {
                 res.status(404).send();
             }
+        });
+        this.app.post('/openbmclapi/report', (req: Request, res: Response) => {
+            const body = req.body as {
+                urls: string[],
+                error: string
+            };
+            res.status(200).send();
         });
         this.app.get('/files/*', async (req: Request, res: Response) => {
             try {

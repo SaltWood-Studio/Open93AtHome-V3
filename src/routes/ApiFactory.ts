@@ -7,6 +7,12 @@ import { Server } from "../Server.js";
 import { SQLiteHelper } from "../SQLiteHelper.js";
 import { Express } from "express";
 import { ApiClusters } from "./ApiClusters.js";
+import { StatsStorage } from "../statistics/ClusterStats.js";
+import { File } from "../database/File.js";
+import { Got } from "got";
+import { ApiAdmin } from "./ApiAdmin.js";
+import { ApiUser } from "./ApiUser.js";
+import { ApiAuth } from "./ApiAuth.js";
 
 export class ApiFactory {
     public fileList: FileList;
@@ -16,20 +22,23 @@ export class ApiFactory {
     public acme: ACME | null;
     public app: Express;
 
-    public get got() {
+    public get got(): Got {
         return this.server.got;
     }
-    public get files() {
+    public get files(): File[] {
         return this.fileList.files;
     }
-    public get clusters() {
+    public get clusters(): ClusterEntity[] {
         return this.fileList.clusters;
     }
     public set clusters(value: ClusterEntity[]) {
         this.fileList.clusters = value;
     }
-    public get users() {
+    public get users(): UserEntity[] {
         return this.db.getEntities<UserEntity>(UserEntity);
+    }
+    public get stats(): StatsStorage[] {
+        return this.server.stats;
     }
     
     constructor(server: Server, fileList: FileList, db: SQLiteHelper, dns: DnsManager | null, acme: ACME | null, app: Express) {
@@ -41,7 +50,10 @@ export class ApiFactory {
         this.app = app;
     }
 
-    public factory() {
+    public factory(): void {
         ApiClusters.register(this);
+        ApiAdmin.register(this);
+        ApiUser.register(this);
+        ApiAuth.register(this);
     }
 }
