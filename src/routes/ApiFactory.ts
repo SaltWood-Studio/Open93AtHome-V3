@@ -12,8 +12,8 @@ export class ApiFactory {
     public fileList: FileList;
     public server: Server;
     public db: SQLiteHelper;
-    public dns: DnsManager;
-    public acme: ACME;
+    public dns: DnsManager | null;
+    public acme: ACME | null;
     public app: Express;
 
     public get got() {
@@ -32,7 +32,7 @@ export class ApiFactory {
         return this.db.getEntities<UserEntity>(UserEntity);
     }
     
-    constructor(server: Server, fileList: FileList, db: SQLiteHelper, dns: DnsManager, acme: ACME, app: Express) {
+    constructor(server: Server, fileList: FileList, db: SQLiteHelper, dns: DnsManager | null, acme: ACME | null, app: Express) {
         this.server = server;
         this.fileList = fileList;
         this.db = db;
