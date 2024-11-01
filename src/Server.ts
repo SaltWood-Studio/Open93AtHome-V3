@@ -46,7 +46,7 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-const getRealIP = (obj: Indexable<any>): string => {
+export const getRealIP = (obj: Indexable<any>): string => {
     return (obj[Config.instance.sourceIpHeader] as string).split(',')[0];
 }
 
@@ -63,10 +63,10 @@ export class Server {
     public db: SQLiteHelper;
     protected fileList: FileList;
     public isUpdating: boolean = false;
-    protected sessionToClusterMap: Map<string, ClusterEntity> = new Map();
+    public sessionToClusterMap: Map<string, ClusterEntity> = new Map();
     public stats: StatsStorage[];
     public centerStats: HourlyStatsStorage;
-    protected plugins: Plugin[];
+    public plugins: Plugin[];
     protected pluginLoader: PluginLoader;
     public got: Got;
     public sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
@@ -258,78 +258,6 @@ export class Server {
     public setupRoutes(): void {
         this.setupHttp();
         this.setupSocketIO();
-        if (Config.instance.debug) this.setupDebugRoutes();
-    }
-
-    public setupDebugRoutes(): void {
-        // 认证中间件
-        const authMiddleware = (req: Request, res: Response, next: Function) => {
-            if (Utilities.verifyAdmin(req, res, this.db)) {
-                next();
-            } else {
-                res.status(403).json({ message: 'Forbidden' }); // 验证失败，返回 403 错误
-            }
-        };
-
-        // 统一使用 authMiddleware 中间件来验证
-        this.app.use('/93AtHome/debug', authMiddleware);
-
-        this.app.get('/93AtHome/debug/list_plugins', async (req: Request, res: Response) => {
-            const promises = this.plugins.map(async p => ({
-                name: p.getName(),
-                fileCount: (await p.getFiles()).length
-            }));
-            res.status(200).json(await Promise.all(promises));
-        });
-        this.app.get('/93AtHome/debug/all', (req: Request, res: Response) => {
-            res.status(200).json({
-                clusters: this.clusters.map(c => c.getJson(true, true)),
-                sources: this.sources,
-                plugins: this.plugins
-            })
-        })
-        this.app.get('/93AtHome/debug/list_sessions', (req: Request, res: Response) => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(Array.from(this.io.sockets.sockets).map(([id, socket]) => ({
-                session: id,
-                ip: getRealIP(socket.handshake.headers) || socket.handshake.address,
-                cluster: this.sessionToClusterMap.get(id)?.getJson(true, true)
-            }))));
-        });
-        this.app.post('/93AtHome/debug/test_all_cluster', (req: Request, res: Response) => {
-            const hash = req.body.hash as string;
-            const file = this.fileList.getFile("hash", hash);
-            if (!file) {
-                res.status(404).json({ message: 'File not found' });
-                return;
-            }
-            res.status(200).json(this.fileList.getAvailableClusters(file).map(c => ({
-                clusterId: c.clusterId,
-                requestUrl: Utilities.getUrl(file, c)
-            })));
-        })
-        this.app.get('/93AtHome/debug/get_shard', (req: Request, res: Response) => {
-            const hash = req.query.hash as string;
-            const file = this.fileList.getFile("hash", hash);
-            if (!file) {
-                res.status(404).json({ message: 'File not found' });
-                return;
-            }
-            res.status(200).json({
-                shard: FileList.getShardIndex(file.path, FileList.SHARD_COUNT),
-                file
-            });
-        });
-        this.app.get('/93AtHome/debug/get_available_files', (req: Request, res: Response) => {
-            const clusterId = req.query.clusterId as string;
-            const cluster = this.clusters.find(c => c.clusterId === clusterId);
-            if (!cluster) {
-                res.status(404).json({ message: 'Cluster not found' });
-                return;
-            }
-            res.status(200).json(this.fileList.getAvailableFiles(cluster));
-        });
     }
 
     public setupHttp(): void {
@@ -338,8 +266,13 @@ export class Server {
         });
         this.app.use('/assets', express.static(path.resolve('./assets')));
 
+        // 废弃提示
+        this.app.use("/93AtHome", (req: Request, res: Response) => {
+            res.status(410).send("This API is deprecated and removed. Please use APIv2 instead.");
+        });
+
         const factory = new ApiFactory(this, this.fileList, this.db, this.dns, this.acme, this.app);
-        factory.factory();
+        factory.factory(Config.instance.debug);
 
         this.app.get('/openbmclapi-agent/challenge', (req: Request, res: Response) => {
             res.setHeader('Content-Type', 'application/json');

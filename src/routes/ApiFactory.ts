@@ -15,6 +15,7 @@ import { ApiUser } from "./ApiUser.js";
 import { ApiAuth } from "./ApiAuth.js";
 import { ApiStats } from "./ApiStats.js";
 import { ApiOther } from "./ApiOther.js";
+import { ApiDebug } from "./ApiDebug.js";
 
 export class ApiFactory {
     public fileList: FileList;
@@ -52,12 +53,13 @@ export class ApiFactory {
         this.app = app;
     }
 
-    public factory(): void {
+    public factory(debug: boolean = false): void {
         ApiClusters.register(this);
         ApiAdmin.register(this);
         ApiUser.register(this);
         ApiAuth.register(this);
         ApiStats.register(this);
         ApiOther.register(this);
+        if (debug) ApiDebug.register(this);
     }
 }
