@@ -60,11 +60,6 @@ export class ApiAdmin {
         });
 
         inst.app.post("/api/admin/update", async (req, res) => {
-            const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(req.cookies.adminToken, 'admin') as { userId: number }).userId);
-            if (!user) {
-                res.status(401).send();
-                return;
-            }
             if (inst.server.isUpdating) {
                 res.status(409).send({
                     success: false,
@@ -77,5 +72,7 @@ export class ApiAdmin {
                 success: true
             });
         });
+
+        inst.app.get("/api/admin/all_users", async (req, res) => { res.json(inst.db.getEntities<UserEntity>(UserEntity)) });
     }
 }

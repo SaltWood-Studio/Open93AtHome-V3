@@ -562,32 +562,3 @@
         this.app.get('/93AtHome/syncSources', (req: Request, res: Response) => {
             res.status(200).json(this.sources);
         });
-        this.app.get('/93AtHome/super/list_users', (req: Request, res: Response) => {
-            if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const users = this.db.getEntities<UserEntity>(UserEntity);
-            res.status(200).json(users);
-        })
-        this.app.get('/93AtHome/shards', (req: Request, res: Response) => {
-            if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            res.json(this.fileList.shards);
-        });
-        this.app.post('/93AtHome/super/modify_shards', (req: Request, res: Response) => {
-            if (!Utilities.verifyAdmin(req, res, this.db)) return;
-            const cluster = this.clusters.find(c => c.clusterId === req.query.clusterId);
-            if (!cluster) {
-                res.status(404).send(); // 集群不存在
-                return;
-            }
-            // 判断 shards 是不是在 int 范围内
-            const shards = Number(req.body.shards);
-            if (shards < 0 || shards > 1000) {
-                res.status(400).send({
-                    message: "Shards must be between 0 and 1000"
-                });
-                return;
-            }
-            cluster.shards = shards;
-            this.db.update(cluster);
-            res.setHeader('Content-Type', 'application/json');
-            res.status(200).json(cluster.getJson(true, false));
-        });

@@ -125,5 +125,35 @@ export class ApiClusters {
             inst.db.update(cluster);
             res.json({ success: true });
         });
+
+        inst.app.get("/api/clusters/:id/shards", async (req, res) => {
+            if (!Utilities.verifyAdmin(req, res, inst.db)) return;
+            const cluster = inst.clusters.find(c => c.clusterId === req.params.id);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            res.status(200).json({ shards: cluster.shards });
+        });
+        inst.app.put("/api/clusters/:id/shards", async (req, res) => {
+            if (!Utilities.verifyAdmin(req, res, inst.db)) return;
+            const cluster = inst.clusters.find(c => c.clusterId === req.query.clusterId);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            // 判断 shards 是不是在 int 范围内
+            const shards = Number(req.body.shards);
+            if (shards < 0 || shards > 1000) {
+                res.status(400).send({
+                    message: "Shards must be between 0 and 1000"
+                });
+                return;
+            }
+            cluster.shards = shards;
+            inst.db.update(cluster);
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(cluster.getJson(true, false));
+        });
     }
 }
