@@ -1,0 +1,593 @@
+
+        this.app.use('/assets', express.static(path.resolve('./assets')));
+
+        // 设置路由
+        this.app.get('/', (req: Request, res: Response) => {
+            res.status(302).setHeader('Location', '/dashboard').send();
+        });
+        this.app.get('/93AtHome/list_clusters', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(this.db.getEntities<ClusterEntity>(ClusterEntity).map(c => c.getJson(true, false)).map(c => {
+                const ignoredFields = (c as any).ignoredFields || [];
+                const obj = c as Record<string, any>;
+                const keys = Object.keys(c).filter(k => !ignoredFields.includes(k));
+                const values = keys.map(k => obj[k]);
+                
+                const result = keys.reduce((acc, key) => {
+                    acc[key] = obj[key];
+                    return acc;
+                }, {} as Record<string, any>);
+
+                return result;
+            })));
+        });
+        this.app.get('/93AtHome/list_files', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(this.files));
+        });
+        this.app.get('/93AtHome/dashboard/oauth_id', (req: Request, res: Response) => {
+            res.statusCode = 200;
+            res.end(Config.instance.githubOAuthClientId);
+        });
+        this.app.get('/93AtHome/dashboard/user/oauth', async (req: Request, res: Response) => {
+            res.set("Content-Type", "application/json");
+        
+            try {
+                const code = req.query.code as string || '';
+        
+                // 请求GitHub获取access_token
+                const tokenData = await this.got.post(`https://${Config.instance.githubUrl}/login/oauth/access_token`, {
+                    form: {
+                        code,
+                        client_id: Config.instance.githubOAuthClientId,
+                        client_secret: Config.instance.githubOAuthClientSecret
+                    },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    responseType: 'json'
+                }).json<{ access_token: string }>();
+        
+                const accessToken = tokenData.access_token;
+        
+                let userResponse = await this.got.get(`https://${Config.instance.githubApiUrl}/user`, {
+                    headers: {
+                        'Authorization': `token ${accessToken}`,
+                        'Accept': 'application/json',
+                        'User-Agent': 'Open93AtHome-V3/3.0.0' // GitHub API要求设置User-Agent
+                    }
+                }).json<{ id: number, login: string, avatar_url: string, name: string }>();
+             
+                const user = GitHubUser.create(
+                    userResponse.id,
+                    userResponse.name || userResponse.login || '',
+                    userResponse.avatar_url
+                );
+        
+                // 处理数据库操作
+                let dbUser = this.db.getEntity<UserEntity>(UserEntity, user.id);
+                if (dbUser) {
+                    this.db.update(user.toUserWithDbEntity(dbUser));
+                } else {
+                    this.db.insert<UserEntity>(user.toUserEntity());
+                }
+        
+                // 生成JWT并设置cookie
+                const token = JwtHelper.instance.issueToken({
+                    userId: user.id,
+                    clientId: Config.instance.githubOAuthClientId
+                }, "user", 60 * 60 * 24);
+        
+                res.cookie('token', token, {
+                    expires: new Date(Date.now() + 86400000), // 24小时后过期
+                    secure: true,
+                    sameSite: 'lax',
+                });
+
+                if (this.db.getEntity<UserEntity>(UserEntity, user.id)?.isSuperUser) {
+                    const adminToken = JwtHelper.instance.issueToken({
+                        userId: user.id,
+                        clientId: Config.instance.githubOAuthClientId
+                    }, "admin", 60 * 60 * 24);
+                    res.cookie('adminToken', adminToken, {
+                        expires: new Date(Date.now() + 86400000), // 24小时后过期
+                        secure: true,
+                        sameSite: 'lax',
+                    });
+                }
+        
+                res.status(200).json({
+                    avatar_url: user.avatar_url,
+                    username: user.login,
+                    id: user.id
+                });
+            } catch (error) {
+                const err = error as Error;
+                console.error('Error processing GitHub OAuth:', err);
+                res.status(500).json({
+                    error: `${err.name}: ${err.message}`
+                });
+            }
+        });
+        this.app.get('/93AtHome/update_files', (req: Request, res: Response) => {
+            const token = req.query.token as string || '';
+            if (token !== Config.instance.updateToken) {
+                res.status(403).send(); // 禁止访问
+                return;
+            }
+            if (this.isUpdating) {
+                res.status(409).send('Update in progress');
+                return;
+            }
+
+            this.updateFiles(true);
+            res.status(204).send();
+        });
+        this.app.get('/openbmclapi-agent/challenge', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+        
+            const clusterId = req.query.clusterId as string || '';
+        
+            if (this.clusters.some(c => c.clusterId === clusterId)) {
+                const cluster = this.clusters.find(c => c.clusterId === clusterId);
+                if (!cluster) {
+                    res.status(404).send();
+                    return;
+                }
+                if (cluster.isBanned) {
+                    res.status(403).send();
+                    return;
+                }
+                const token = JwtHelper.instance.issueToken({
+                    clusterId: clusterId
+                }, "cluster-challenge", 60 * 5);
+        
+                res.status(200).json({ challenge: token });
+            } else {
+                res.status(404).send();
+            }
+        });
+        // 处理 POST 请求
+        this.app.post('/openbmclapi-agent/token', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+            
+        
+            // 从请求体中获取参数
+            const clusterId = req.body.clusterId as string;
+            const signature = req.body.signature as string;
+            const challenge = req.body.challenge as string;
+            const claims = JwtHelper.instance.verifyToken(challenge, 'cluster-challenge') as { clusterId: string };
+            const cluster = this.clusters.find(c => c.clusterId === claims.clusterId);
+        
+            if (cluster) {
+
+                if (claims && claims.clusterId === clusterId && Utilities.computeSignature(challenge, signature, cluster.clusterSecret)) {
+                    const token = JwtHelper.instance.issueToken(
+                        { clusterId: clusterId },
+                        'cluster',
+                        60 * 60 * 24 // 过期时间：24小时
+                    );
+                
+                    res.status(200).json({
+                        token,
+                        ttl: 1000 * 60 * 60 * 24 // TTL：24小时
+                    });
+                } else {
+                    res.status(403).send(); // 禁止访问
+                }
+            } else {
+                res.status(404).send(); // 未找到
+            }
+        });
+        this.app.get('/openbmclapi/files', async (req: Request, res: Response) => {
+            if (this.isUpdating) {
+                res.status(503).send('File list update in progress');
+                return;
+            }
+            if (!Utilities.verifyClusterRequest(req)) {
+                res.status(403).send(); // 禁止访问
+                return;
+            }
+            const clusterId = Utilities.tryGetRequestCluster<{ clusterId: string }>(req)?.clusterId || "";
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (!cluster) {
+                res.status(401).send();
+                return;
+            }
+            res.setHeader('Content-Disposition', 'attachment; filename="files.avro"');
+            
+            let lastModified = Number(req.query.lastModified);
+            lastModified = Number.isNaN(lastModified)? 0 : lastModified;
+            console.log(`Available files for cluster ${clusterId}: ${cluster.shards} shards.`);
+
+            if (lastModified === 0) {
+                res.status(200).send(await Utilities.getAvroBytes(this.fileList.getAvailableFiles(cluster)));
+            }
+            else {
+                const files = this.fileList.getAvailableFiles(cluster);
+                if (files.length === 0){
+                    res.status(204).send();
+                    return;
+                }
+                res.send(await Utilities.getAvroBytes(files));
+            }
+        });
+        this.app.get('/openbmclapi/configuration', (req: Request, res: Response) => {
+            if (!Utilities.verifyClusterRequest(req)) {
+                res.status(403).send(); // 禁止访问
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json({ sync: { concurrency: Config.instance.concurrency, source: "center" }});
+        });
+        this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
+            if (!Utilities.verifyClusterRequest(req)) {
+                res.status(403).send(); // 禁止访问
+                return;
+            }
+            if (this.isUpdating) {
+                res.status(503).send('File list update in progress');
+                return;
+            }
+            const hash = req.params.hash.toLowerCase();
+            const file = this.fileList.getFile("hash", hash);
+            if (file) {
+                this.sendFile(req, res, file);
+                return;
+            } else {
+                res.status(404).send();
+            }
+        });
+        this.app.get('/files/*', async (req: Request, res: Response) => {
+            try {
+                if (this.isUpdating) {
+                    res.status(503).send('File list update in progress');
+                    return;
+                }
+                const p = decodeURI(req.path);
+                const file = this.fileList.getFile("path", p);
+                if (file) {
+                    if (Config.instance.forceNoOpen) {
+                        this.sendFile(req, res, file);
+                        return;
+                    }
+                    let cluster = await this.fileList.randomAvailableCluster(file, file.url ? undefined : this.fileList.clusters.filter(c => !c.isProxyCluster), getRealIP(req.headers) || req.ip);
+                    if (!cluster) {
+                        this.sendFile(req, res, file);
+                        return;
+                    }
+
+                    if (file.url && cluster.isProxyCluster) {
+                        const url = `${Utilities.getUrlByPath(file.url, `/download`, cluster)}&origin=${encodeURIComponent(file.url)}`;
+                        res.redirect(url);
+                    }
+                    else res.redirect(Utilities.getUrl(file, cluster));
+
+                    if (cluster.masterStatsMode) {
+                        this.stats.filter(s => s.id === cluster.clusterId).forEach(s => s.addData({ hits: 1, bytes: file.size }));
+                        this.centerStats.addData({ hits: 1, bytes: file.size });
+                    }
+                    else {
+                        cluster.pendingHits++;
+                        cluster.pendingTraffic += file.size;
+                    }
+                } else {
+                    res.status(404).send();
+                }
+            } catch (error) {
+                console.error(error);
+                res.status(500).json(error);
+            }
+        });
+        this.app.get('/93AtHome/centerStatistics', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+            const data = this.centerStats.getLast30DaysHourlyStats();
+            let dailyHits: number[] = [];
+            let dailyBytes: number[] = [];
+            data.forEach(d => {
+                let hits = 0;
+                let bytes = 0;
+                d.filter(h => h !== null).forEach(h => {
+                    hits += h.hits;
+                    bytes += h.bytes;
+                });
+                dailyHits.push(hits);
+                dailyBytes.push(bytes);
+            });
+
+            res.status(200).json({
+                dailyHits,
+                dailyBytes,
+                today: this.centerStats.today(),
+                hourly: data.at(0)?.map(hour => ([hour.hits, hour.bytes])) || [],
+                onlines: this.clusters.filter(c => c.isOnline).length,
+                sourceCount: this.sources.length,
+                totalFiles: this.files.length,
+                totalSize: this.files.reduce((acc, f) => acc + f.size, 0),
+                startTime: this.startAt.getTime(),
+                rejectedRequests: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(0)?.map(hour => hour.hits) || []
+            });
+        });
+        this.app.get('/93AtHome/clusterStatistics', (req: Request, res: Response) => {
+            res.setHeader('Content-Type', 'application/json');
+            const clusterId = req.query.clusterId as string;
+            const cluster = this.clusters.find(c => c.clusterId === clusterId);
+            if (cluster) {
+                const stats = this.stats.find(s => s.id === clusterId);
+                if (stats) {
+                    res.status(200).json(stats.getLast30DaysStats());
+                } else {
+                    res.status(404).send(); // 未找到统计数据
+                }
+            } else {
+                res.status(404).send(); // 未找到集群
+            }
+        });
+        this.app.get('/93AtHome/rank', async (req: Request, res: Response) => {
+            // 先把节点按照在线和离线分成两部分，然后各自按照 traffic 从大到小排序，最后返回 JSON 字符串
+            const onlineClusters = this.clusters.filter(c => c.isOnline);
+            const offlineClusters = this.clusters.filter(c => !c.isOnline);
+        
+            const onlineClustersSorted = onlineClusters
+                .sort((a, b) => {
+                    const aStat = this.stats.find(s => s.id === a.clusterId)?.getTodayStats();
+                    const bStat = this.stats.find(s => s.id === b.clusterId)?.getTodayStats();
+                    if (aStat && bStat) {
+                        return bStat.bytes - aStat.bytes;
+                    } else {
+                        return 0;
+                    }
+                })
+                .map(c => c.getJson(true, true));
+        
+            const offlineClustersSorted = offlineClusters
+                .sort((a, b) => {
+                    const aStat = this.stats.find(s => s.id === a.clusterId)?.getTodayStats();
+                    const bStat = this.stats.find(s => s.id === b.clusterId)?.getTodayStats();
+                    if (aStat && bStat) {
+                        return bStat.bytes - aStat.bytes;
+                    } else {
+                        return 0;
+                    }
+                })
+                .map(c => c.getJson(true, true));
+        
+            // 添加 ownerName 并返回 JSON 响应
+            const result = onlineClustersSorted.concat(offlineClustersSorted).map(c => {
+                const stat = this.stats.find(s => s.id === c.clusterId)?.getTodayStats();
+                return {
+                    ...c,
+                    ownerName: this.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || '',
+                    hits: stat?.hits || 0,
+                    traffic: stat?.bytes || 0
+                }
+            });
+            
+            try {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200).json(result);
+            } catch (error) {
+                console.error('Error processing rank request:', error);
+                res.status(500).send();
+                console.log(result);
+                result.forEach(element => {
+                    console.log(element);
+                    console.log(JSON.stringify(element));
+                });
+            }
+        });
+        
+        this.app.get('/93AtHome/dashboard/user/profile', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json({
+                id: user.id,
+                login: user.username,
+                avatar_url: user.photo,
+                is_super_admin: Boolean(user.isSuperUser)
+            });
+        });
+        this.app.post('/93AtHome/dashboard/user/bindCluster', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number, exp: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            const body = req.body as { clusterId: string, clusterSecret: string };
+            res.setHeader('Content-Type', 'application/json');
+            const matches = this.clusters.filter(c => c.clusterId === body.clusterId && c.clusterSecret === body.clusterSecret && Number(c.owner) === 0);
+            if (matches.length === 0) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            matches.forEach(c => {
+                c.owner = user.id;
+                this.db.update(c);
+            });
+            res.status(200).json(matches.map(c => c.getJson(true, false)));
+        });
+        this.app.post('/93AtHome/dashboard/user/unbindCluster', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            const body = req.body as { clusterId: string };
+            res.setHeader('Content-Type', 'application/json');
+            const matches = this.clusters.filter(c => c.clusterId === body.clusterId && Number(c.owner) === user.id);
+            if (matches.length === 0) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            matches.forEach(c => {
+                c.owner = 0;
+                this.db.update(c);
+            });
+            res.status(200).json(matches.map(c => c.getJson(true, false)));
+        });
+        this.app.get('/93AtHome/dashboard/user/clusters', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            const clusterId = req.query.clusterId as string || null;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send("User not found."); // 用户不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            if (!clusterId) {
+                const clusters = this.clusters.filter(c => c.owner === user.id);
+                res.status(200).json(clusters.map(c => c.getJson(true, false)));
+            } else {
+                const cluster = this.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
+                if (!cluster) {
+                    res.status(404).send(); // 集群不存在
+                    return;
+                }
+                res.status(200).json(cluster.getJson(true, false));
+            }
+        });
+        this.app.post('/93AtHome/dashboard/user/cluster/profile', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            const clusterId = req.query.clusterId as string || null;
+            const cluster = this.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            const clusterName = req.body.clusterName as string || null;
+            const bandwidth = Number(req.body.bandwidth) || 0;
+            const sponsor = req.body.sponsor as string || null;
+            const sponsorUrl = req.body.sponsorUrl as string || null;
+
+            // 将以上四个可选项目更新到集群，如果为null说明不进行更改
+            if (clusterName) {
+                cluster.clusterName = clusterName;
+            }
+
+            if (bandwidth) {
+                if (bandwidth < 10 || bandwidth > 500) {
+                    res.status(400).send({
+                        message: "Bandwidth must be between 10 and 500"
+                    });
+                    return;
+                }
+                cluster.bandwidth = bandwidth;
+            }
+
+            if (sponsor) {
+                cluster.sponsor = sponsor;
+            }
+
+            if (sponsorUrl) {
+                cluster.sponsorUrl = sponsorUrl;
+            }
+
+            this.db.update(cluster);
+            res.status(200).json(cluster.getJson(true, false));
+        });
+        
+        this.app.post('/93AtHome/dashboard/user/cluster/reset_secret', (req: Request, res: Response) => {
+            const token = req.cookies.token;
+            if (!token) {
+                res.status(401).send(); // 未登录
+                return;
+            }
+            const user = this.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send(); // 用户不存在
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            const cluster = this.clusters.find(c => c.clusterId === req.query.clusterId && c.owner === user.id);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            const secret = Utilities.generateRandomString(32);
+            cluster.clusterSecret = secret;
+            this.db.update(cluster);
+            res.status(200).json({
+                clusterSecret: secret
+            });
+        });
+        this.app.get('/93AtHome/random', (req: Request, res: Response) => {
+            res.status(302);
+            res.setHeader('Location', encodeURI(Utilities.getRandomElement(this.files)?.path || ''));
+            res.send();
+        });
+        this.app.post('/openbmclapi/report', (req: Request, res: Response) => {
+            const body = req.body as {
+                urls: string[],
+                error: string
+            };
+            res.status(200).send();
+        });
+        this.app.get('/93AtHome/syncSources', (req: Request, res: Response) => {
+            res.status(200).json(this.sources);
+        });
+        this.app.get('/93AtHome/super/list_users', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const users = this.db.getEntities<UserEntity>(UserEntity);
+            res.status(200).json(users);
+        })
+        this.app.get('/93AtHome/shards', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            res.json(this.fileList.shards);
+        });
+        this.app.post('/93AtHome/super/modify_shards', (req: Request, res: Response) => {
+            if (!Utilities.verifyAdmin(req, res, this.db)) return;
+            const cluster = this.clusters.find(c => c.clusterId === req.query.clusterId);
+            if (!cluster) {
+                res.status(404).send(); // 集群不存在
+                return;
+            }
+            // 判断 shards 是不是在 int 范围内
+            const shards = Number(req.body.shards);
+            if (shards < 0 || shards > 1000) {
+                res.status(400).send({
+                    message: "Shards must be between 0 and 1000"
+                });
+                return;
+            }
+            cluster.shards = shards;
+            this.db.update(cluster);
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(cluster.getJson(true, false));
+        });
