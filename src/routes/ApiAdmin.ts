@@ -23,7 +23,7 @@ export class ApiAdmin {
             const id = Number(req.body.id)
             const targetUser = inst.db.getEntity<UserEntity>(UserEntity, id);
             if (!targetUser) {
-                res.status(404).send(); // 用户不存在
+                res.status(404).send();
                 return;
             }
             if ((user.isSuperUser <= targetUser.isSuperUser) && user.id !== targetUser.id) {

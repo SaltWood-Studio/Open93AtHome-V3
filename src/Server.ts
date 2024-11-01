@@ -27,7 +27,9 @@ import { CloudFlare } from './certificate-manager/CloudFlare.js';
 import { DNSPod } from './certificate-manager/DNSPod.js';
 import { ACME } from './certificate-manager/ACME.js';
 import { ApiFactory } from './routes/ApiFactory.js';
-require("express-async-errors");
+
+//@ts-ignore
+await import("express-async-errors")
 
 type Indexable<T> = {
     [key: string]: T;
