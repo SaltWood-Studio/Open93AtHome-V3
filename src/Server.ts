@@ -67,7 +67,7 @@ export class Server {
     protected plugins: Plugin[];
     protected pluginLoader: PluginLoader;
     public got: Got;
-    protected sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
+    public sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
     protected dns: DnsManager | null = null;
     protected acme: ACME | null = null;
     public startAt: Date;

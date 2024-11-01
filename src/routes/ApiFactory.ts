@@ -13,6 +13,8 @@ import { Got } from "got";
 import { ApiAdmin } from "./ApiAdmin.js";
 import { ApiUser } from "./ApiUser.js";
 import { ApiAuth } from "./ApiAuth.js";
+import { ApiStats } from "./ApiStats.js";
+import { ApiOther } from "./ApiOther.js";
 
 export class ApiFactory {
     public fileList: FileList;
@@ -55,5 +57,7 @@ export class ApiFactory {
         ApiAdmin.register(this);
         ApiUser.register(this);
         ApiAuth.register(this);
+        ApiStats.register(this);
+        ApiOther.register(this);
     }
 }
