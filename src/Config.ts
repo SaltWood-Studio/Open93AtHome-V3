@@ -2,6 +2,8 @@ import dotenv from 'dotenv'
 import env from 'env-var'
 import { defaultInstance } from './RateLimiter.js'
 
+export const version = "3.2.0-patch3";
+
 export class Config {
     public static instance: Config
 
@@ -36,7 +38,7 @@ export class Config {
     public readonly debug: boolean = env.get('DEBUG').default("false").asBool();
     public readonly disableAccessLog: boolean = env.get('DISABLE_ACCESS_LOG').default("false").asBool();
 
-    public static readonly version: string = "3.2.0-patch3";
+    public static readonly version: string = version;
 
     private constructor() { }
 

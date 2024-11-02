@@ -11,7 +11,7 @@ import { ClusterEntity } from './database/Cluster.js';
 import { Config } from './Config.js';
 import { GitHubUser } from './database/GitHubUser.js';
 import { File } from './database/File.js';
-import { request, Utilities } from './Utilities.js';
+import { Utilities } from './Utilities.js';
 import { StatsStorage } from './statistics/ClusterStats.js';
 import { HourlyStatsStorage } from './statistics/HourlyStats.js';
 import cookieParser from 'cookie-parser';
@@ -27,6 +27,7 @@ import { CloudFlare } from './certificate-manager/CloudFlare.js';
 import { DNSPod } from './certificate-manager/DNSPod.js';
 import { ACME } from './certificate-manager/ACME.js';
 import { ApiFactory } from './routes/ApiFactory.js';
+import { request } from './Request.js';
 
 //@ts-ignore
 await import("express-async-errors")
