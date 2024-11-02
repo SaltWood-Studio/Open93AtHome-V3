@@ -10,7 +10,10 @@ export class ApiStats {
             if (cluster) {
                 const stats = inst.stats.find(s => s.id === clusterId);
                 if (stats) {
-                    res.status(200).json(stats.getLast30DaysStats());
+                    const data = stats.getLast30DaysStats();
+                    const dailyHits: number[] = data.map(d => d.hits);
+                    const dailyBytes: number[] = data.map(d => d.bytes);
+                    res.status(200).json([dailyHits, dailyBytes]);
                 } else {
                     res.status(404).send({ message: "Stats not found. This should never happen, please contact administrator." });
                 }
