@@ -1,7 +1,6 @@
 import dotenv from 'dotenv'
 import env from 'env-var'
-import { Utilities } from './Utilities.js'
-import RateLimiter, { defaultInstance } from './RateLimiter.js'
+import { defaultInstance } from './RateLimiter.js'
 
 export class Config {
     public static instance: Config
@@ -23,7 +22,6 @@ export class Config {
     public readonly githubUrl: string = env.get('GITHUB_URL').default("github.com").asString();
     public readonly githubApiUrl: string = env.get('GITHUB_API_URL').default("api.github.com").asString();
     public readonly port: number = env.get('PORT').default(9388).asPortNumber();
-    public readonly updateToken: string = env.get('UPDATE_TOKEN').default(Utilities.generateRandomString(24)).asString();
     public readonly concurrency: number = env.get('CONCURRENCY').default(10).asIntPositive();
     public readonly forceNoOpen: boolean = env.get('FORCE_NO_OPEN').default("false").asBool();
     public readonly noWarden: boolean = env.get('NO_WARDEN').default("false").asBool();
