@@ -3,9 +3,11 @@ import { Request, Response } from "express";
 import { getRealIP } from "../Server.js";
 import { Utilities } from "../Utilities.js";
 import { FileList } from "../FileList.js";
+import { Config } from "../Config.js";
 
 export class ApiDebug {
-    public static register(inst: ApiFactory) {        // 认证中间件
+    public static register(inst: ApiFactory) {
+        // 认证中间件
         const authMiddleware = (req: Request, res: Response, next: Function) => {
             if (Utilities.verifyAdmin(req, res, inst.db)) {
                 next();
@@ -17,6 +19,9 @@ export class ApiDebug {
         // 统一使用 authMiddleware 中间件来验证
         inst.app.use('/api/debug', authMiddleware);
 
+        inst.app.get('/api/debug/config', (req: Request, res: Response) => {
+            res.status(200).json(Config.instance);
+        });
         inst.app.get('/api/debug/plugins', async (req: Request, res: Response) => {
             const promises = inst.server.plugins.map(async p => ({
                 name: p.getName(),
