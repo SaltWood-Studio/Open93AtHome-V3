@@ -626,9 +626,9 @@ export class Server {
                 const tip = `Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the ${enableData.byoc ? "domain's record" : (!enableData.byoc && enableData.host ? `CNAME destination (${enableData.host})` : `IP address (${address}:${enableData.port})`)} has changed, please allow a few minutes for the DNS records to update and propagate.`;
 
                 if (Config.instance.noWarden){
+                    socket.send(tip);
                     cluster.doOnline(this.files, socket);
                     this.db.update(cluster);
-                    socket.send(tip);
                     ack([null, true]);
                     return;
                 }
@@ -638,9 +638,9 @@ export class Server {
                         ack([message]);
                         return;
                     } else {
+                        socket.send(tip);
                         cluster.doOnline(this.files, socket);
                         this.db.update(cluster);
-                        socket.send(tip);
                         ack([null, true]);
                         cluster.enableHistory = [];
                         return;
