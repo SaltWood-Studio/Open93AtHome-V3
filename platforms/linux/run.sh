@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-./node dist/index.js
+./node --enable-source-maps dist/index.js
