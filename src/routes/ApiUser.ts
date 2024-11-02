@@ -120,18 +120,18 @@ export class ApiUser {
                 res.status(404).send(); // 集群不存在
                 return;
             }
-            const clusterName = req.body.clusterName as string || null;
-            const bandwidth = Number(req.body.bandwidth) || 0;
+            const name = req.body.name as string || null;
+            const bandwidth = Number(req.body.bandwidth) || null;
             const sponsor = req.body.sponsor as string || null;
             const sponsorUrl = req.body.sponsorUrl as string || null;
 
-            if (clusterName) cluster.clusterName = clusterName;
-            if (bandwidth) {
-                if (Number.isNaN(bandwidth) || bandwidth < 10 || bandwidth > 500) {
-                    res.status(400).send({ message: 'Invalid bandwidth' });
-                    return;
-                }
+            if (bandwidth !== null && (Number.isNaN(bandwidth) || bandwidth < 10 || bandwidth > 500)) {
+                res.status(400).send({ message: 'Invalid bandwidth' });
+                return;
             }
+
+            if (name) cluster.clusterName = name;
+            if (bandwidth) cluster.bandwidth = bandwidth;
             if (sponsor) cluster.sponsor = sponsor;
             if (sponsorUrl) cluster.sponsorUrl = sponsorUrl;
 
