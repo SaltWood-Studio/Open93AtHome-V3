@@ -424,7 +424,7 @@ export class Server {
                     }
                     else {
                         cluster.pendingHits++;
-                        cluster.pendingTraffic += file.size;
+                        cluster.pendingBytes += file.size;
                     }
                 } else {
                     res.status(404).send();
@@ -674,13 +674,13 @@ export class Server {
                         return;
                     }
                     const hits = Math.min(keepAliveData.hits, cluster.pendingHits);
-                    const traffic = Math.min(keepAliveData.bytes, cluster.pendingTraffic);
-                    this.centerStats.addData({ hits: hits, bytes: traffic });
+                    const bytes = Math.min(keepAliveData.bytes, cluster.pendingBytes);
+                    this.centerStats.addData({ hits: hits, bytes: bytes });
                     cluster.pendingHits = 0;
-                    cluster.pendingTraffic = 0;
+                    cluster.pendingBytes = 0;
                     ack([null, keepAliveData.time]);
                     this.db.update(cluster);
-                    this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: Number(hits), bytes: Number(traffic) }));
+                    this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: Number(hits), bytes: Number(bytes) }));
                 }
             });
 

@@ -42,7 +42,7 @@ export class ApiClusters {
                     ...c,
                     ownerName: inst.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || '',
                     hits: stat?.hits || 0,
-                    traffic: stat?.bytes || 0
+                    bytes: stat?.bytes || 0
                 }
             });
             
