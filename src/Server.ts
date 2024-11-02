@@ -151,6 +151,8 @@ export class Server {
         await this.updateFiles();
         this.setupRoutes();
 
+        if (Config.instance.autoUpdateDuration > 0) setInterval(this.updateFiles.bind(this), Config.instance.autoUpdateDuration * 60 * 1000);
+
         // 加载证书管理器
         if (Config.instance.enableRequestCertificate) {
             switch (Config.instance.dnsType) {
