@@ -68,7 +68,7 @@ export class FileList {
     }
 
     public getAvailableFiles(cluster: ClusterEntity): File[] {
-        return this._shards.filter((_, index) => cluster.shards >= index).flat();
+        return this._shards.filter((_, index) => cluster.shards >= index).flat().filter(f => f.url || !cluster.isProxyCluster);
     }
 
     public getAvailableClusters(file: File | null = null, clusters: ClusterEntity[] | undefined = undefined): ClusterEntity[] {
@@ -91,6 +91,7 @@ export class FileList {
     }
 
     public static availableInCluster(file: File, cluster: ClusterEntity): boolean {
+        if (!file.url && cluster.isProxyCluster) return false;
         const index = FileList.getShardIndex(file.path, FileList.SHARD_COUNT);
         return index <= cluster.shards;
     }

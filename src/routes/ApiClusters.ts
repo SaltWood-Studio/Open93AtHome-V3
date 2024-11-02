@@ -110,7 +110,7 @@ export class ApiClusters {
         inst.app.put("/api/clusters/:id", async (req, res) => {
             if (!Utilities.verifyAdmin(req, res, inst.db)) return;
             const clusterId = req.params.id;
-            const clusterName = req.body.clusterName as string || null;
+            const clusterName = req.body.name as string || null;
             const bandwidth = Number(req.body.bandwidth) || null;
             const sponsor = req.body.sponsor as string || null;
             const sponsorUrl = req.body.sponsorUrl as string || null;
@@ -197,6 +197,11 @@ export class ApiClusters {
             }
             // 判断 shards 是不是在 int 范围内
             const shards = Number(req.body.shards);
+            if (Number.isNaN(shards)) {
+                res.status(400).send({
+                    message: "Not a Number"
+                });
+            }
             if (shards < 0 || shards > 1000) {
                 res.status(400).send({
                     message: "Shards must be between 0 and 1000"
