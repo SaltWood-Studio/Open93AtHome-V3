@@ -151,7 +151,7 @@ export class ApiUser {
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            const cluster = inst.clusters.find(c => c.clusterId === req.query.clusterId && c.owner === user.id);
+            const cluster = inst.clusters.find(c => c.clusterId === req.params.id && c.owner === user.id);
             if (!cluster) {
                 res.status(404).send(); // 集群不存在
                 return;
