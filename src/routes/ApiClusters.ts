@@ -109,7 +109,7 @@ export class ApiClusters {
 
         inst.app.put("/api/clusters/:id", async (req, res) => {
             if (!Utilities.verifyAdmin(req, res, inst.db)) return;
-            const clusterId = req.query.clusterId as string || null;
+            const clusterId = req.params.id;
             const clusterName = req.body.clusterName as string || null;
             const bandwidth = Number(req.body.bandwidth) || null;
             const sponsor = req.body.sponsor as string || null;
@@ -190,7 +190,7 @@ export class ApiClusters {
         });
         inst.app.put("/api/clusters/:id/shards", async (req, res) => {
             if (!Utilities.verifyAdmin(req, res, inst.db)) return;
-            const cluster = inst.clusters.find(c => c.clusterId === req.query.clusterId);
+            const cluster = inst.clusters.find(c => c.clusterId === req.params.id);
             if (!cluster) {
                 res.status(404).send(); // 集群不存在
                 return;

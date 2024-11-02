@@ -5,7 +5,7 @@ export class ApiStats {
     public static register(inst: ApiFactory) {
         inst.app.get("/api/stats/cluster/:id", (req, res) => {
             res.setHeader('Content-Type', 'application/json');
-            const clusterId = req.query.clusterId as string;
+            const clusterId = req.params.id;
             const cluster = inst.clusters.find(c => c.clusterId === clusterId);
             if (cluster) {
                 const stats = inst.stats.find(s => s.id === clusterId);
