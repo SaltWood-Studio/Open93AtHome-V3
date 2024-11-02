@@ -61,7 +61,7 @@ export class ApiAuth {
                 }, "user", 60 * 60 * 24);
         
                 res.cookie('token', token, {
-                    expires: new Date(Date.now() + 86400000), // 24小时后过期
+                    expires: Utilities.getDate(1, "day"),
                     secure: true,
                     sameSite: 'lax',
                 });
@@ -72,7 +72,7 @@ export class ApiAuth {
                         clientId: Config.instance.githubOAuthClientId
                     }, "admin", 60 * 60 * 24);
                     res.cookie('adminToken', adminToken, {
-                        expires: new Date(Date.now() + 86400000), // 24小时后过期
+                        expires: Utilities.getDate(1, "day"),
                         secure: true,
                         sameSite: 'lax',
                     });

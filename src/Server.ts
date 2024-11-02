@@ -91,7 +91,7 @@ export class Server {
     }
 
     public constructor() {
-        this.startAt = new Date();
+        this.startAt = Utilities.getDate();
         this.plugins = [];
         this.pluginLoader = new PluginLoader();
 

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Config } from './Config.js';
 import { HourlyStatsStorage } from './statistics/HourlyStats.js';
+import { Utilities } from './Utilities.js';
 
 interface RateLimitRecord {
     tokens: number;        // 令牌数量
@@ -38,7 +39,7 @@ class RateLimiter {
         }
         const ip = (req.headers[Config.instance.sourceIpHeader] as string).split(',')[0] || req.ip; // 根据请求的IP地址进行限速
         if (!ip) throw new Error('No IP address provided.');
-        const currentTime = Date.now();
+        const currentTime = Utilities.getTimestamp();
 
         // 获取该IP地址的限速记录
         let record = this.rateLimitMap.get(ip);
@@ -75,7 +76,7 @@ class RateLimiter {
 
     // 清理超过过期时间的 IP 记录
     private cleanupRateLimitMap(): void {
-        const currentTime = Date.now();
+        const currentTime = Utilities.getTimestamp();
         this.rateLimitMap.forEach((record, ip) => {
             if (currentTime - record.lastRequest > this.EXPIRATION_TIME) {
                 this.rateLimitMap.delete(ip); // 移除过期记录

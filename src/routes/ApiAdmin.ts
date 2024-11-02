@@ -42,12 +42,12 @@ export class ApiAdmin {
                 clientId: Config.instance.githubOAuthClientId
             }, 'admin', 1 * 24 * 60 * 60);
             res.cookie('token', targetToken, {
-                expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                expires: Utilities.getDate(1, "day"),
                 secure: true,
                 sameSite: 'lax'
             })
             .cookie('adminToken', newAdminToken, {
-                expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                expires: Utilities.getDate(1, "day"),
                 secure: true,
                 sameSite: 'lax'
             })

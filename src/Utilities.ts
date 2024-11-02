@@ -145,7 +145,7 @@ export class Utilities {
                     files, 
                     name: folder, 
                     count: files.length, 
-                    lastUpdated: latestFileTime || new Date(), // 如果没有文件，默认当前时间
+                    lastUpdated: latestFileTime || Utilities.getDate(), // 如果没有文件，默认当前时间
                     isFromPlugin: false 
                 });
             }
@@ -417,7 +417,7 @@ export class Utilities {
             return null;
         }
         
-        const timestamp = Date.now() + 5 * 60 * 1000;
+        const timestamp = Utilities.getDate(5, "min").getTime();
         const e = timestamp.toString(36);
         const signBytes = sha1.update(secret + path + e).digest();
         const sign = Utilities.toUrlSafeBase64String(signBytes);
@@ -543,6 +543,29 @@ export class Utilities {
             // 删除15分钟之外的日期
             dates.length = 0;
             dates.push(...filteredDates);
+        }
+    }
+
+    public static getTimestamp(date: Date | undefined = undefined): number {
+        return date? date.getTime() : Date.now();
+    }
+
+    public static getDate(after: number = 0, unit: "ms" | "s" | "min" | "hour" | "day" | "month" | "year" = "day"): Date {
+        switch (unit) {
+            case "ms":
+                return new Date(Date.now() + after);
+            case "s":
+                return new Date(Date.now() + after * 1000);
+            case "min":
+                return new Date(Date.now() + after * 60 * 1000);
+            case "hour":
+                return new Date(Date.now() + after * 60 * 60 * 1000);
+            case "day":
+                return new Date(Date.now() + after * 24 * 60 * 60 * 1000);
+            case "month":
+                return new Date(Date.now() + after * 30 * 24 * 60 * 60 * 1000);
+            case "year":
+                return new Date(Date.now() + after * 365 * 24 * 60 * 60 * 1000);
         }
     }
 }

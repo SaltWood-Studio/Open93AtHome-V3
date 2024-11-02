@@ -91,7 +91,7 @@ export class ClusterEntity {
     public doOffline(reason: string = "Unspecfied"): void {
         this.isOnline = false;
         this.downReason = reason;
-        this.downTime = Math.floor(Date.now() / 1000);
+        this.downTime = Utilities.getTimestamp();
         if (this.interval) {
             clearInterval(this.interval);
             this.interval = null;

@@ -88,7 +88,7 @@ export class ApiClusters {
             cluster.owner = 0;
             cluster.isOnline = false;
             cluster.downReason = "null";
-            cluster.createdAt = Math.floor(Date.now() / 1000);
+            cluster.createdAt = Utilities.getTimestamp();
             inst.db.insert(cluster);
             inst.server.stats.push(new StatsStorage(cluster.clusterId));
             inst.clusters.push(cluster);
