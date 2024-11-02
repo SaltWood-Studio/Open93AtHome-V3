@@ -25,9 +25,6 @@ export class ApiFactory {
     public acme: ACME | null;
     public app: Express;
 
-    public get got(): Got {
-        return this.server.got;
-    }
     public get files(): File[] {
         return this.fileList.files;
     }

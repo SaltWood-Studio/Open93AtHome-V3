@@ -10,9 +10,9 @@ import { exec, ExecException } from 'child_process';
 import { ClusterEntity } from './database/Cluster.js';
 import { SQLiteHelper } from './SQLiteHelper.js';
 import { UserEntity } from './database/User.js';
-import got, { Got } from 'got';
 import { Config } from './Config.js';
 import os from 'os';
+import { request } from './Request.js';
 
 export const FileListSchema = avsc.Type.forSchema({
   type: 'array',
@@ -191,7 +191,7 @@ export class Utilities {
 
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {
         try {
-            const response = await got.get(url, {
+            const response = await request(url, {
                 responseType: 'buffer'
             });
             const responseData = response.body as Buffer;
@@ -483,7 +483,7 @@ export class Utilities {
     public static async doMeasure(url: string): Promise<number> {
         try {
             // 发出请求，接收下载数据
-            const response = await got(url, {
+            const response = await request(url, {
                 responseType: 'buffer',  // 以二进制数据形式接收
                 timeout: { request: 60000 }, // 设置请求超时时间 (可选)
             });

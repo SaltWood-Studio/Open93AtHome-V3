@@ -2,6 +2,7 @@ import { Config } from "../Config.js";
 import { GitHubUser } from "../database/GitHubUser.js";
 import { UserEntity } from "../database/User.js";
 import JwtHelper from "../JwtHelper.js";
+import { request } from "../Request.js";
 import { Utilities } from "../Utilities.js";
 import { ApiFactory } from "./ApiFactory.js";
 import { NextFunction, Request, Response } from "express";
@@ -18,7 +19,7 @@ export class ApiAuth {
                 const code = req.query.code as string || '';
         
                 // 请求GitHub获取access_token
-                const tokenData = await inst.got.post(`https://${Config.instance.githubUrl}/login/oauth/access_token`, {
+                const tokenData = await request.post(`https://${Config.instance.githubUrl}/login/oauth/access_token`, {
                     form: {
                         code,
                         client_id: Config.instance.githubOAuthClientId,
@@ -32,7 +33,7 @@ export class ApiAuth {
         
                 const accessToken = tokenData.access_token;
         
-                let userResponse = await inst.got.get(`https://${Config.instance.githubApiUrl}/user`, {
+                let userResponse = await request.get(`https://${Config.instance.githubApiUrl}/user`, {
                     headers: {
                         'Authorization': `token ${accessToken}`,
                         'Accept': 'application/json',

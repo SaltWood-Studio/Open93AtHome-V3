@@ -17,7 +17,6 @@ import { HourlyStatsStorage } from './statistics/HourlyStats.js';
 import cookieParser from 'cookie-parser';
 import { Plugin } from './plugin/Plugin.js';
 import { PluginLoader } from './plugin/PluginLoader.js';
-import {type Got} from 'got'
 import acme from 'acme-client'
 import { FileList } from './FileList.js';
 import RateLimiter, { rateLimiter } from './RateLimiter.js';
@@ -69,7 +68,6 @@ export class Server {
     public centerStats: HourlyStatsStorage;
     public plugins: Plugin[];
     protected pluginLoader: PluginLoader;
-    public got: Got;
     public sources: { name: string, count: number, lastUpdated: Date, isFromPlugin: boolean }[] = [];
     protected dns: DnsManager | null = null;
     protected acme: ACME | null = null;
@@ -95,8 +93,6 @@ export class Server {
         this.startAt = Utilities.getDate();
         this.plugins = [];
         this.pluginLoader = new PluginLoader();
-
-        this.got = request;
 
         // 创建 Express 应用
         this.app = express();
