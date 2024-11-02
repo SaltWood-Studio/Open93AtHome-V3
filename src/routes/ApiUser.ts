@@ -52,7 +52,7 @@ export class ApiUser {
             res.status(200).json(cluster.getJson(true, false));
         });
 
-        inst.app.post("/api/user/clusters/unbind", async (req, res) => {
+        inst.app.post("/api/user/clusters/:id/unbind", async (req, res) => {
             if (!Utilities.verifyUser(req, res, inst.db)) return;
             const token = req.cookies.token;
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
@@ -60,11 +60,14 @@ export class ApiUser {
                 res.status(404).send({ message: 'User not found' });
                 return;
             }
-            const body = req.body as { clusterId: string };
             res.setHeader('Content-Type', 'application/json');
-            const cluster = inst.clusters.find(c => c.clusterId === body.clusterId && Number(c.owner) === user.id);
+            const cluster = inst.clusters.find(c => c.clusterId === req.params.id);
             if (!cluster) {
-                res.status(404).send({ message: 'Cluster not found or not bound to this user' });
+                res.status(404).send({ message: 'Cluster not found' });
+                return;
+            }
+            if (cluster.owner !== user.id) {
+                res.status(403).send({ message: 'That\'s not your cluster!' });
                 return;
             }
             cluster.owner = 0;
