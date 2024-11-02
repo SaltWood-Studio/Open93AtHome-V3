@@ -2,8 +2,9 @@ import got, { Got } from "got";
 import { Config } from "./Config.js";
 import os from "os";
 
-export class Request {
+export class HttpRequest {
     public static request: Got;
+    
     public static init(): void {
         const appVersion = Config.version;
         const nodeVersion = process.version;
@@ -14,7 +15,7 @@ export class Request {
                 
         const userAgent = `Open93AtHome-Center/${appVersion} (Open93AtHome-Center; TypeScript; Node.js ${nodeVersion}; ${platform} ${release}, ${arch}; ${locale})`;
 
-        Request.request = got.extend({
+        HttpRequest.request = got.extend({
             retry: {
                 limit: 1
             },
@@ -25,5 +26,4 @@ export class Request {
     }
 }
 
-export default Request;
-export const request = Request.request;
+export default HttpRequest;

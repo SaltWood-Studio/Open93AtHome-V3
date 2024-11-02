@@ -2,7 +2,7 @@ import { exec } from "child_process";
 import { Config } from './Config.js';
 import { Server } from './Server.js';
 import { Utilities } from './Utilities.js';
-import Request from "./Request.js";
+import { HttpRequest } from "./HttpRequest.js";
 import fs from 'fs';
 
 function createFolderIfNotExist(folder: string) {
@@ -31,7 +31,7 @@ for (const folder of requiredFolders) {
 
 // 初始化配置
 Config.init();
-Request.init();
+HttpRequest.init();
 
 if (Utilities.isRunningInDocker()) {
     console.debug("Running in Docker container");
