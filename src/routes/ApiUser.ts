@@ -24,6 +24,28 @@ export class ApiUser {
             });
         });
 
+        inst.app.get("/api/user/clusters/:id", async (req, res) => {
+            if (!Utilities.verifyUser(req, res, inst.db)) return;
+            const token = req.cookies.token;
+            const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
+            if (!user) {
+                res.status(404).send({ message: 'User not found' });
+                return;
+            }
+            const clusterId = req.params.id;
+            const cluster = inst.clusters.find(c => c.clusterId === clusterId);
+            if (!cluster) {
+                res.status(404).send({ message: 'Cluster not found or not bound to this user' });
+                return;
+            }
+            if (cluster.owner !== user.id) {
+                res.status(403).send({ message: 'That\'s not your cluster!' });
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).json(cluster.getJson(true, false));
+        });
+
         inst.app.post("/api/user/clusters/bind", async (req, res) => {
             if (!Utilities.verifyUser(req, res, inst.db)) return;
             const token = req.cookies.token;
