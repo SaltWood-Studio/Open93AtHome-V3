@@ -1,11 +1,64 @@
 import { ClusterEntity } from "../database/Cluster.js";
+import { UserEntity } from "../database/User.js";
 import { StatsStorage } from "../statistics/ClusterStats.js";
 import { Utilities } from "../Utilities.js";
 import { ApiFactory } from "./ApiFactory.js";
 
 export class ApiClusters {
     public static register(inst: ApiFactory) {
-        inst.app.get("/api/clusters", async (req, res) => { res.json(inst.clusters.map(cluster => cluster.getJson(true, true))) });
+        inst.app.get("/api/clusters", async (req, res) => {
+            // 先把节点按照在线和离线分成两部分，然后各自按照 traffic 从大到小排序，最后返回 JSON 字符串
+            const onlineClusters = inst.clusters.filter(c => c.isOnline);
+            const offlineClusters = inst.clusters.filter(c => !c.isOnline);
+        
+            const onlineClustersSorted = onlineClusters
+                .sort((a, b) => {
+                    const aStat = inst.stats.find(s => s.id === a.clusterId)?.getTodayStats();
+                    const bStat = inst.stats.find(s => s.id === b.clusterId)?.getTodayStats();
+                    if (aStat && bStat) {
+                        return bStat.bytes - aStat.bytes;
+                    } else {
+                        return 0;
+                    }
+                })
+                .map(c => c.getJson(true, true));
+        
+            const offlineClustersSorted = offlineClusters
+                .sort((a, b) => {
+                    const aStat = inst.stats.find(s => s.id === a.clusterId)?.getTodayStats();
+                    const bStat = inst.stats.find(s => s.id === b.clusterId)?.getTodayStats();
+                    if (aStat && bStat) {
+                        return bStat.bytes - aStat.bytes;
+                    } else {
+                        return 0;
+                    }
+                })
+                .map(c => c.getJson(true, true));
+        
+            // 添加 ownerName 并返回 JSON 响应
+            const result = onlineClustersSorted.concat(offlineClustersSorted).map(c => {
+                const stat = inst.stats.find(s => s.id === c.clusterId)?.getTodayStats();
+                return {
+                    ...c,
+                    ownerName: inst.db.getEntity<UserEntity>(UserEntity, c.owner)?.username || '',
+                    hits: stat?.hits || 0,
+                    traffic: stat?.bytes || 0
+                }
+            });
+            
+            try {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200).json(result);
+            } catch (error) {
+                console.error('Error processing rank request:', error);
+                res.status(500).send();
+                console.log(result);
+                result.forEach(element => {
+                    console.log(element);
+                    console.log(JSON.stringify(element));
+                });
+            }
+        });
         inst.app.get("/api/clusters/:id", async (req, res) => {
             const cluster = inst.clusters.find(cluster => cluster.clusterId === req.params.id);
             if (!cluster) {
