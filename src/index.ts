@@ -30,7 +30,6 @@ for (const folder of requiredFolders) {
 
 // 初始化配置
 Config.init();
-Utilities.init();
 
 if (Utilities.isRunningInDocker()) {
     console.debug("Running in Docker container");

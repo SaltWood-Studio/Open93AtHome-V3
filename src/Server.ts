@@ -11,7 +11,7 @@ import { ClusterEntity } from './database/Cluster.js';
 import { Config } from './Config.js';
 import { GitHubUser } from './database/GitHubUser.js';
 import { File } from './database/File.js';
-import { Utilities } from './Utilities.js';
+import { request, Utilities } from './Utilities.js';
 import { StatsStorage } from './statistics/ClusterStats.js';
 import { HourlyStatsStorage } from './statistics/HourlyStats.js';
 import cookieParser from 'cookie-parser';
@@ -95,7 +95,7 @@ export class Server {
         this.plugins = [];
         this.pluginLoader = new PluginLoader();
 
-        this.got = Utilities.got;
+        this.got = request;
 
         // 创建 Express 应用
         this.app = express();
