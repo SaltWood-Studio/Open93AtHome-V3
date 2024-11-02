@@ -22,19 +22,28 @@ export class ApiStats {
         inst.app.get("/api/stats/center", (req, res) => {
             res.setHeader('Content-Type', 'application/json');
             const data = inst.server.centerStats.getLast30DaysHourlyStats();
-            const daily = data.map(d => {
-                let hits = 0;
-                let bytes = 0;
-                d.filter(h => h !== null).forEach(h => {
-                    hits += h.hits;
-                    bytes += h.bytes;
-                });
-                return { hits, bytes };
-            });
 
+            const dailyHits: number[] = [];
+            const dailyBytes: number[] = [];
+            
+            data.forEach(d => {
+                const { hits, bytes } = d.filter(h => h !== null).reduce((acc, h) => {
+                    acc.hits += h.hits;
+                    acc.bytes += h.bytes;
+                    return acc;
+                }, { hits: 0, bytes: 0 });
+            
+                dailyHits.push(hits);
+                dailyBytes.push(bytes);
+            });
+            
+            const hourlyData = data.at(0) || [];
+            const hourlyHits = hourlyData.map(d => d?.hits || 0);
+            const hourlyBytes = hourlyData.map(d => d?.bytes || 0);
+            
             res.status(200).json({
-                daily,
-                hourly: data.at(0)?.map(hour => ([hour.hits, hour.bytes])) || [],
+                daily: [dailyHits, dailyBytes],
+                hourly: [hourlyHits, hourlyBytes],
                 rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(0)?.map(hour => hour.hits) || [],
                 today: inst.server.centerStats.today(),
                 onlines: inst.clusters.filter(c => c.isOnline).length,
@@ -42,7 +51,7 @@ export class ApiStats {
                 totalFiles: inst.files.length,
                 totalSize: inst.files.reduce((acc, f) => acc + f.size, 0),
                 startTime: inst.server.startAt.getTime()
-            });
+            });            
         });
 
         inst.app.get("/api/stats/source", (req, res) => {
