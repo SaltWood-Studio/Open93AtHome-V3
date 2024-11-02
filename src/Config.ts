@@ -35,7 +35,7 @@ export class Config {
     public readonly debug: boolean = env.get('DEBUG').default("false").asBool();
     public readonly disableAccessLog: boolean = env.get('DISABLE_ACCESS_LOG').default("false").asBool();
 
-    public static readonly version: string = "3.2.0-patch2";
+    public static readonly version: string = "3.2.0-patch3";
 
     private constructor() { }
 
