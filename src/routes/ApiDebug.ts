@@ -11,8 +11,6 @@ export class ApiDebug {
         const authMiddleware = (req: Request, res: Response, next: Function) => {
             if (Utilities.verifyAdmin(req, res, inst.db)) {
                 next();
-            } else {
-                res.status(403).json({ message: 'Forbidden' }); // 验证失败，返回 403 错误
             }
         };
 
