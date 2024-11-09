@@ -51,7 +51,7 @@ export class NumberStorage {
         return todayData.data;
     }
 
-    public getLast30DaysStats(): number[][] {
+    public getLast30DaysHourlyStats(): number[][] {
         return [...(new Array(30 - this.data.length).fill(new Array(24).fill(0))), ...this.data.map(d => d.data)];
     }
 
