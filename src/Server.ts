@@ -409,7 +409,7 @@ export class Server {
                         this.sendFile(req, res, file);
                         return;
                     }
-                    
+
                     else res.redirect(Utilities.getUrl(file, cluster));
 
                     if (cluster.masterStatsMode) {
@@ -632,7 +632,7 @@ export class Server {
                         return;
                     } else {
                         socket.send(tip);
-                        cluster.doOnline(this.files, socket);
+                        cluster.doOnline(cluster.isProxyCluster ? this.files.filter(f => f.url) : this.files, socket);
                         this.db.update(cluster);
                         ack([null, true]);
                         cluster.enableHistory = [];
