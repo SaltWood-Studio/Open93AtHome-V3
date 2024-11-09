@@ -1,3 +1,5 @@
+import { UserEntity } from "../database/User.js";
+import { FileList } from "../FileList.js";
 import RateLimiter from "../RateLimiter.js";
 import { ApiFactory } from "./ApiFactory.js";
 
@@ -71,7 +73,22 @@ export class ApiStats {
                     bytes: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.bytes, 0)
                 },
                 rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(2),
-                rank: inst.stats.sort((a, b) => ((a.getLast30DaysStats().at(2)?.bytes || 0) - (b.getLast30DaysStats().at(2)?.bytes || 0))).map(s => inst.clusters.find(c => c.clusterId === s.id))
+                rank: inst.stats.sort((a, b) => ((b.getLast30DaysStats().at(2)?.bytes || 0) - (a.getLast30DaysStats().at(2)?.bytes || 0))).map((s, index) => {
+                    const cluster = inst.clusters.find(c => c.clusterId === s.id);
+                    if (!cluster) return null;
+                    const user = inst.server.db.getEntity(UserEntity, cluster.owner);
+                    return {
+                        rank: index + 1,
+                        clusterId: cluster.clusterId,
+                        name: cluster.clusterName,
+                        owner: user?.username,
+                        hits: s.getLast30DaysStats().at(2)?.hits || 0,
+                        bytes: s.getLast30DaysStats().at(2)?.bytes || 0,
+                        fullsize: cluster.shards >= FileList.SHARD_COUNT,
+                        isMasterStats: cluster.masterStatsMode,
+                        isProxy: cluster.isProxyCluster
+                    }
+                })
             });
         });
     }
