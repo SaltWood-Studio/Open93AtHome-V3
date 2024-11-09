@@ -65,15 +65,16 @@ export class ApiStats {
         });
 
         inst.app.get("/api/stats/yesterday", (req, res) => {
+            const lastDayIndex = -2;
             res.json({
-                hits: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.map(d => d.hits || 0),
-                bytes : inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.map(d => d.bytes || 0),
+                hits: inst.server.centerStats.getLast30DaysHourlyStats().at(lastDayIndex)?.map(d => d.hits || 0),
+                bytes : inst.server.centerStats.getLast30DaysHourlyStats().at(lastDayIndex)?.map(d => d.bytes || 0),
                 total: {
-                    hits: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.hits, 0),
-                    bytes: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.bytes, 0)
+                    hits: inst.server.centerStats.getLast30DaysHourlyStats().at(lastDayIndex)?.reduce((acc, d) => acc + d.hits, 0),
+                    bytes: inst.server.centerStats.getLast30DaysHourlyStats().at(lastDayIndex)?.reduce((acc, d) => acc + d.bytes, 0)
                 },
-                rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(2),
-                rank: inst.stats.sort((a, b) => ((b.getLast30DaysStats().at(2)?.bytes || 0) - (a.getLast30DaysStats().at(2)?.bytes || 0))).map((s, index) => {
+                rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(lastDayIndex),
+                rank: inst.stats.sort((a, b) => ((b.getLast30DaysStats().at(lastDayIndex)?.bytes || 0) - (a.getLast30DaysStats().at(lastDayIndex)?.bytes || 0))).map((s, index) => {
                     const cluster = inst.clusters.find(c => c.clusterId === s.id);
                     if (!cluster) return null;
                     const user = inst.server.db.getEntity(UserEntity, cluster.owner);
@@ -82,8 +83,8 @@ export class ApiStats {
                         clusterId: cluster.clusterId,
                         name: cluster.clusterName,
                         owner: user?.username,
-                        hits: s.getLast30DaysStats().at(2)?.hits || 0,
-                        bytes: s.getLast30DaysStats().at(2)?.bytes || 0,
+                        hits: s.getLast30DaysStats().at(lastDayIndex)?.hits || 0,
+                        bytes: s.getLast30DaysStats().at(lastDayIndex)?.bytes || 0,
                         fullsize: cluster.shards >= FileList.SHARD_COUNT,
                         isMasterStats: cluster.masterStatsMode,
                         isProxy: cluster.isProxyCluster
