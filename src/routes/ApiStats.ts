@@ -70,7 +70,8 @@ export class ApiStats {
                     hits: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.hits, 0),
                     bytes: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.bytes, 0)
                 },
-                rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(2)
+                rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(2),
+                rank: inst.stats.sort((a, b) => ((a.getLast30DaysStats().at(2)?.bytes || 0) - (b.getLast30DaysStats().at(2)?.bytes || 0))).map(s => inst.clusters.find(c => c.clusterId === s.id))
             });
         });
     }
