@@ -623,7 +623,7 @@ export class Server {
                 }
 
                 const randomFileCount = 5;
-                const randomFiles = Utilities.getRandomElements(cluster.isProxyCluster ? this.files.filter(f => f.url) : this.files, randomFileCount);
+                const randomFiles = Utilities.getRandomElements(this.fileList.getAvailableFiles(cluster), randomFileCount);
 
                 Utilities.checkSpecfiedFiles(randomFiles, cluster)
                 .then(message => {
@@ -632,7 +632,7 @@ export class Server {
                         return;
                     } else {
                         socket.send(tip);
-                        cluster.doOnline(cluster.isProxyCluster ? this.files.filter(f => f.url) : this.files, socket);
+                        cluster.doOnline(this.fileList.getAvailableFiles(cluster), socket);
                         this.db.update(cluster);
                         ack([null, true]);
                         cluster.enableHistory = [];
