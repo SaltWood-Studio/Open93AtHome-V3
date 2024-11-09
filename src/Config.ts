@@ -2,7 +2,7 @@ import dotenv from 'dotenv'
 import env from 'env-var'
 import { defaultInstance } from './RateLimiter.js'
 
-export const version = "3.2.0-patch7";
+export const version = "3.2.0-patch8";
 
 export class Config {
     public static instance: Config
