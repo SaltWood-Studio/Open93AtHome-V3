@@ -183,6 +183,7 @@ export class Utilities {
     }
 
     public static getUrl(file: File, cluster: ClusterEntity): string {
+        if (file.url && cluster.isProxyCluster) return `${Utilities.getUrlByPath(file.url, '/download', cluster)}&origin=${file.url}`;
         return Utilities.getUrlByPath(file.hash, `/download/${file.hash}`, cluster);
     }
     public static getUrlByPath(hash: string, path: string, cluster: ClusterEntity): string {

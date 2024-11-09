@@ -409,11 +409,7 @@ export class Server {
                         this.sendFile(req, res, file);
                         return;
                     }
-
-                    if (file.url && cluster.isProxyCluster) {
-                        const url = `${Utilities.getUrlByPath(file.url, `/download`, cluster)}&origin=${encodeURIComponent(file.url)}`;
-                        res.redirect(url);
-                    }
+                    
                     else res.redirect(Utilities.getUrl(file, cluster));
 
                     if (cluster.masterStatsMode) {
@@ -541,8 +537,6 @@ export class Server {
                     return;
                 }
 
-                const randomFileCount = 5;
-                const randomFiles = Utilities.getRandomElements(this.files, randomFileCount);
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (!cluster) {
@@ -627,6 +621,10 @@ export class Server {
                     ack([null, true]);
                     return;
                 }
+
+                const randomFileCount = 5;
+                const randomFiles = Utilities.getRandomElements(cluster.isProxyCluster ? this.files.filter(f => f.url) : this.files, randomFileCount);
+
                 Utilities.checkSpecfiedFiles(randomFiles, cluster)
                 .then(message => {
                     if (message) {
