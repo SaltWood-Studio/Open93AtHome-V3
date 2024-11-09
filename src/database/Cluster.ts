@@ -36,7 +36,7 @@ export class ClusterEntity {
 
     public port: number = 80;
 
-    public owner: number = 80;
+    public owner: number = 0;
 
     public downReason: string = '';
 
