@@ -66,8 +66,13 @@ export class NumberStorage {
     }
 
     private loadFromFile(): void {
-        const data = fs.readFileSync(this.filePath, 'utf8');
-        this.data = JSON.parse(data);
+        try {
+            const data = fs.readFileSync(this.filePath, 'utf8');
+            this.data = JSON.parse(data);
+        }
+        catch (e) {
+            this.data = [];
+        }
     }
 
     public stopAutoSave(): void {

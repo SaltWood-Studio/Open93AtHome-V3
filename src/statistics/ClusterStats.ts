@@ -96,9 +96,13 @@ export class StatsStorage {
     }
 
     private loadFromFile(): void {
-        // 直接读取 JSON 数据
-        const fileContent = fs.readFileSync(this.filePath, 'utf8');
-        this.data = JSON.parse(fileContent);
+        try {
+            const fileContent = fs.readFileSync(this.filePath, 'utf8');
+            this.data = JSON.parse(fileContent);
+        }
+        catch (e) {
+            this.data = [];
+        }
     }
 
     public stopAutoSave(): void {
