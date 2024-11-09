@@ -48,7 +48,7 @@ export class ApiStats {
             res.status(200).json({
                 daily: [dailyHits, dailyBytes],
                 hourly: [hourlyHits, hourlyBytes],
-                rejected: RateLimiter.rejectedRequest.getLast30DaysStats() || [],
+                rejected: RateLimiter.rejectedRequest.getTodayStats() || [],
                 today: inst.server.centerStats.today(),
                 onlines: inst.clusters.filter(c => c.isOnline).length,
                 sources: inst.server.sources.length,

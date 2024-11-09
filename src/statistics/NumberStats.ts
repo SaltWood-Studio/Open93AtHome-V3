@@ -4,7 +4,7 @@ import { Utilities } from "../Utilities.js";
 
 export class NumberStorage {
     public readonly id: string;
-    private data: { date: string, number: number }[];
+    private data: { date: string, data: number[] }[];
     private filePath: string;
     private saveInterval: NodeJS.Timeout;
     private dataUpdated: boolean;
@@ -25,32 +25,34 @@ export class NumberStorage {
     }
 
     public addData(data: number): void {
-        const today = Utilities.getCurrentDate();
+        const now = new Date();
+        const date = Utilities.getDateDate(now);
+        const hour = now.getHours();
 
-        let todayData = this.data.find(d => d.date === today);
+        let todayData = this.data.find(d => d.date === date);
         if (!todayData) {
-            todayData = { date: today, number: 0 };
+            todayData = { date, data: [] };
             this.data.push(todayData);
-            if (this.data.length > 30) {
-                this.data.shift();
-            }
         }
 
-        if (!todayData.number) todayData.number = 0;
-        todayData.number += data;
+        if (todayData.data.length !== 24) todayData.data = new Array(24).fill(0);
+
+        todayData.data[hour] += data;
         this.dataUpdated = true;
     }
 
-    public getTodayStats(): number {
-        const today = Utilities.getCurrentDate();
-        const todayData = this.data.find(d => d.date === today);
-        return todayData? todayData.number : NaN;
+    public getTodayStats(): number[] {
+        const now = new Date();
+        const date = Utilities.getDateDate(now);
+
+        const todayData = this.data.find(d => d.date === date);
+        if (!todayData) return new Array(24).fill(0);
+
+        return todayData.data;
     }
 
-    public getLast30DaysStats(): number[] {
-        const now = new Date();
-        const data = this.data.map(d => d.number);
-        return [...(new Array(30 - data.length).fill(0)), ...data];
+    public getLast30DaysStats(): number[][] {
+        return [...(new Array(30 - this.data.length).fill(new Array(24).fill(0))), ...this.data.map(d => d.data)];
     }
 
     private maybeWriteToFile(): void {
@@ -61,7 +63,7 @@ export class NumberStorage {
     }
 
     private writeToFile(): void {
-        const data = JSON.stringify(this.data, null, 2);
+        const data = JSON.stringify(this.data);
         fs.writeFileSync(this.filePath, data);
     }
 
