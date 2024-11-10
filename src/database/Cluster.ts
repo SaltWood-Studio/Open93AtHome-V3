@@ -26,7 +26,8 @@ import { FileList } from '../FileList.js';
     lastSeen INTEGER,
     shards INTEGER, 
     isProxy INTEGER,
-    isMasterStats INTEGER
+    isMasterStats INTEGER,
+    noWarden INTEGER
 `)
 @PrimaryKey('clusterId')
 export class ClusterEntity {
@@ -92,6 +93,11 @@ export class ClusterEntity {
     public get masterStatsMode(): boolean { return Boolean(this.isMasterStats); }
     public set masterStatsMode(value: boolean) { this.isMasterStats = Number(value); }
 
+    private noWarden: number = 0;
+
+    public get noWardenMode(): boolean { return Boolean(this.noWarden); }
+    public set noWardenMode(value: boolean) { this.noWarden = Number(value); }
+
     public doOffline(reason: string = "Unspecfied"): void {
         this.isOnline = false;
         this.downReason = reason;
@@ -102,13 +108,13 @@ export class ClusterEntity {
         }
     }
 
-    public doOnline(files: File[], io: Socket): void {
+    public doOnline(files: File[], io: Socket, noWarden: boolean = false): void {
         this.isOnline = true;
         if (this.interval) {
             clearInterval(this.interval);
             this.interval = null;
         }
-        if (!Config.instance.noWarden) {
+        if (!noWarden) {
             this.interval = setInterval(() => {
                 const file = Utilities.getRandomElement(files);
                 if (file) {
@@ -131,12 +137,14 @@ export class ClusterEntity {
     public getJson(removeSecret: boolean = false, removeSensitive: boolean = false): any {
         const removeSensitiveInfo = ({ clusterSecret, endpoint, measureBandwidth, port, downReason, shards, ...rest }: any) => rest;
         const removeSecretInfo = ({ clusterSecret, ...rest }: any) => rest;
-        const optimizeJsonObject = ({ interval, banned, isProxy, isMasterStats, enableHistory, ...rest }: ClusterEntity) => {
+        const optimizeJsonObject = ({ interval, banned, isProxy, noWarden, isMasterStats, enableHistory, shards, ...rest }: ClusterEntity) => {
             return {
                 ...rest,
-                fullsize: this.shards >= 1000,
+                shards,
+                fullsize: shards >= 1000,
                 isMasterStats: Boolean(isMasterStats),
                 isProxy: Boolean(isProxy),
+                noWarden: Boolean(noWarden),
                 isBanned: Boolean(banned),
             }
         };

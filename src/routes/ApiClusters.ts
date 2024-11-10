@@ -134,6 +134,7 @@ export class ApiClusters {
             const sponsorBanner = req.body.sponsorBanner as string || null;
             const isProxy = Boolean(req.body.isProxy) || false;
             const isMasterStats = Boolean(req.body.isMasterStats) || false;
+            const noWarden = Boolean(req.body.noWarden) || false;
 
             if (!Utilities.checkName(clusterName) || !Utilities.checkName(sponsor) || !Utilities.checkName(sponsorUrl) || !Utilities.checkName(sponsorBanner)) {
                 res.status(400).json({ error: "Cannot contain special characters" });
@@ -162,6 +163,7 @@ export class ApiClusters {
 
             cluster.isProxyCluster = isProxy;
             cluster.masterStatsMode = isMasterStats;
+            cluster.noWardenMode = noWarden;
 
             inst.db.update(cluster);
             res.json(cluster.getJson(true, false));
