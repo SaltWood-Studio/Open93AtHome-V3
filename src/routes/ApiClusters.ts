@@ -67,7 +67,7 @@ export class ApiClusters {
             }
             const stat = inst.stats.find(s => s.id === cluster.clusterId)?.getTodayStats();
             res.json({
-                ...cluster,
+                ...cluster.getJson(true, true),
                 ownerName: inst.db.getEntity<UserEntity>(UserEntity, cluster.owner)?.username || '',
                 hits: stat?.hits || 0,
                 bytes: stat?.bytes || 0
