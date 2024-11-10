@@ -65,7 +65,13 @@ export class ApiClusters {
                 res.status(404).json({ error: "Cluster not found" });
                 return;
             }
-            res.json(cluster.getJson(true, true));
+            const stat = inst.stats.find(s => s.id === cluster.clusterId)?.getTodayStats();
+            res.json({
+                ...cluster,
+                ownerName: inst.db.getEntity<UserEntity>(UserEntity, cluster.owner)?.username || '',
+                hits: stat?.hits || 0,
+                bytes: stat?.bytes || 0
+            });
         });
 
         inst.app.post("/api/clusters", async (req, res) => {

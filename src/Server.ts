@@ -586,7 +586,7 @@ export class Server {
                         ack([{message: `Failed to add DNS record for "${enableData.host || address}". Please contact admin.`}, false]);
                         return;
                     }
-                    console.log(`Adding A record for cluster ${cluster.clusterId}, address "${address}".`);
+                    console.log(`Adding record for cluster ${cluster.clusterId}, address "${address}".`);
 
                     this.db.update(cluster);
                 }
