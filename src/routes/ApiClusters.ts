@@ -85,9 +85,15 @@ export class ApiClusters {
             const bandwidth = Number(req.body.bandwidth || 0);
             if (Number.isNaN(bandwidth) || bandwidth <= 10 || bandwidth > 500) {
                 res.status(400).json({ error: "Invalid bandwidth" });
+                return;
             }
             if (name.length < 1 || name.length > 20 || name === "") {
                 res.status(400).json({ error: "Invalid name" });
+                return;
+            }
+            if (!Utilities.checkName(name)) {
+                res.status(400).json({ error: "Name cannot contain special characters" });
+                return;
             }
 
             let cluster = new ClusterEntity();
@@ -128,6 +134,11 @@ export class ApiClusters {
             const sponsorBanner = req.body.sponsorBanner as string || null;
             const isProxy = Boolean(req.body.isProxy) || false;
             const isMasterStats = Boolean(req.body.isMasterStats) || false;
+
+            if (!Utilities.checkName(clusterName) || !Utilities.checkName(sponsor) || !Utilities.checkName(sponsorUrl) || !Utilities.checkName(sponsorBanner)) {
+                res.status(400).json({ error: "Cannot contain special characters" });
+                return;
+            }
 
             const cluster = inst.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {

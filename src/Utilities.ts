@@ -28,6 +28,8 @@ export const FileListSchema = avsc.Type.forSchema({
   },
 });
 
+const bannedCharacters = /[&<>\"'\r\n]/g;
+
 export class Utilities {
     public static isRunningInDocker(): boolean {
         return process.env.IS_IN_DOCKER === 'true';
@@ -547,5 +549,14 @@ export class Utilities {
             case "year":
                 return new Date(Date.now() + after * 365 * 24 * 60 * 60 * 1000);
         }
+    }
+
+    public static checkName(name: string | null): boolean {
+        if (!name) return true;
+        return !bannedCharacters.test(name);
+    };
+    
+    public static checkNameRule(name: string): boolean | string {
+        return bannedCharacters.test(name) ? '名称不能包含特殊字符' : true;
     }
 }

@@ -126,6 +126,11 @@ export class ApiUser {
             const sponsorUrl = req.body.sponsorUrl as string || null;
             const sponsorBanner = req.body.sponsorBanner as string || null;
 
+            if (!Utilities.checkName(name) || !Utilities.checkName(sponsor) || !Utilities.checkName(sponsorUrl) || !Utilities.checkName(sponsorBanner)) {
+                res.status(400).json({ error: "Cannot contain special characters" });
+                return;
+            }
+
             if (bandwidth !== null && (Number.isNaN(bandwidth) || bandwidth < 10 || bandwidth > 500)) {
                 res.status(400).send({ message: 'Invalid bandwidth' });
                 return;
