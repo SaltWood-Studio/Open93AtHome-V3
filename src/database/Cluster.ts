@@ -64,7 +64,7 @@ export class ClusterEntity {
 
     public sponsor: string = '';
     public sponsorUrl: string = '';
-    public sponsorPicture: string = '';
+    public sponsorBanner: string = '';
 
     public version: string = '';
 
