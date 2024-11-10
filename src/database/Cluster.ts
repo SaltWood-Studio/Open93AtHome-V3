@@ -20,6 +20,7 @@ import { FileList } from '../FileList.js';
     createdAt INTEGER,
     sponsor TEXT,
     sponsorUrl TEXT,
+    sponsorBanner TEXT,
     version TEXT,
     downTime INTEGER,
     shards INTEGER, 
