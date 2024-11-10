@@ -120,7 +120,7 @@ export class ApiClusters {
             const bandwidth = Number(req.body.bandwidth) || null;
             const sponsor = req.body.sponsor as string || null;
             const sponsorUrl = req.body.sponsorUrl as string || null;
-            const sponsorBanner = req.body.sponsorPicture as string || null;
+            const sponsorBanner = req.body.sponsorBanner as string || null;
             const isProxy = Boolean(req.body.isProxy) || false;
             const isMasterStats = Boolean(req.body.isMasterStats) || false;
 
