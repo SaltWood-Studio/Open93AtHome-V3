@@ -516,6 +516,11 @@ export class Server {
             socket.onAny((event: string, data) => {
                 if (this.sessionToClusterMap.has(socket.id)) {
                     console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <${event?.toUpperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}> ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+                    const cluster = this.sessionToClusterMap.get(socket.id);
+                    if (cluster) {
+                        cluster.lastSeen = Date.now();
+                        this.db.update(cluster);
+                    }
                 }
             });
 

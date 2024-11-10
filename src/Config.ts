@@ -32,6 +32,7 @@ export class Config {
     public readonly failAttemptsDuration: number = env.get('FAIL_ATTEMPTS_DURATION').default(0).asIntPositive();
     public readonly requestRateLimit: number = env.get('REQUEST_RATE_LIMIT').default(0).asIntPositive();
     public readonly autoUpdateDuration: number = env.get('AUTO_UPDATE_DURATION').default(0).asIntPositive();
+    public readonly lastActivityDays: number = env.get('LAST_ACTIVITY_DAYS').default(15).asIntPositive();
 
     // 开发变量
     public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();

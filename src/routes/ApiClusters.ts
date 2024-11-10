@@ -1,3 +1,4 @@
+import { Config } from "../Config.js";
 import { ClusterEntity } from "../database/Cluster.js";
 import { UserEntity } from "../database/User.js";
 import { StatsStorage } from "../statistics/ClusterStats.js";
@@ -7,9 +8,13 @@ import { ApiFactory } from "./ApiFactory.js";
 export class ApiClusters {
     public static register(inst: ApiFactory) {
         inst.app.get("/api/clusters", async (req, res) => {
+            // 仅显示特定天数内有活动的节点
             // 先把节点按照在线和离线分成两部分，然后各自按照 traffic 从大到小排序，最后返回 JSON 字符串
-            const onlineClusters = inst.clusters.filter(c => c.isOnline);
-            const offlineClusters = inst.clusters.filter(c => !c.isOnline);
+            const clusters = Config.instance.lastActivityDays > 0
+                ? inst.clusters.filter(c => c.lastSeen > Utilities.getDate(-Config.instance.lastActivityDays, "day").getTime())
+                : inst.clusters;
+            const onlineClusters = clusters.filter(c => c.isOnline);
+            const offlineClusters = clusters.filter(c => !c.isOnline);
         
             const onlineClustersSorted = onlineClusters
                 .sort((a, b) => {

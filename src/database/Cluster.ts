@@ -23,6 +23,7 @@ import { FileList } from '../FileList.js';
     sponsorBanner TEXT,
     version TEXT,
     downTime INTEGER,
+    lastSeen INTEGER,
     shards INTEGER, 
     isProxy INTEGER,
     isMasterStats INTEGER
@@ -70,6 +71,8 @@ export class ClusterEntity {
     public version: string = '';
 
     public downTime: number = 0;
+
+    public lastSeen: number = 0;
 
     public shards: number = 1000;
 
