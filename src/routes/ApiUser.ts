@@ -124,6 +124,7 @@ export class ApiUser {
             const bandwidth = Number(req.body.bandwidth) || null;
             const sponsor = req.body.sponsor as string || null;
             const sponsorUrl = req.body.sponsorUrl as string || null;
+            const sponsorPicture = req.body.sponsorPicture as string || null;
 
             if (bandwidth !== null && (Number.isNaN(bandwidth) || bandwidth < 10 || bandwidth > 500)) {
                 res.status(400).send({ message: 'Invalid bandwidth' });
@@ -134,6 +135,7 @@ export class ApiUser {
             if (bandwidth) cluster.bandwidth = bandwidth;
             if (sponsor) cluster.sponsor = sponsor;
             if (sponsorUrl) cluster.sponsorUrl = sponsorUrl;
+            if (sponsorPicture) cluster.sponsorPicture = sponsorPicture;
 
             inst.db.update(cluster);
             res.status(200).json(cluster.getJson(true, false));

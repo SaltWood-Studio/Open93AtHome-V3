@@ -63,8 +63,8 @@ export class ClusterEntity {
     public createdAt: number = 0;
 
     public sponsor: string = '';
-
     public sponsorUrl: string = '';
+    public sponsorPicture: string = '';
 
     public version: string = '';
 
