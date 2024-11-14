@@ -73,7 +73,7 @@ export class ApiStats {
                     bytes: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.bytes, 0)
                 },
                 rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(-2),
-                rank: inst.stats.sort((a, b) => ((b.getLast30DaysStats().at(-2)?.bytes || 0) - (a.getLast30DaysStats().at(-2)?.bytes || 0))).map((s, index) => {
+                rank: inst.stats.sort((a, b) => ((b.getLast30DaysStats().at(-2)?.bytes || 0) - (a.getLast30DaysStats().at(-2)?.bytes || 0))).filter(s => (s.getLast30DaysStats().at(-2)?.bytes || 0) > 0).map((s, index) => {
                     const cluster = inst.clusters.find(c => c.clusterId === s.id);
                     if (!cluster) return null;
                     const user = inst.server.db.getEntity(UserEntity, cluster.owner);
