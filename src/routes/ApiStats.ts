@@ -80,8 +80,8 @@ export class ApiStats {
                     return {
                         rank: index + 1,
                         clusterId: cluster.clusterId,
-                        name: cluster.clusterName,
-                        owner: user?.username,
+                        clusterName: cluster.clusterName,
+                        ownerName: user?.username,
                         hits: s.getLast30DaysStats().at(-2)?.hits || 0,
                         bytes: s.getLast30DaysStats().at(-2)?.bytes || 0,
                         fullsize: cluster.shards >= FileList.SHARD_COUNT,
