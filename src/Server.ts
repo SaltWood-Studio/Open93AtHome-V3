@@ -319,6 +319,7 @@ export class Server {
                     token: newToken,
                     ttl: 1000 * 60 * 60 * 24
                 });
+                return;
             }
 
             const claims = JwtHelper.instance.verifyToken(challenge, 'cluster-challenge') as { clusterId: string };
