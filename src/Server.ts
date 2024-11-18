@@ -307,7 +307,7 @@ export class Server {
                 const token = String(req.body.token);
                 const claims = JwtHelper.instance.verifyToken(token, 'cluster') as { clusterId: string };
                 if (!this.clusters.some(c => c.clusterId === claims.clusterId)) {
-                    res.status(401).json({ error: "Cluster not found. But, how did you done it?" }):
+                    res.status(401).json({ error: "Cluster not found. But, how did you done it?" });
                     return;
                 }
                 const newToken = JwtHelper.instance.issueToken(
