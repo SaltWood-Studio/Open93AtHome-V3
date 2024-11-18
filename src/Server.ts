@@ -302,6 +302,25 @@ export class Server {
             const clusterId = req.body.clusterId as string;
             const signature = req.body.signature as string;
             const challenge = req.body.challenge as string;
+
+            if (req.body.token) {
+                const token = String(req.body.token);
+                const claims = JwtHelper.instance.verifyToken(token, 'cluster') as { clusterId: string };
+                if (!this.clusters.some(c => c.clusterId === claims.clusterId)) {
+                    res.status(401).json({ error: "Cluster not found. But, how did you done it?" }):
+                    return;
+                }
+                const newToken = JwtHelper.instance.issueToken(
+                    { clusterId: clusterId },
+                    'cluster',
+                    60 * 60 * 24 // 过期时间：24小时
+                );
+                res.status(200).json({
+                    token: newToken,
+                    ttl: 1000 * 60 * 60 * 24
+                });
+            }
+
             const claims = JwtHelper.instance.verifyToken(challenge, 'cluster-challenge') as { clusterId: string };
             const cluster = this.clusters.find(c => c.clusterId === claims.clusterId);
         
