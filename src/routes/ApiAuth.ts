@@ -79,11 +79,9 @@ export class ApiAuth {
                     });
                 }
         
-                res.status(200).json({
-                    avatar_url: user.avatar_url,
-                    username: user.login,
-                    id: user.id
-                });
+                const login = inst.db.getEntity<UserEntity>(UserEntity, user.id);
+
+                res.status(200).json(login);
             } catch (error) {
                 const err = error as Error;
                 console.error('Error processing GitHub OAuth:', err);
