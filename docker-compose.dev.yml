@@ -22,3 +22,7 @@ services:
       options:
         max-size: '10m'
         max-file: '10'
+    ulimits:
+      core:
+        hard: 0
+        soft: 0
