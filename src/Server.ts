@@ -248,7 +248,7 @@ export class Server {
 
     public start(): void {
         // 启动 HTTPS 服务器
-        this.httpServer.listen(Config.instance.port, () => {
+        this.httpServer.listen(Config.instance.port, Config.instance.host, () => {
           console.log(`HTTP Server running on http://localhost:${Config.instance.port}`);
         });
     }

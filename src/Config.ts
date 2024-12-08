@@ -23,6 +23,7 @@ export class Config {
     public readonly githubOAuthCallbackUrl: string = env.get('GITHUB_OAUTH_CALLBACK_URL').default("").asString();
     public readonly githubUrl: string = env.get('GITHUB_URL').default("github.com").asString();
     public readonly githubApiUrl: string = env.get('GITHUB_API_URL').default("api.github.com").asString();
+    public readonly host: string = env.get('HOST').default("127.0.0.1").asString();
     public readonly port: number = env.get('PORT').default(9388).asPortNumber();
     public readonly concurrency: number = env.get('CONCURRENCY').default(10).asIntPositive();
     public readonly forceNoOpen: boolean = env.get('FORCE_NO_OPEN').default("false").asBool();
