@@ -1,16 +1,14 @@
-# 使用Alpine Linux作为基础镜像
-FROM alpine:latest
+# 构建阶段
+FROM alpine:latest AS build
 
-# 更改apk软件源为清华大学镜像并更新软件包
-# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
 RUN apk update && \
     apk add --no-cache \
-        build-base \
-        python3 \
-        git \
-        npm \
-        openssh \
-        nodejs
+    build-base \
+    python3 \
+    git \
+    npm \
+    openssh \
+    nodejs
 
 # 设置镜像源
 # RUN npm config set registry https://registry.npmmirror.com
@@ -19,12 +17,24 @@ RUN apk update && \
 WORKDIR /app
 COPY . .
 
-RUN rm -rf node_modules && \
-    rm -rf dist && \
-    npm install
+# 安装依赖并构建项目
+RUN npm ci && \
+    npm run build
 
-# 安装TypeScript以及其他依赖包
-RUN npm install -g typescript && npm install && npm run build
+# 运行阶段
+FROM alpine:latest
+
+# 仅安装运行时所需的包
+RUN apk add --no-cache \
+    nodejs \
+    npm
+
+WORKDIR /app
+
+# 从构建阶段复制构建输出和依赖
+COPY --from=build /app/dist /app/dist
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/package.json /app/package.json
 
 # 启动应用程序
 CMD ["node", "--enable-source-maps", "dist/index.js"]
