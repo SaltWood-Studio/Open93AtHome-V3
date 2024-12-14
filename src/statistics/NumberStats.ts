@@ -25,6 +25,8 @@ export class NumberStorage {
     }
 
     public addData(data: number): void {
+        if (this.data.length > 30) this.data.shift();
+
         const now = new Date();
         const date = Utilities.getDateDate(now);
         const hour = now.getHours();
@@ -52,7 +54,7 @@ export class NumberStorage {
     }
 
     public getLast30DaysHourlyStats(): number[][] {
-        return [...(new Array(30 - this.data.length).fill(new Array(24).fill(0))), ...this.data.map(d => d.data)];
+        return [...(new Array(Math.max(30 - this.data.length, 0)).fill(new Array(24).fill(0))), ...this.data.map(d => d.data)];
     }
 
     private maybeWriteToFile(): void {
