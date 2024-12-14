@@ -12,7 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@mongodb-js/zstd": "^1.2.1",
+    "@mongodb-js/zstd": "^2.0.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
