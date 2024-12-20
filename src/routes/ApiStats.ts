@@ -16,7 +16,7 @@ export class ApiStats {
                     const dates = data.map(d => d.date);
                     const dailyHits: number[] = data.map(d => d.hits);
                     const dailyBytes: number[] = data.map(d => d.bytes);
-                    res.status(200).json({dates, hits: dailyHits, bytes: dailyBytes});
+                    res.status(200).json({ dates, hits: dailyHits, bytes: dailyBytes });
                 } else {
                     res.status(404).send({ message: "Stats not found. This should never happen, please contact administrator." });
                 }
@@ -31,22 +31,22 @@ export class ApiStats {
 
             const dailyHits: number[] = [];
             const dailyBytes: number[] = [];
-            
+
             data.forEach(d => {
                 const { hits, bytes } = d.filter(h => h !== null).reduce((acc, h) => {
                     acc.hits += h.hits;
                     acc.bytes += h.bytes;
                     return acc;
                 }, { hits: 0, bytes: 0 });
-            
+
                 dailyHits.push(hits);
                 dailyBytes.push(bytes);
             });
-            
+
             const hourlyData = data.at(0) || [];
             const hourlyHits = hourlyData.map(d => d?.hits || 0);
             const hourlyBytes = hourlyData.map(d => d?.bytes || 0);
-            
+
             res.status(200).json({
                 daily: [dailyHits, dailyBytes],
                 hourly: [hourlyHits, hourlyBytes],
@@ -57,7 +57,7 @@ export class ApiStats {
                 totalFiles: inst.files.length,
                 totalSize: inst.files.reduce((acc, f) => acc + f.size, 0),
                 startTime: inst.server.startAt.getTime()
-            });            
+            });
         });
 
         inst.app.get("/api/stats/source", (req, res) => {
@@ -68,28 +68,35 @@ export class ApiStats {
             const yesterday = inst.server.centerStats.getYesterday();
             res.json({
                 hits: yesterday.hits,
-                bytes : yesterday.bytes,
+                bytes: yesterday.bytes,
                 total: {
                     hits: yesterday.hits.reduce((acc, d) => acc + d, 0),
                     bytes: yesterday.bytes.reduce((acc, d) => acc + d, 0)
                 },
                 rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(-2),
-                rank: inst.stats.sort((a, b) => ((b.getLast30DaysStats().at(-2)?.bytes || 0) - (a.getLast30DaysStats().at(-2)?.bytes || 0))).filter(s => (s.getLast30DaysStats().at(-2)?.bytes || 0) > 0).map((s, index) => {
-                    const cluster = inst.clusters.find(c => c.clusterId === s.id);
-                    if (!cluster) return null;
-                    const user = inst.server.db.getEntity(UserEntity, cluster.owner);
-                    return {
-                        rank: index + 1,
-                        clusterId: cluster.clusterId,
-                        clusterName: cluster.clusterName,
-                        ownerName: user?.username,
-                        hits: s.getLast30DaysStats().at(-2)?.hits || 0,
-                        bytes: s.getLast30DaysStats().at(-2)?.bytes || 0,
-                        fullsize: cluster.shards >= FileList.SHARD_COUNT,
-                        isMasterStats: cluster.masterStatsMode,
-                        isProxy: cluster.isProxyCluster
-                    }
-                })
+                rank: inst.stats
+                    .sort((a, b) => (b.getYesterday().bytes - a.getYesterday().bytes))
+                    .filter(s => s.getYesterday().bytes > 0)
+                    .map(s => {
+                        const cluster = inst.clusters.find(c => c.clusterId === s.id);
+                        if (!cluster) return null;
+                        const user = inst.server.db.getEntity(UserEntity, cluster.owner);
+                        return { stats: s, cluster, user };
+                    })
+                    .map((s, index) => {
+                        if (!s) return null;
+                        return {
+                            rank: index + 1,
+                            clusterId: s.cluster.clusterId,
+                            clusterName: s.cluster.clusterName,
+                            ownerName: s.user?.username,
+                            hits: s.stats.getYesterday().hits || 0,
+                            bytes: s.stats.getYesterday().bytes || 0,
+                            fullsize: s.cluster.shards >= FileList.SHARD_COUNT,
+                            isMasterStats: s.cluster.masterStatsMode,
+                            isProxy: s.cluster.isProxyCluster
+                        }
+                    })
             });
         });
     }
