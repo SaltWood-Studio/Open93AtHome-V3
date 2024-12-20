@@ -66,8 +66,8 @@ export class ApiStats {
 
         inst.app.get("/api/stats/yesterday", (req, res) => {
             res.json({
-                hits: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.map(d => d.hits || 0),
-                bytes : inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.map(d => d.bytes || 0),
+                hits: inst.server.centerStats.getLast30DaysHourlyStats().at(-2)?.map(d => d.hits || 0),
+                bytes : inst.server.centerStats.getLast30DaysHourlyStats().at(-2)?.map(d => d.bytes || 0),
                 total: {
                     hits: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.hits, 0),
                     bytes: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.bytes, 0)
