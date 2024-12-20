@@ -35,7 +35,7 @@ export class HourlyStatsStorage {
 
     public addData({ hits, bytes }: { hits: number, bytes: number }): void {
         const now = new Date();
-        const date = Utilities.getDateDate(now);
+        const date = Utilities.getDateString(now);
         const hour = now.getHours().toString().padStart(2, '0');
 
         let dayData = this.data.find(entry => entry.date === date);
@@ -63,12 +63,27 @@ export class HourlyStatsStorage {
         this.dataUpdated = true;
     }
 
+    public getYesterday(): { hits: number[], bytes: number[] } {
+        const yesterday = Utilities.getDateString(new Date(Date.now() - 24 * 60 * 60 * 1000));
+        let yesterdayData = this.data.find(entry => entry.date === yesterday);
+        if (!yesterdayData) {
+            return { hits: Array(24).fill(0), bytes: Array(24).fill(0) };
+        }
+        const yesterdayStats = { hits: Array(24).fill(0), bytes: Array(24).fill(0) };
+        yesterdayData.hourlyStats.forEach(hourData => {
+            const hour = parseInt(hourData.hour);
+            yesterdayStats.hits[hour] = hourData.hits;
+            yesterdayStats.bytes[hour] = hourData.bytes;
+        });
+        return yesterdayStats;
+    }
+
     public getLast30DaysHourlyStats(): { date: string, hits: number, bytes: number }[][] {
         const result: { date: string, hits: number, bytes: number }[][] = [];
         const now = new Date();
 
         for (let i = 0; i < 30; i++) {
-            const dateString = Utilities.getDateDate(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
+            const dateString = Utilities.getDateString(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
 
             const dayData = this.data.find(entry => entry.date === dateString);
             const dayResult: { date: string, hits: number, bytes: number }[] = [];

@@ -65,12 +65,13 @@ export class ApiStats {
         });
 
         inst.app.get("/api/stats/yesterday", (req, res) => {
+            const yesterday = inst.server.centerStats.getYesterday();
             res.json({
-                hits: inst.server.centerStats.getLast30DaysHourlyStats().at(-2)?.map(d => d.hits || 0),
-                bytes : inst.server.centerStats.getLast30DaysHourlyStats().at(-2)?.map(d => d.bytes || 0),
+                hits: yesterday.hits,
+                bytes : yesterday.bytes,
                 total: {
-                    hits: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.hits, 0),
-                    bytes: inst.server.centerStats.getLast30DaysHourlyStats().at(2)?.reduce((acc, d) => acc + d.bytes, 0)
+                    hits: yesterday.hits.reduce((acc, d) => acc + d, 0),
+                    bytes: yesterday.bytes.reduce((acc, d) => acc + d, 0)
                 },
                 rejected: RateLimiter.rejectedRequest.getLast30DaysHourlyStats().at(-2),
                 rank: inst.stats.sort((a, b) => ((b.getLast30DaysStats().at(-2)?.bytes || 0) - (a.getLast30DaysStats().at(-2)?.bytes || 0))).filter(s => (s.getLast30DaysStats().at(-2)?.bytes || 0) > 0).map((s, index) => {

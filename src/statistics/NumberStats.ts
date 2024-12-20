@@ -28,7 +28,7 @@ export class NumberStorage {
         if (this.data.length > 30) this.data.shift();
 
         const now = new Date();
-        const date = Utilities.getDateDate(now);
+        const date = Utilities.getDateString(now);
         const hour = now.getHours();
 
         let todayData = this.data.find(d => d.date === date);
@@ -45,7 +45,7 @@ export class NumberStorage {
 
     public getTodayStats(): number[] {
         const now = new Date();
-        const date = Utilities.getDateDate(now);
+        const date = Utilities.getDateString(now);
 
         const todayData = this.data.find(d => d.date === date);
         if (!todayData) return new Array(24).fill(0);

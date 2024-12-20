@@ -56,6 +56,16 @@ export class StatsStorage {
         }
     }
 
+    public getYesterday(): { hits: number, bytes: number } {
+        const yesterday = Utilities.getDateString(new Date(Date.now() - 24 * 60 * 60 * 1000));
+        const yesterdayData = this.data.find(entry => entry.date === yesterday);
+        if (yesterdayData) {
+            return { hits: yesterdayData.hits, bytes: yesterdayData.bytes };
+        } else {
+            return { hits: 0, bytes: 0 };
+        }
+    }
+
     public getLast30DaysStats(): { date: string, hits: number, bytes: number }[] {
         const now = new Date();
 
@@ -63,7 +73,7 @@ export class StatsStorage {
 
         // 填充最近30天的数据
         for (let i = 0; i < 30; i++) {
-            const date = Utilities.getDateDate(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
+            const date = Utilities.getDateString(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
             dateMap[date] = { hits: 0, bytes: 0 };
         }
 

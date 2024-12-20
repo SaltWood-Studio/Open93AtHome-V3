@@ -473,10 +473,10 @@ export class Utilities {
     }
 
     public static getCurrentDate(): string {
-        return Utilities.getDateDate(new Date());
+        return Utilities.getDateString(new Date());
     }
 
-    public static getDateDate(date: Date): string {
+    public static getDateString(date: Date): string {
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const day = date.getDate().toString().padStart(2, '0');
