@@ -60,4 +60,8 @@ export class ACME {
 
         return [key, csr, certificate, validFrom, expiresAt];
     }
+
+    public revokeCertificate(certificate: acme.CertificateBuffer | acme.CertificateString) {
+        this.client.revokeCertificate(certificate);
+    }
 }

@@ -1,4 +1,5 @@
 import { Config } from "../Config.js";
+import { CertificateObject } from "../database/Certificate.js";
 import { ClusterEntity } from "../database/Cluster.js";
 import { UserEntity } from "../database/User.js";
 import JwtHelper from "../JwtHelper.js";
@@ -90,6 +91,49 @@ export class ApiAdmin {
                 return result;
             });
             res.json(result);
+        });
+
+        inst.app.post("/api/admin/certificates/revoke", async (req, res) => {
+            if (!Utilities.verifyAdmin(req, res, inst.db)) return;
+            const data = req.body as {
+                id: string
+            };
+            const cluster = inst.db.getEntity<ClusterEntity>(ClusterEntity, data.id);
+            if (!cluster) {
+                res.status(404).json({ message: "Cluster not found" });
+                return;
+            }
+
+            const cert = inst.db.getEntity<CertificateObject>(CertificateObject, cluster.clusterId);
+            if (!cert) {
+                res.status(404).json({ message: "Certificate not found" });
+                return;
+            }
+
+            await inst.acme?.revokeCertificate(cert.certificate);
+            if (inst.acme) inst.db.remove(CertificateObject, cert);
+
+            res.status(200).json({ message: "Certificate revoked" });
+        });
+
+        inst.app.get("/api/admin/certificates/cluster", async (req, res) => {
+            if (!Utilities.verifyAdmin(req, res, inst.db)) return;
+            const data = req.query as {
+                id: string
+            };
+            const cluster = inst.db.getEntity<ClusterEntity>(ClusterEntity, data.id);
+            if (!cluster) {
+                res.status(404).json({ message: "Cluster not found" });
+                return;
+            }
+
+            const cert = inst.db.getEntity<CertificateObject>(CertificateObject, cluster.clusterId);
+            if (!cert) {
+                res.status(404).json({ message: "Certificate not found" });
+                return;
+            }
+
+            res.status(200).json(cert);
         });
     }
 }
