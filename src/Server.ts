@@ -46,7 +46,7 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const getRealIP = (obj: Indexable<any>): string => {
-    return (obj[Config.instance.sourceIpHeader] as string).split(',')[0];
+    return (obj[Config.instance.sourceIpHeader] as string)?.split(',')[0];
 }
 
 const logAccess = (req: Request, res: Response) => {
