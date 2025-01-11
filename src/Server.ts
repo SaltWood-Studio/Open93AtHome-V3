@@ -459,18 +459,18 @@ export class Server {
                         const result = await fn(...data);
                         // 如果不为 undefined
                         if (result === undefined) {
-                            callback(null, false);
+                            callback([null, false]);
                             return;
                         }
                         // 如果为数组
-                        if (Array.isArray(result)) callback(...result);
+                        if (Array.isArray(result)) callback(result);
                         // 如果为对象
-                        else callback(null, result);
+                        else callback([null, result]);
                     }
                     catch (error) {
                         try {
                             socket.emit("error", error);
-                            callback(error, null)
+                            callback([error, null])
                         } catch (e) { }
                     }
                 } catch (error) {
@@ -639,21 +639,15 @@ export class Server {
                 const randomFileCount = 5;
                 const randomFiles = Utilities.getRandomElements(this.fileList.getAvailableFiles(cluster), randomFileCount);
 
-                Utilities.checkSpecfiedFiles(randomFiles, cluster)
-                .then(message => {
-                    if (message) throw new Error(message);
-                    else {
-                        socket.send(tip);
-                        cluster.doOnline(this.fileList.getAvailableFiles(cluster), socket);
-                        this.db.update(cluster);
-                        cluster.enableHistory = [];
-                        return true;
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    throw err;
-                });
+                const message = await Utilities.checkSpecfiedFiles(randomFiles, cluster);
+                if (message) throw new Error(message);
+                else {
+                    socket.send(tip);
+                    cluster.doOnline(this.fileList.getAvailableFiles(cluster), socket);
+                    this.db.update(cluster);
+                    cluster.enableHistory = [];
+                    return true;
+                }
             });
 
             wrapper(socket, "keep-alive", (data: any) => {
