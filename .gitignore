@@ -106,3 +106,5 @@ database.sqlite
 /assets
 /plugins
 /plugin-dependencies/node_modules
+
+.npmrc
