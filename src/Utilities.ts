@@ -28,9 +28,17 @@ export const FileListSchema = avsc.Type.forSchema({
   },
 });
 
+type Indexable<T> = {
+    [key: string]: T;
+}
+
 const bannedCharacters = /[&<>\"'\r\n]/g;
 
 export class Utilities {
+    public static getRealIP(obj: Indexable<any>): string {
+        return (obj[Config.instance.dev.sourceIpHeader] as string).split(',')[0];
+    }
+    
     public static isRunningInDocker(): boolean {
         return process.env.IS_IN_DOCKER === 'true';
     }
@@ -189,7 +197,7 @@ export class Utilities {
         return Utilities.getUrlByPath(file.hash, `/download/${file.hash}`, cluster);
     }
     public static getUrlByPath(hash: string, path: string, cluster: ClusterEntity): string {
-        return `${Config.instance.forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/${path.substring(1)}?${Utilities.getSign(hash, cluster.clusterSecret)}`
+        return `${Config.instance.server.forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/${path.substring(1)}?${Utilities.getSign(hash, cluster.clusterSecret)}`
     }
 
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {

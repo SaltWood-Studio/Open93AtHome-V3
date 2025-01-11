@@ -36,11 +36,11 @@ export class ApiAdmin {
             }
             const targetToken = JwtHelper.instance.issueToken({
                 userId: targetUser.id,
-                clientId: Config.instance.githubOAuthClientId
+                clientId: Config.instance.github.oAuthClientId
             }, 'user', 1 * 24 * 60 * 60);
             const newAdminToken = JwtHelper.instance.issueToken({
                 userId: user.id,
-                clientId: Config.instance.githubOAuthClientId
+                clientId: Config.instance.github.oAuthClientId
             }, 'admin', 1 * 24 * 60 * 60);
             res.cookie('token', targetToken, {
                 expires: Utilities.getDate(1, "day"),

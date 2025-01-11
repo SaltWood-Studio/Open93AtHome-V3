@@ -1,66 +1,164 @@
-import dotenv from 'dotenv'
-import env from 'env-var'
-import { defaultInstance } from './RateLimiter.js'
+import json5 from 'json5';
+import { defaultInstance } from './RateLimiter.js';
+import fs from 'fs';
 
 export const version = "3.2.1-pre3";
 
 export class Config {
-    public static instance: Config
+    private static _instance: Config;
+    public static readonly FILENAME = './data/config.json5';
+    private static _fsWatcher: fs.FSWatcher;
 
-    public readonly enableRequestCertificate: boolean = env.get('ENABLE_REQUEST_CERTIFICATE').default("false").asBool();
-    public readonly dnsType: string = env.get('DNS_TYPE').default("cloudflare").asString();
-    public readonly dnsSecretId: string = env.get('DNS_SECRET_ID').default("").asString();
-    public readonly dnsSecretToken: string = env.get('DNS_SECRET_TOKEN').default("").asString();
-    public readonly dnsDomain: string = env.get('DNS_DOMAIN').default("").asString();
-    public readonly domainContactEmail: string = env.get('DOMAIN_CONTACT_EMAIL').default("").asString();
-    // public readonly acmeStaging: boolean = env.get('ACME_STAGING').default("false").asBool();
+    public readonly dns: {
+        type: string;
+        secretId: string;
+        secretToken: string;
+        domain: string;
+        contactEmail: string;
+    } = {
+        type: "cloudflare",
+        secretId: "",
+        secretToken: "",
+        domain: "",
+        contactEmail: ""
+    };
 
-    public readonly zerosslKid: string = env.get('ZEROSSL_KID').default("").asString();
-    public readonly zerosslHmacKey: string = env.get('ZEROSSL_HMAC_KEY').default("").asString();
+    public readonly github: {
+        oAuthClientId: string;
+        oAuthClientSecret: string;
+        oAuthCallbackUrl: string;
+        url: string;
+        apiUrl: string;
+    } = {
+        oAuthClientId: "",
+        oAuthClientSecret: "",
+        oAuthCallbackUrl: "",
+        url: "github.com",
+        apiUrl: "api.github.com"
+    };
 
-    public readonly githubOAuthClientId: string = env.get('GITHUB_OAUTH_CLIENT_ID').default("").asString();
-    public readonly githubOAuthClientSecret: string = env.get('GITHUB_OAUTH_CLIENT_SECRET').default("").asString();
-    public readonly githubOAuthCallbackUrl: string = env.get('GITHUB_OAUTH_CALLBACK_URL').default("").asString();
-    public readonly githubUrl: string = env.get('GITHUB_URL').default("github.com").asString();
-    public readonly githubApiUrl: string = env.get('GITHUB_API_URL').default("api.github.com").asString();
-    public readonly host: string = env.get('HOST').default("127.0.0.1").asString();
-    public readonly port: number = env.get('PORT').default(9388).asPortNumber();
-    public readonly concurrency: number = env.get('CONCURRENCY').default(10).asIntPositive();
-    public readonly forceNoOpen: boolean = env.get('FORCE_NO_OPEN').default("false").asBool();
-    public readonly noWarden: boolean = env.get('NO_WARDEN').default("false").asBool();
-    public readonly forceHttps: boolean = env.get('FORCE_HTTPS').default("false").asBool() || this.enableRequestCertificate;
-    public readonly failAttemptsToBan: number = env.get('FAIL_ATTEMPTS_TO_BAN').default(0).asIntPositive();
-    public readonly failAttemptsDuration: number = env.get('FAIL_ATTEMPTS_DURATION').default(0).asIntPositive();
-    public readonly requestRateLimit: number = env.get('REQUEST_RATE_LIMIT').default(0).asIntPositive();
-    public readonly autoUpdateDuration: number = env.get('AUTO_UPDATE_DURATION').default(0).asIntPositive();
-    public readonly lastActivityDays: number = env.get('LAST_ACTIVITY_DAYS').default(15).asIntPositive();
+    public readonly server: {
+        concurrency: number;
+        forceNoOpen: boolean;
+        noWarden: boolean;
+        forceHttps: boolean;
+        requestCert: boolean;
+    } = {
+        concurrency: 10,
+        forceNoOpen: false,
+        noWarden: false,
+        forceHttps: false,
+        requestCert: false
+    };
 
-    // 开发变量
-    public readonly sourceIpHeader: string = env.get('SOURCE_IP_HEADER').default("x-real-ip").asString();
-    public readonly debug: boolean = env.get('DEBUG').default("false").asBool();
-    public readonly disableAccessLog: boolean = env.get('DISABLE_ACCESS_LOG').default("false").asBool();
+    public network: {
+        host: string;
+        port: number;
+        trustProxy: boolean;
+    } = {
+        host: "127.0.0.1",
+        port: 9388,
+        trustProxy: false
+    };
+
+    public readonly security: {
+        failAttemptsToBan: number;
+        failAttemptsDuration: number;
+        requestRateLimit: number;
+    } = {
+        failAttemptsToBan: 0,
+        failAttemptsDuration: 0,
+        requestRateLimit: 0
+    };
+
+    public readonly data: {
+        checkInterval: number;
+        shownDays: number;
+    } = {
+        checkInterval: 0,
+        shownDays: 15
+    };
+
+    public readonly dev: {
+        sourceIpHeader: string;
+        debug: boolean;
+        disableAccessLog: boolean;
+    } = {
+        sourceIpHeader: "x-real-ip",
+        debug: false,
+        disableAccessLog: false
+    };
+
+    public readonly zerossl: {
+        kid: string;
+        hmacKey: string;
+    } = {
+        kid: "",
+        hmacKey: ""
+    };
 
     public static readonly version: string = version;
 
-    private constructor() { }
+    private constructor() {
+        this.loadConfig();
+    }
+
+    private loadConfig(): void {
+        if (fs.existsSync(Config.FILENAME)) {
+            const data = fs.readFileSync(Config.FILENAME, 'utf-8');
+            const configData = json5.parse(data);
+
+            Object.keys(configData).forEach((key) => {
+                if (key in this) {
+                    this.validateAndAssign(key as keyof Config, configData[key]);
+                }
+            });
+        }
+        defaultInstance.RATE_LIMIT = this.security.requestRateLimit;
+        this.server.forceHttps = this.server.requestCert || this.server.forceHttps;
+    }
+
+    private validateAndAssign(field: keyof Config, value: any): void {
+        const fieldType = typeof this[field];
+        if (fieldType === 'string' && typeof value !== 'string') {
+            throw new Error(`Invalid type for field "${field}". Expected string but got ${typeof value}.`);
+        }
+        if (fieldType === 'number' && typeof value !== 'number') {
+            throw new Error(`Invalid type for field "${field}". Expected number but got ${typeof value}.`);
+        }
+        if (fieldType === 'boolean' && typeof value !== 'boolean') {
+            throw new Error(`Invalid type for field "${field}". Expected boolean but got ${typeof value}.`);
+        }
+        if (fieldType === 'object' && typeof value === 'object' && value !== null) {
+            const expectedObjectType = this[field] as unknown as object;
+            if (Array.isArray(value)) {
+                throw new Error(`Invalid type for field "${field}". Expected object but got array.`);
+            }
+            Object.keys(expectedObjectType).forEach(subKey => {
+                if (!(subKey in value)) {
+                    (value as any)[subKey] = (expectedObjectType as any)[subKey];
+                }
+            });
+        }
+        (this as any)[field] = value;
+    }
 
     public static getInstance(): Config {
-        if (!Config.instance) {
-            Config.init();
+        if (!Config._instance) {
+            Config._instance = new Config();
+            Config._fsWatcher = fs.watch(Config.FILENAME, () => {
+                console.log('[Config] Config file changed. Reloading...');
+                Config._instance.loadConfig();
+            });
         }
-        return Config.instance;
+        return Config._instance;
     }
 
-    public get instance(): Config {
-        return Config.instance;
+    public static get instance(): Config {
+        return Config.getInstance();
     }
 
-    public static init() {
-        if (!Config.instance) {
-            Config.instance = new Config();
-            defaultInstance.RATE_LIMIT = Config.instance.requestRateLimit;
-        }
+    public static get fsWatcher(): fs.FSWatcher {
+        return Config._fsWatcher;
     }
 }
-
-dotenv.config()
