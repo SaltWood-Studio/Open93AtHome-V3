@@ -10,8 +10,8 @@ export class ApiClusters {
         inst.app.get("/api/clusters", async (req, res) => {
             // 仅显示特定天数内有活动的节点
             // 先把节点按照在线和离线分成两部分，然后各自按照 traffic 从大到小排序，最后返回 JSON 字符串
-            const clusters = Config.instance.lastActivityDays > 0
-                ? inst.clusters.filter(c => c.lastSeen > Utilities.getDate(-Config.instance.lastActivityDays, "day").getTime())
+            const clusters = Config.instance.update.shownDays > 0
+                ? inst.clusters.filter(c => c.lastSeen > Utilities.getDate(-Config.instance.update.shownDays, "day").getTime())
                 : inst.clusters;
             const onlineClusters = clusters.filter(c => c.isOnline);
             const offlineClusters = clusters.filter(c => !c.isOnline);

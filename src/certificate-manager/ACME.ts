@@ -17,8 +17,8 @@ export class ACME {
             directoryUrl: acme.directory.zerossl.production,
             accountKey: privateKey,
             externalAccountBinding: {
-                kid: Config.instance.zerosslKid,
-                hmacKey: Config.instance.zerosslHmacKey
+                kid: Config.instance.zerossl.kid,
+                hmacKey: Config.instance.zerossl.hmacKey
             }
         });
     }

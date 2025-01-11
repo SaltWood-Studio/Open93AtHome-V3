@@ -26,7 +26,7 @@ for (const folder of requiredFolders) {
 }
 
 // 初始化配置
-Config.init();
+// Config.init();
 HttpRequest.init();
 
 if (Utilities.isRunningInDocker()) {

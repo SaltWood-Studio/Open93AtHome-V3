@@ -189,7 +189,7 @@ export class Utilities {
         return Utilities.getUrlByPath(file.hash, `/download/${file.hash}`, cluster);
     }
     public static getUrlByPath(hash: string, path: string, cluster: ClusterEntity): string {
-        return `${Config.instance.forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/${path.substring(1)}?${Utilities.getSign(hash, cluster.clusterSecret)}`
+        return `${Config.instance.server.forceHttps ? 'https' : 'http'}://${cluster.endpoint}:${cluster.port}/${path.substring(1)}?${Utilities.getSign(hash, cluster.clusterSecret)}`
     }
 
     public static async checkUrl(url: string): Promise<{ url: string; hash: string }> {

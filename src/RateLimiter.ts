@@ -37,7 +37,7 @@ class RateLimiter {
             next(); // 速率限制功能关闭，直接处理请求
             return;
         }
-        const ip = (req.headers[Config.instance.sourceIpHeader] as string).split(',')[0] || req.ip; // 根据请求的IP地址进行限速
+        const ip = (req.headers[Config.instance.dev.sourceIpHeader] as string).split(',')[0] || req.ip; // 根据请求的IP地址进行限速
         if (!ip) throw new Error('No IP address provided.');
         const currentTime = Utilities.getTimestamp();
 

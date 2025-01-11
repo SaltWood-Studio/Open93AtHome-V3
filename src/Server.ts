@@ -46,7 +46,7 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const getRealIP = (obj: Indexable<any>): string => {
-    return (obj[Config.instance.sourceIpHeader] as string).split(',')[0];
+    return (obj[Config.instance.dev.sourceIpHeader] as string).split(',')[0];
 }
 
 const logAccess = (req: Request, res: Response) => {
@@ -138,8 +138,8 @@ export class Server {
 
     public async init(): Promise<void> {
         // 设置中间件
-        if (!Config.instance.disableAccessLog) this.app.use(logMiddleware);
-        if (Config.instance.requestRateLimit > 0) this.app.use(rateLimiter);
+        if (!Config.instance.dev.disableAccessLog) this.app.use(logMiddleware);
+        if (Config.instance.security.requestRateLimit > 0) this.app.use(rateLimiter);
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cookieParser());
@@ -147,26 +147,26 @@ export class Server {
         await this.updateFiles();
         this.setupRoutes();
 
-        if (Config.instance.autoUpdateDuration > 0) setInterval(this.updateFiles.bind(this), Config.instance.autoUpdateDuration * 60 * 1000);
+        if (Config.instance.update.checkInterval > 0) setInterval(this.updateFiles.bind(this), Config.instance.update.checkInterval * 60 * 1000);
 
         // 加载证书管理器
-        if (Config.instance.enableRequestCertificate) {
-            switch (Config.instance.dnsType) {
+        if (Config.instance.server.requestCert) {
+            switch (Config.instance.dns.type) {
                 case "cloudflare":
-                    this.dns = new CloudFlare(Config.instance.dnsSecretId, Config.instance.dnsSecretToken, Config.instance.dnsDomain);
+                    this.dns = new CloudFlare(Config.instance.dns.secretId, Config.instance.dns.secretToken, Config.instance.dns.domain);
                     break;
                 case "dnspod":
-                    this.dns = new DNSPod(Config.instance.dnsSecretId, Config.instance.dnsSecretToken, Config.instance.dnsDomain);
+                    this.dns = new DNSPod(Config.instance.dns.secretId, Config.instance.dns.secretToken, Config.instance.dns.domain);
                     break;
                 default:
-                    if (!Config.instance.dnsType) {
+                    if (!Config.instance.dns.type) {
                         throw new Error("DNS type is not specified in \".env\" file. Specify DNS type in it or disable request certificate.");
                     }
                     else {
-                        throw new Error(`Unsupported DNS type: ${Config.instance.dnsType}`);
+                        throw new Error(`Unsupported DNS type: ${Config.instance.dns.type}`);
                     }
             }
-            console.log(`Certificate manager loaded. Using ${Config.instance.dnsType} DNS provider.`);
+            console.log(`Certificate manager loaded. Using ${Config.instance.dns.type} DNS provider.`);
 
             // 检查 ./data/acme.key
             let buffer;
@@ -248,8 +248,8 @@ export class Server {
 
     public start(): void {
         // 启动 HTTPS 服务器
-        this.httpServer.listen(Config.instance.port, Config.instance.host, () => {
-          console.log(`HTTP Server running on http://localhost:${Config.instance.port}`);
+        this.httpServer.listen(Config.instance.server.port, Config.instance.server.host, () => {
+          console.log(`HTTP Server running on http://${Config.instance.server.host}:${Config.instance.server.port}`);
         });
     }
 
@@ -270,7 +270,7 @@ export class Server {
         });
 
         const factory = new ApiFactory(this, this.fileList, this.db, this.dns, this.acme, this.app);
-        factory.factory(Config.instance.debug);
+        factory.factory(Config.instance.dev.debug);
 
         this.app.get('/openbmclapi-agent/challenge', (req: Request, res: Response) => {
             res.setHeader('Content-Type', 'application/json');
@@ -384,7 +384,7 @@ export class Server {
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json({ sync: { concurrency: Config.instance.concurrency, source: "center" }});
+            res.status(200).json({ sync: { concurrency: Config.instance.server.concurrency, source: "center" }});
         });
         this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
@@ -420,7 +420,7 @@ export class Server {
                 const p = decodeURI(req.path);
                 const file = this.fileList.getFile("path", p);
                 if (file) {
-                    if (Config.instance.forceNoOpen) {
+                    if (Config.instance.server.forceNoOpen) {
                         this.sendFile(req, res, file);
                         return;
                     }
@@ -460,7 +460,7 @@ export class Server {
                     }
                     callback = callback || ((...args: any[]) => {});
                     const data = callback ? rest.slice(0, rest.indexOf(callback)) : rest;
-                    if (Config.instance.debug) {
+                    if (Config.instance.dev.debug) {
                         console.debug(`Received event "${event}" with data ${JSON.stringify(data)}.`);
                     }
                     try {
@@ -485,7 +485,7 @@ export class Server {
                     throw new Error('No token provided');
                 }
 
-                if (Config.instance.debug && adminToken) {
+                if (Config.instance.dev.debug && adminToken) {
                     if (!(JwtHelper.instance.verifyToken(adminToken, 'admin') instanceof Object)) {
                         throw new Error('Invalid admin token');
                     }
@@ -569,9 +569,9 @@ export class Server {
                     return;
                 }
 
-                if (Config.instance.failAttemptsToBan > 0 && Config.instance.failAttemptsDuration > 0) {
-                    Utilities.filterMinutes(cluster.enableHistory, Config.instance.failAttemptsDuration);
-                    if (cluster.enableHistory.length >= Config.instance.failAttemptsToBan) {
+                if (Config.instance.security.failAttemptsToBan > 0 && Config.instance.security.failAttemptsDuration > 0) {
+                    Utilities.filterMinutes(cluster.enableHistory, Config.instance.security.failAttemptsDuration);
+                    if (cluster.enableHistory.length >= Config.instance.security.failAttemptsToBan) {
                         ack(["Error: Too many failed enable requests. This cluster is now banned."]);
                         cluster.isBanned = true;
                         cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
@@ -586,16 +586,16 @@ export class Server {
                     return;
                 }
                 
-                const address = (socket.handshake.headers[Config.instance.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
+                const address = (socket.handshake.headers[Config.instance.dev.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
 
                 if (enableData.byoc) {
                     cluster.endpoint = enableData.host;
                 }
                 else if (this.dns) {
-                    const domain = Config.instance.dnsDomain;
+                    const domain = Config.instance.dns.domain;
                     const subDomain = `${cluster.clusterId}.cluster`;
 
-                    cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dnsDomain}`;
+                    cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dns.domain}`;
 
                     try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
                     try { await this.dns.removeRecord(subDomain, "CNAME"); } catch (error) {}
@@ -639,7 +639,7 @@ export class Server {
 
                 const tip = `Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the ${enableData.byoc ? "domain's record" : (!enableData.byoc && enableData.host ? `CNAME destination (${enableData.host})` : `IP address (${address}:${enableData.port})`)} has changed, please allow a few minutes for the DNS records to update and propagate.`;
 
-                if (Config.instance.noWarden || cluster.noWardenMode){
+                if (Config.instance.server.noWarden || cluster.noWardenMode){
                     socket.send(tip);
                     cluster.doOnline(this.files, socket, true);
                     this.db.update(cluster);
@@ -719,7 +719,7 @@ export class Server {
                 }
             });
 
-            if (Config.instance.enableRequestCertificate) {
+            if (Config.instance.server.requestCert) {
                 wrapper(socket, "request-cert", async (ack: Function) => {
 
                     const cluster = this.sessionToClusterMap.get(socket.id);
@@ -762,14 +762,14 @@ export class Server {
                                 return [{message: "Request-Certificate is not enabled. Please contact admin."}, null];
                             }
 
-                            const domain = Config.instance.dnsDomain;
+                            const domain = Config.instance.dns.domain;
                             const subDomain = `${cluster.clusterId}.cluster`;
 
                             console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
                             try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) {}
                         
-                            console.log('Requesting certificate for', domain, subDomain, Config.instance.domainContactEmail);
-                            const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.domainContactEmail);
+                            console.log('Requesting certificate for', domain, subDomain, Config.instance.dns.contactEmail);
+                            const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.dns.contactEmail);
 
                             const finalCertificate = CertificateObject.create(
                                 cluster.clusterId,
@@ -815,7 +815,7 @@ export class Server {
                 }
             });
 
-            if (Config.instance.debug) {
+            if (Config.instance.dev.debug) {
                 socket.on('run-sql', (data, callback: Function) => {
                     const ack = callback ? callback : (...rest: any[]) => {};
                     try {

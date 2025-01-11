@@ -10,7 +10,7 @@ import { NextFunction, Request, Response } from "express";
 export class ApiAuth {
     public static register(inst: ApiFactory) {
         inst.app.get("/api/auth/id", (req: Request, res: Response) => {
-            res.end(Config.instance.githubOAuthClientId);
+            res.end(Config.instance.github.oAuthClientId);
         });
         inst.app.post("/api/auth/login", async (req: Request, res: Response) => {
             res.set("Content-Type", "application/json");
@@ -19,11 +19,11 @@ export class ApiAuth {
                 const code = req.query.code as string || '';
         
                 // 请求GitHub获取access_token
-                const tokenData = await HttpRequest.request.post(`https://${Config.instance.githubUrl}/login/oauth/access_token`, {
+                const tokenData = await HttpRequest.request.post(`https://${Config.instance.github.url}/login/oauth/access_token`, {
                     form: {
                         code,
-                        client_id: Config.instance.githubOAuthClientId,
-                        client_secret: Config.instance.githubOAuthClientSecret
+                        client_id: Config.instance.github.oAuthClientId,
+                        client_secret: Config.instance.github.oAuthClientSecret
                     },
                     headers: {
                         'Accept': 'application/json'
@@ -33,7 +33,7 @@ export class ApiAuth {
         
                 const accessToken = tokenData.access_token;
         
-                let userResponse = await HttpRequest.request.get(`https://${Config.instance.githubApiUrl}/user`, {
+                let userResponse = await HttpRequest.request.get(`https://${Config.instance.github.apiUrl}/user`, {
                     headers: {
                         'Authorization': `token ${accessToken}`,
                         'Accept': 'application/json',
@@ -58,7 +58,7 @@ export class ApiAuth {
                 // 生成JWT并设置cookie
                 const token = JwtHelper.instance.issueToken({
                     userId: user.id,
-                    clientId: Config.instance.githubOAuthClientId
+                    clientId: Config.instance.github.oAuthClientId
                 }, "user", 60 * 60 * 24);
         
                 res.cookie('token', token, {
@@ -70,7 +70,7 @@ export class ApiAuth {
                 if (inst.db.getEntity<UserEntity>(UserEntity, user.id)?.isSuperUser) {
                     const adminToken = JwtHelper.instance.issueToken({
                         userId: user.id,
-                        clientId: Config.instance.githubOAuthClientId
+                        clientId: Config.instance.github.oAuthClientId
                     }, "admin", 60 * 60 * 24);
                     res.cookie('adminToken', adminToken, {
                         expires: Utilities.getDate(1, "day"),
