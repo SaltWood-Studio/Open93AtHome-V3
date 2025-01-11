@@ -456,11 +456,21 @@ export class Server {
                         console.debug(`Received event "${event}" with data ${JSON.stringify(data)}.`);
                     }
                     try {
-                        await fn(callback, ...data);
+                        const result = await fn(...data);
+                        // 如果不为 undefined
+                        if (result === undefined) {
+                            callback(null, false);
+                            return;
+                        }
+                        // 如果为数组
+                        if (Array.isArray(result)) callback(...result);
+                        // 如果为对象
+                        else callback(null, result);
                     }
                     catch (error) {
                         try {
                             socket.emit("error", error);
+                            callback(error, null)
                         } catch (e) { }
                     }
                 } catch (error) {
@@ -536,7 +546,7 @@ export class Server {
                 }
             });
 
-            wrapper(socket, "enable", async (ack: Function, data: any) => {
+            wrapper(socket, "enable", async (data: any) => {
                 const enableData = data as {
                     host: string,
                     port: number,
@@ -549,33 +559,25 @@ export class Server {
                     }
                 };
 
-                if (this.isUpdating) {
-                    ack([{message: "File list is updating, please try again later."}, false]);
-                    return;
-                }
+                if (this.isUpdating) throw new Error("File list is updating, please try again later.");
 
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
-                if (!cluster) {
-                    ack([{message: "Cluster not found."}, false]);
-                    return;
-                }
+                if (!cluster) throw new Error('No cluster found');
 
                 if (Config.instance.security.failAttemptsToBan > 0 && Config.instance.security.failAttemptsDuration > 0) {
                     Utilities.filterMinutes(cluster.enableHistory, Config.instance.security.failAttemptsDuration);
                     if (cluster.enableHistory.length >= Config.instance.security.failAttemptsToBan) {
-                        ack(["Error: Too many failed enable requests. This cluster is now banned."]);
                         cluster.isBanned = true;
                         cluster.doOffline("Too many failed enable requests. This cluster is now banned.");
                         this.db.update(cluster);
-                        return;
+                        throw new Error("Error: Too many failed enable requests. This cluster is now banned.");
                     }
                     cluster.enableHistory.push(new Date());
                 }
 
                 if (cluster.isBanned) {
-                    ack([{message: "This cluster is banned."}, false]);
-                    return;
+                    throw new Error("Error: This cluster is banned.");
                 }
                 
                 const address = (socket.handshake.headers[Config.instance.dev.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
@@ -600,17 +602,13 @@ export class Server {
                     }
                     catch (error) {
                         console.error(error);
-                        ack([{message: `Failed to add DNS record for "${enableData.host || address}". Please contact admin.`}, false]);
-                        return;
+                        throw new Error(`Failed to add DNS record for "${enableData.host || address}". Please contact admin.`);
                     }
                     console.log(`Adding record for cluster ${cluster.clusterId}, address "${address}".`);
 
                     this.db.update(cluster);
                 }
-                else {
-                    ack([{message: "DNS is not enabled, so you must enable \"Bring Your Own Certificate\" and provide the endpoint."}, false]);
-                    return;
-                }
+                else throw new Error("DNS is not enabled, so you must enable \"Bring Your Own Certificate\" and provide the endpoint.");
                 cluster.port = enableData.port;
                 cluster.version = enableData.version;
 
@@ -635,8 +633,7 @@ export class Server {
                     socket.send(tip);
                     cluster.doOnline(this.files, socket, true);
                     this.db.update(cluster);
-                    ack([null, true]);
-                    return;
+                    return true;
                 }
 
                 const randomFileCount = 5;
@@ -644,25 +641,22 @@ export class Server {
 
                 Utilities.checkSpecfiedFiles(randomFiles, cluster)
                 .then(message => {
-                    if (message) {
-                        ack([message]);
-                        return;
-                    } else {
+                    if (message) throw new Error(message);
+                    else {
                         socket.send(tip);
                         cluster.doOnline(this.fileList.getAvailableFiles(cluster), socket);
                         this.db.update(cluster);
-                        ack([null, true]);
                         cluster.enableHistory = [];
-                        return;
+                        return true;
                     }
                 })
                 .catch(err => {
-                    ack([err.message]);
                     console.error(err);
+                    throw err;
                 });
             });
 
-            wrapper(socket, "keep-alive", (ack: Function, data: any) => {
+            wrapper(socket, "keep-alive", (data: any) => {
                 const keepAliveData = data as  {
                     time: string,
                     hits: number,
@@ -679,46 +673,44 @@ export class Server {
                         socket.send("This cluster is banned.");
                         cluster.doOffline("This cluster is banned.");
                     }
-                    ack([null, false]);
+                    return false;
                 }
                 else {
                     if (cluster.masterStatsMode) {
-                        ack([null, keepAliveData.time]);
-                        return;
+                        return keepAliveData.time;
                     }
                     const hits = Math.min(keepAliveData.hits, cluster.pendingHits);
                     const bytes = Math.min(keepAliveData.bytes, cluster.pendingBytes);
                     this.centerStats.addData({ hits: hits, bytes: bytes });
                     cluster.pendingHits = 0;
                     cluster.pendingBytes = 0;
-                    ack([null, keepAliveData.time]);
                     this.db.update(cluster);
                     this.stats.filter(c => c.id === cluster.clusterId).forEach(s => s.addData({ hits: Number(hits), bytes: Number(bytes) }));
+                    return keepAliveData.time;
                 }
             });
 
-            wrapper(socket, "disable", (ack: Function, ...data: any) => {
+            wrapper(socket, "disable", (...data: any) => {
                 const cluster = this.sessionToClusterMap.get(socket.id);
 
                 if (!cluster || !cluster.isOnline) {
-                    ack([null, false]);
+                    return false;
                 }
                 else {
                     cluster.doOffline("Client disabled");
                     socket.send('Bye. Have a good day!');
-                    ack([null, true]);
                     this.db.update(cluster);
+                    return true;
                 }
             });
 
             if (Config.instance.server.requestCert) {
-                wrapper(socket, "request-cert", async (ack: Function) => {
+                wrapper(socket, "request-cert", async () => {
 
                     const cluster = this.sessionToClusterMap.get(socket.id);
 
                     if (!cluster) {
-                        ack([null, false]);
-                        return;
+                        return false;
                     }
 
                     console.log(`Cluster ${cluster.clusterId} is trying to request a certificate.`);
@@ -751,7 +743,7 @@ export class Server {
 
                         if (!validRecordFound) {
                             if (!this.dns || !this.acme) {
-                                return [{message: "Request-Certificate is not enabled. Please contact admin."}, null];
+                                throw new Error("Request-Certificate is not enabled. Please contact admin.");
                             }
 
                             const domain = Config.instance.dns.domain;
@@ -788,7 +780,8 @@ export class Server {
                         console.error(e);
                     }
                     finally {
-                        ack([err, cert]);
+                        if (err) throw err;
+                        else return cert;
                     }
                 });
             }
@@ -808,18 +801,17 @@ export class Server {
             });
 
             if (Config.instance.dev.debug) {
-                socket.on('run-sql', (data, callback: Function) => {
-                    const ack = callback ? callback : (...rest: any[]) => {};
+                socket.on('run-sql', (data) => {
                     try {
                         const stmt = this.db.database.prepare(data);
                         let result = null;
                         if (stmt.reader) result = stmt.all();
                         else result = stmt.run();
-                        ack(result);
+                        return result;
                     }
                     catch (err) {
                         console.error(err);
-                        ack({ error: err });
+                        throw err;
                     }
                 });
             }
