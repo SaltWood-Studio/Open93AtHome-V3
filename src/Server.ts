@@ -62,7 +62,7 @@ export class Server {
     protected dns: DnsManager | null = null;
     protected acme: ACME | null = null;
     public startAt: Date;
-    
+
     protected get files(): File[] {
         return this.fileList.files;
     }
@@ -70,7 +70,7 @@ export class Server {
     protected set files(files: File[]) {
         this.fileList.files = files;
     }
-    
+
     protected get clusters(): ClusterEntity[] {
         return this.fileList.clusters;
     }
@@ -111,7 +111,7 @@ export class Server {
             }
         });
     }
-    
+
     private sendFile(req: Request, res: Response, file: File) {
         const availablePlugins = this.plugins.filter(p => p.exists(file));
         if (availablePlugins.length > 0) {
@@ -176,11 +176,11 @@ export class Server {
 
     public async loadPlugins(): Promise<void> {
         await this.pluginLoader.loadPlugins(this)
-        .then(plugins => {
-            this.plugins = plugins;
-            plugins.forEach(plugin => plugin.init());
-        })
-        .catch(error => console.error(error));
+            .then(plugins => {
+                this.plugins = plugins;
+                plugins.forEach(plugin => plugin.init());
+            })
+            .catch(error => console.error(error));
     }
 
     public async updateFiles(checkClusters: boolean = false): Promise<void> {
@@ -241,7 +241,7 @@ export class Server {
     public start(): void {
         // 启动 HTTPS 服务器
         this.httpServer.listen(Config.instance.network.port, Config.instance.network.host, () => {
-          console.log(`HTTP Server running on http://${Config.instance.network.host}:${Config.instance.network.port}`);
+            console.log(`HTTP Server running on http://${Config.instance.network.host}:${Config.instance.network.port}`);
         });
     }
 
@@ -266,9 +266,9 @@ export class Server {
 
         this.app.get('/openbmclapi-agent/challenge', (req: Request, res: Response) => {
             res.setHeader('Content-Type', 'application/json');
-        
+
             const clusterId = req.query.clusterId as string || '';
-        
+
             if (this.clusters.some(c => c.clusterId === clusterId)) {
                 const cluster = this.clusters.find(c => c.clusterId === clusterId);
                 if (!cluster) {
@@ -282,7 +282,7 @@ export class Server {
                 const token = JwtHelper.instance.issueToken({
                     clusterId: clusterId
                 }, "cluster-challenge", 60 * 5);
-        
+
                 res.status(200).json({ challenge: token });
             } else {
                 res.status(404).send();
@@ -316,7 +316,7 @@ export class Server {
 
             const claims = JwtHelper.instance.verifyToken(challenge, 'cluster-challenge') as { clusterId: string };
             const cluster = this.clusters.find(c => c.clusterId === claims.clusterId);
-        
+
             if (cluster) {
 
                 if (claims && claims.clusterId === clusterId && Utilities.computeSignature(challenge, signature, cluster.clusterSecret)) {
@@ -325,7 +325,7 @@ export class Server {
                         'cluster',
                         60 * 60 * 24 // 过期时间：24小时
                     );
-                
+
                     res.status(200).json({
                         token,
                         ttl: 1000 * 60 * 60 * 24 // TTL：24小时
@@ -353,9 +353,9 @@ export class Server {
                 return;
             }
             res.setHeader('Content-Disposition', 'attachment; filename="files.avro"');
-            
+
             let lastModified = Number(req.query.lastModified);
-            lastModified = Number.isNaN(lastModified)? 0 : lastModified;
+            lastModified = Number.isNaN(lastModified) ? 0 : lastModified;
             console.log(`Available files for cluster ${clusterId}: ${cluster.shards} shards.`);
 
             if (lastModified === 0) {
@@ -363,7 +363,7 @@ export class Server {
             }
             else {
                 const files = this.fileList.getAvailableFiles(cluster);
-                if (files.length === 0){
+                if (files.length === 0) {
                     res.status(204).send();
                     return;
                 }
@@ -376,7 +376,7 @@ export class Server {
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).json({ sync: { concurrency: Config.instance.server.concurrency, source: "center" }});
+            res.status(200).json({ sync: { concurrency: Config.instance.server.concurrency, source: "center" } });
         });
         this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
@@ -450,7 +450,7 @@ export class Server {
                     if (!callback) {
                         console.warn("No callback found in arguments");
                     }
-                    callback = callback || ((...args: any[]) => {});
+                    callback = callback || ((...args: any[]) => { });
                     const data = callback ? rest.slice(0, rest.indexOf(callback)) : rest;
                     if (Config.instance.dev.debug) {
                         console.debug(`Received event "${event}" with data ${JSON.stringify(data)}.`);
@@ -470,7 +470,8 @@ export class Server {
                     catch (error) {
                         try {
                             socket.emit("error", error);
-                            callback([error, null])
+                            callback([error, null]);
+                            console.error(error);
                         } catch (e) { }
                     }
                 } catch (error) {
@@ -502,10 +503,10 @@ export class Server {
                     console.log(`SOCKET [${socket.id}] <ADMIN> - [${Utilities.getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
                     return next();
                 }
-        
+
                 // 验证 token
                 const object = JwtHelper.instance.verifyToken(token, 'cluster');
-        
+
                 // 检查 payload 是否是对象类型，并且包含 exp 字段
                 if (object && typeof object === 'object' && 'exp' in object && 'clusterId' in object) {
                     const payload = object as { exp: number, clusterId: string };
@@ -579,7 +580,7 @@ export class Server {
                 if (cluster.isBanned) {
                     throw new Error("Error: This cluster is banned.");
                 }
-                
+
                 const address = (socket.handshake.headers[Config.instance.dev.sourceIpHeader] as string).split(',').at(0) || socket.handshake.address;
 
                 if (enableData.byoc) {
@@ -591,14 +592,14 @@ export class Server {
 
                     cluster.endpoint = `${cluster.clusterId}.cluster.${Config.instance.dns.domain}`;
 
-                    try { await this.dns.removeRecord(subDomain, "A"); } catch (error) {}
-                    try { await this.dns.removeRecord(subDomain, "CNAME"); } catch (error) {}
+                    try { await this.dns.removeRecord(subDomain, "A"); } catch (error) { }
+                    try { await this.dns.removeRecord(subDomain, "CNAME"); } catch (error) { }
 
                     try {
                         if (enableData.host) {
                             await this.dns.addRecord(subDomain, enableData.host, "CNAME");
                         }
-                        else await this.dns.addRecord(subDomain,  address, "A");
+                        else await this.dns.addRecord(subDomain, address, "A");
                     }
                     catch (error) {
                         console.error(error);
@@ -629,7 +630,7 @@ export class Server {
 
                 const tip = `Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the ${enableData.byoc ? "domain's record" : (!enableData.byoc && enableData.host ? `CNAME destination (${enableData.host})` : `IP address (${address}:${enableData.port})`)} has changed, please allow a few minutes for the DNS records to update and propagate.`;
 
-                if (Config.instance.server.noWarden || cluster.noWardenMode){
+                if (Config.instance.server.noWarden || cluster.noWardenMode) {
                     socket.send(tip);
                     cluster.doOnline(this.files, socket, true);
                     this.db.update(cluster);
@@ -651,7 +652,7 @@ export class Server {
             });
 
             wrapper(socket, "keep-alive", (data: any) => {
-                const keepAliveData = data as  {
+                const keepAliveData = data as {
                     time: string,
                     hits: number,
                     bytes: number
@@ -709,74 +710,64 @@ export class Server {
 
                     console.log(`Cluster ${cluster.clusterId} is trying to request a certificate.`);
 
-                    let [err, cert]: [any | null, {cert: string, key: string} | null] = [null, null];
+                    let cert: { cert: string, key: string } | null = null;
                     let validRecordFound = false;
 
-                    try {
-                        const record = this.db.getEntities<CertificateObject>(CertificateObject).find(c => c.clusterId === cluster.clusterId);
+                    const record = this.db.getEntities<CertificateObject>(CertificateObject).find(c => c.clusterId === cluster.clusterId);
 
-                        if (record) {
-                            const certificate = record.certificate;
-                            const key = record.key;
-                            const csr = record.csr;
-                            const date = record.validFrom;
-                            const expires = record.expiresAt;
-                            const now = Date.now();
+                    if (record) {
+                        const certificate = record.certificate;
+                        const key = record.key;
+                        const csr = record.csr;
+                        const date = record.validFrom;
+                        const expires = record.expiresAt;
+                        const now = Date.now();
 
-                            if (now + (10 * 24 * 60 * 60 * 1000) > expires) {
-                                socket.send("Certificate will expire in 10 days. Will generate a new one.");
-                                validRecordFound = false;
-                            }
-                            else {
-                                socket.send("Valid certificate found in database. Sending back to client.");
-                                err = null;
-                                cert = { cert: certificate, key };
-                                validRecordFound = true;
-                            }
+                        if (now + (10 * 24 * 60 * 60 * 1000) > expires) {
+                            socket.send("Certificate will expire in 10 days. Will generate a new one.");
+                            validRecordFound = false;
                         }
-
-                        if (!validRecordFound) {
-                            if (!this.dns || !this.acme) {
-                                throw new Error("Request-Certificate is not enabled. Please contact admin.");
-                            }
-
-                            const domain = Config.instance.dns.domain;
-                            const subDomain = `${cluster.clusterId}.cluster`;
-
-                            console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
-                            try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) {}
-                        
-                            console.log('Requesting certificate for', domain, subDomain, Config.instance.dns.contactEmail);
-                            const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.dns.contactEmail);
-
-                            const finalCertificate = CertificateObject.create(
-                                cluster.clusterId,
-                                certificate[0],
-                                certificate[1],
-                                certificate[2],
-                                certificate[3],
-                                certificate[4]
-                            );
-
-                            if (this.db.exists<CertificateObject>(finalCertificate)) {
-                                this.db.update<CertificateObject>(finalCertificate);
-                            }
-                            else {
-                                this.db.insert<CertificateObject>(finalCertificate);
-                            }
-
-                            err = null;
-                            cert = { cert: finalCertificate.certificate, key: finalCertificate.key };
+                        else {
+                            socket.send("Valid certificate found in database. Sending back to client.");
+                            cert = { cert: certificate, key };
+                            validRecordFound = true;
                         }
                     }
-                    catch (e) {
-                        err = e;
-                        console.error(e);
+
+                    if (!validRecordFound) {
+                        if (!this.dns || !this.acme) {
+                            throw new Error("Request-Certificate is not enabled. Please contact admin.");
+                        }
+
+                        const domain = Config.instance.dns.domain;
+                        const subDomain = `${cluster.clusterId}.cluster`;
+
+                        console.log('Removing old TXT records for', domain, `_acme-challenge.${subDomain}`);
+                        try { await this.dns.removeRecord(`_acme-challenge.${subDomain}`, "TXT"); } catch (error) { }
+
+                        console.log('Requesting certificate for', domain, subDomain, Config.instance.dns.contactEmail);
+                        const certificate = await this.acme.requestCertificate(domain, subDomain, Config.instance.dns.contactEmail);
+
+                        const finalCertificate = CertificateObject.create(
+                            cluster.clusterId,
+                            certificate[0],
+                            certificate[1],
+                            certificate[2],
+                            certificate[3],
+                            certificate[4]
+                        );
+
+                        if (this.db.exists<CertificateObject>(finalCertificate)) {
+                            this.db.update<CertificateObject>(finalCertificate);
+                        }
+                        else {
+                            this.db.insert<CertificateObject>(finalCertificate);
+                        }
+
+                        cert = { cert: finalCertificate.certificate, key: finalCertificate.key };
                     }
-                    finally {
-                        if (err) throw err;
-                        else return cert;
-                    }
+
+                    return cert;
                 });
             }
 
@@ -796,17 +787,11 @@ export class Server {
 
             if (Config.instance.dev.debug) {
                 socket.on('run-sql', (data) => {
-                    try {
-                        const stmt = this.db.database.prepare(data);
-                        let result = null;
-                        if (stmt.reader) result = stmt.all();
-                        else result = stmt.run();
-                        return result;
-                    }
-                    catch (err) {
-                        console.error(err);
-                        throw err;
-                    }
+                    const stmt = this.db.database.prepare(data);
+                    let result = null;
+                    if (stmt.reader) result = stmt.all();
+                    else result = stmt.run();
+                    return result;
                 });
             }
         });
