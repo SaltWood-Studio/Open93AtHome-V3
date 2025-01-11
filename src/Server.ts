@@ -30,10 +30,6 @@ import { ApiFactory } from './routes/ApiFactory.js';
 //@ts-ignore
 await import("express-async-errors")
 
-type Indexable<T> = {
-    [key: string]: T;
-}
-
 // 创建一个中间件函数
 const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
     // 调用下一个中间件
@@ -45,14 +41,9 @@ const logMiddleware = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const getRealIP = (obj: Indexable<any>): string => {
-    return (obj[Config.instance.dev.sourceIpHeader] as string).split(',')[0];
-}
-
 const logAccess = (req: Request, res: Response) => {
     const userAgent = req.headers['user-agent'] || '';
-    const ip = getRealIP(req.headers) || req.ip;
-    console.log(`${req.method} ${req.originalUrl} ${req.protocol} <${res.statusCode}> - [${ip}] ${userAgent}`);
+    console.log(`${req.method} ${req.originalUrl} ${req.protocol} <${res.statusCode}> - [${req.ip}] ${userAgent}`);
 };
 
 export class Server {
@@ -138,6 +129,7 @@ export class Server {
 
     public async init(): Promise<void> {
         // 设置中间件
+        if (Config.instance.network.trustProxy) this.app.set('trust proxy', true);
         if (!Config.instance.dev.disableAccessLog) this.app.use(logMiddleware);
         if (Config.instance.security.requestRateLimit > 0) this.app.use(rateLimiter);
         this.app.use(express.json());
@@ -147,7 +139,7 @@ export class Server {
         await this.updateFiles();
         this.setupRoutes();
 
-        if (Config.instance.update.checkInterval > 0) setInterval(this.updateFiles.bind(this), Config.instance.update.checkInterval * 60 * 1000);
+        if (Config.instance.data.checkInterval > 0) setInterval(this.updateFiles.bind(this), Config.instance.data.checkInterval * 60 * 1000);
 
         // 加载证书管理器
         if (Config.instance.server.requestCert) {
@@ -248,8 +240,8 @@ export class Server {
 
     public start(): void {
         // 启动 HTTPS 服务器
-        this.httpServer.listen(Config.instance.server.port, Config.instance.server.host, () => {
-          console.log(`HTTP Server running on http://${Config.instance.server.host}:${Config.instance.server.port}`);
+        this.httpServer.listen(Config.instance.network.port, Config.instance.network.host, () => {
+          console.log(`HTTP Server running on http://${Config.instance.network.host}:${Config.instance.network.port}`);
         });
     }
 
@@ -424,7 +416,7 @@ export class Server {
                         this.sendFile(req, res, file);
                         return;
                     }
-                    let cluster = await this.fileList.randomAvailableCluster(file, file.url ? undefined : this.fileList.clusters.filter(c => !c.isProxyCluster), getRealIP(req.headers) || req.ip);
+                    let cluster = await this.fileList.randomAvailableCluster(file, file.url ? undefined : this.fileList.clusters.filter(c => !c.isProxyCluster), req.ip);
                     if (!cluster) {
                         this.sendFile(req, res, file);
                         return;
@@ -497,7 +489,7 @@ export class Server {
                         this.sessionToClusterMap.set(socket.id, cluster);
                         return next(); // 验证通过，允许连接
                     }
-                    console.log(`SOCKET [${socket.id}] <ADMIN> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
+                    console.log(`SOCKET [${socket.id}] <ADMIN> - [${Utilities.getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
                     return next();
                 }
         
@@ -514,7 +506,7 @@ export class Server {
                     }
                     if (exp > Date.now() / 1000) {
                         this.sessionToClusterMap.set(socket.id, cluster);
-                        console.log(`SOCKET ${socket.id} <ACCEPTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
+                        console.log(`SOCKET ${socket.id} <ACCEPTED> - [${Utilities.getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
                         return next(); // 验证通过，允许连接
                     } else {
                         throw new Error('Token expired');
@@ -531,11 +523,11 @@ export class Server {
 
         // 监听 Socket.IO 连接事件
         this.io.on('connection', (socket) => {
-            console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <CONNECTED> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
+            console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <CONNECTED> - [${Utilities.getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}>`);
 
             socket.onAny((event: string, data) => {
                 if (this.sessionToClusterMap.has(socket.id)) {
-                    console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <${event?.toUpperCase() || 'UNKNOWN'}> - [${getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}> ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
+                    console.log(`SOCKET [${this.sessionToClusterMap.get(socket.id)?.clusterId}] <${event?.toUpperCase() || 'UNKNOWN'}> - [${Utilities.getRealIP(socket.handshake.headers) || socket.handshake.address}] <${socket.handshake.headers['user-agent'] || 'null'}> ${`<WITH ${Object.keys(data || []).length || 'NO'} PARAMS>`}`);
                     const cluster = this.sessionToClusterMap.get(socket.id);
                     if (cluster) {
                         cluster.lastSeen = Date.now();

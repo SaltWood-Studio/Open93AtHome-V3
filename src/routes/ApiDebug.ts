@@ -1,6 +1,5 @@
 import { ApiFactory } from "./ApiFactory.js";
 import { Request, Response } from "express";
-import { getRealIP } from "../Server.js";
 import { Utilities } from "../Utilities.js";
 import { FileList } from "../FileList.js";
 import { Config } from "../Config.js";
@@ -39,7 +38,7 @@ export class ApiDebug {
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(Array.from(inst.server.io.sockets.sockets).map(([id, socket]) => ({
                 session: id,
-                ip: getRealIP(socket.handshake.headers) || socket.handshake.address,
+                ip: Utilities.getRealIP(socket.handshake.headers) || socket.handshake.address,
                 cluster: inst.server.sessionToClusterMap.get(id)?.getJson(true, true)
             }))));
         });

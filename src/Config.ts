@@ -38,21 +38,27 @@ export class Config {
     };
 
     public readonly server: {
-        host: string;
-        port: number;
         concurrency: number;
         forceNoOpen: boolean;
         noWarden: boolean;
         forceHttps: boolean;
         requestCert: boolean;
     } = {
-        host: "127.0.0.1",
-        port: 9388,
         concurrency: 10,
         forceNoOpen: false,
         noWarden: false,
         forceHttps: false,
         requestCert: false
+    };
+
+    public network: {
+        host: string;
+        port: number;
+        trustProxy: boolean;
+    } = {
+        host: "127.0.0.1",
+        port: 9388,
+        trustProxy: false
     };
 
     public readonly security: {
@@ -65,7 +71,7 @@ export class Config {
         requestRateLimit: 0
     };
 
-    public readonly update: {
+    public readonly data: {
         checkInterval: number;
         shownDays: number;
     } = {
