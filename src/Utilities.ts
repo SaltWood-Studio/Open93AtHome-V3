@@ -36,7 +36,7 @@ const bannedCharacters = /[&<>\"'\r\n]/g;
 
 export class Utilities {
     public static getRealIP(obj: Indexable<any>): string {
-        return (obj[Config.instance.dev.sourceIpHeader] as string).split(',')[0];
+        return (obj[Config.instance.dev.sourceIpHeader] as string)?.split(',')[0] || "";
     }
     
     public static isRunningInDocker(): boolean {
