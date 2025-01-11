@@ -27,8 +27,7 @@ FROM alpine:latest
 # 仅安装运行时所需的包
 RUN apk add --no-cache \
     nodejs \
-    npm \
-    git
+    npm
 
 WORKDIR /app
 
