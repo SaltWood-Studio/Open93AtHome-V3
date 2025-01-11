@@ -115,6 +115,7 @@ export class Config {
             });
         }
         defaultInstance.RATE_LIMIT = this.security.requestRateLimit;
+        this.server.forceHttps = this.server.requestCert || this.server.forceHttps;
     }
 
     private validateAndAssign(field: keyof Config, value: any): void {
