@@ -6,7 +6,7 @@ export const version = "3.2.1-pre3";
 
 export class Config {
     private static _instance: Config;
-    public static readonly FILENAME = 'config.json5';
+    public static readonly FILENAME = './data/config.json5';
     private static _fsWatcher: fs.FSWatcher;
 
     public readonly dns: {
