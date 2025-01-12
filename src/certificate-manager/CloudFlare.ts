@@ -24,8 +24,8 @@ export class CloudFlare implements DnsManager {
                 {
                     method,
                     headers: {
-                        'Authorization': `Bearer ${this.apiToken}`,
-                        'Content-Type': 'application/json',
+                        'authorization': `Bearer ${this.apiToken}`,
+                        'content-type': 'application/json',
                     },
                     body: JSON.stringify(data)
                 }
