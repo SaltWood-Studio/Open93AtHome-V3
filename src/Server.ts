@@ -157,6 +157,7 @@ export class Server {
                     else {
                         throw new Error(`Unsupported DNS type: ${Config.instance.dns.type}`);
                     }
+                    break;
             }
             console.log(`Certificate manager loaded. Using ${Config.instance.dns.type} DNS provider.`);
 
