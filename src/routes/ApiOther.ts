@@ -16,10 +16,12 @@ export class ApiOther {
                         url: url,
                         encodedUrl: encodeURI(url)
                     });
+                    break;
                 default:
                     res.status(400).json({
                         error: "Bad request"
-                    });
+                    }).send();
+                    break;
             }
         });
     }
