@@ -636,6 +636,7 @@ export class Server {
                     this.db.update(cluster);
                     return true;
                 }
+                socket.send(tip);
 
                 const randomFileCount = 5;
                 const randomFiles = Utilities.getRandomElements(this.fileList.getAvailableFiles(cluster), randomFileCount);
@@ -643,7 +644,6 @@ export class Server {
                 const message = await Utilities.checkSpecfiedFiles(randomFiles, cluster);
                 if (message) throw new Error(message);
                 else {
-                    socket.send(tip);
                     cluster.doOnline(this.fileList.getAvailableFiles(cluster), socket);
                     this.db.update(cluster);
                     cluster.enableHistory = [];
