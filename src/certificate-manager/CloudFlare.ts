@@ -29,7 +29,7 @@ export class CloudFlare implements DnsManager {
                     },
                     body: JSON.stringify(data)
                 }
-            ).json<{ error: string, result: string }>();
+            ).json<{ error: string, result: any }>();
 
             return response.result;
         } catch (error: any) {
