@@ -1,6 +1,5 @@
-import axios from 'axios';
-import * as crypto from 'crypto';
 import { DnsManager } from './DnsManager.js';
+import got from 'got';
 
 export class CloudFlare implements DnsManager {
     private apiToken: string; // Cloudflare API Token
@@ -20,21 +19,19 @@ export class CloudFlare implements DnsManager {
         console.log(`Cloudflare request: ${method} ${url}`);
 
         try {
-            const response = await axios({
-                method,
+            const response = await got(
                 url,
-                headers: {
-                    'Authorization': `Bearer ${this.apiToken}`,
-                    'Content-Type': 'application/json',
-                },
-                data,
-            });
+                {
+                    method,
+                    headers: {
+                        'Authorization': `Bearer ${this.apiToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                }
+            ).json<{ error: string, result: string }>();
 
-            if (!response.data.success) {
-                throw new Error(response.data.errors.map((err: any) => err.message).join(', '));
-            }
-
-            return response.data.result;
+            return response.result;
         } catch (error: any) {
             throw new Error(`Cloudflare request failed: ${error.message}`);
         }

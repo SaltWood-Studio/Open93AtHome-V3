@@ -457,7 +457,7 @@ export class Server {
                     }
                     try {
                         const result = await fn(...data);
-                        // 如果不为 undefined
+                        // 如果为 undefined
                         if (result === undefined) {
                             callback([null, false]);
                             return;

@@ -1,6 +1,15 @@
-import axios from 'axios';
 import * as crypto from 'crypto';
 import { DnsManager } from './DnsManager.js';
+import got from 'got';
+
+interface ApiResponse {
+    Response: {
+        Error: {
+            Message: string;
+        };
+        RecordList: any[]
+    };
+}
 
 export class DNSPod implements DnsManager {
     private secretId: string;
@@ -30,17 +39,17 @@ export class DNSPod implements DnsManager {
         const signature = crypto.createHmac('sha1', this.secretKey).update(signStr).digest('base64');
 
         try {
-            const response = await axios.get('https://dnspod.tencentcloudapi.com/', {
-                params: {
+            const response = await got('https://dnspod.tencentcloudapi.com/', {
+                searchParams: {
                     ...params,
                     Signature: signature,
                 },
-            });
+            }).json<ApiResponse>();
 
-            if (response.data.Response && response.data.Response.Error) {
-                throw new Error(response.data.Response.Error.Message);
+            if (response.Response && response.Response.Error) {
+                throw new Error(response.Response.Error.Message);
             }
-            return response.data.Response;
+            return response.Response;
         } catch (error: any) {
             throw new Error(`DNSPod request failed: ${error}`);
         }
