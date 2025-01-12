@@ -628,15 +628,14 @@ export class Server {
                 //     console.error(err);
                 // });
 
-                const tip = `Cluster ${cluster.clusterId} is now ready at ${cluster.endpoint}. If this is your first time enabling this cluster or the ${enableData.byoc ? "domain's record" : (!enableData.byoc && enableData.host ? `CNAME destination (${enableData.host})` : `IP address (${address}:${enableData.port})`)} has changed, please allow a few minutes for the DNS records to update and propagate.`;
+                const tip = `Cluster ${cluster.clusterId} will be enabled on \"${cluster.endpoint}\" soon. If this is your first time enabling this cluster or the ${enableData.byoc ? "domain's record" : (!enableData.byoc && enableData.host ? `CNAME destination (${enableData.host})` : `IP address (${address}:${enableData.port})`)} has changed, please allow a few minutes for the DNS records to update and propagate.`;
 
+                socket.send(tip);
                 if (Config.instance.server.noWarden || cluster.noWardenMode) {
-                    socket.send(tip);
                     cluster.doOnline(this.files, socket, true);
                     this.db.update(cluster);
                     return true;
                 }
-                socket.send(tip);
 
                 const randomFileCount = 5;
                 const randomFiles = Utilities.getRandomElements(this.fileList.getAvailableFiles(cluster), randomFileCount);
