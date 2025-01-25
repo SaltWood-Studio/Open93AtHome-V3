@@ -18,10 +18,10 @@ export class ApiStats {
                     const dailyBytes: number[] = data.map(d => d.bytes);
                     res.status(200).json({ dates, hits: dailyHits, bytes: dailyBytes });
                 } else {
-                    res.status(404).send({ message: "Stats not found. This should never happen, please contact administrator." });
+                    res.status(404).json({ message: "Stats not found. This should never happen, please contact administrator." });
                 }
             } else {
-                res.status(404).send({ message: "Cluster not found" });
+                res.status(404).json({ message: "Cluster not found" });
             }
         });
 

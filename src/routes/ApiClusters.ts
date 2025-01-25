@@ -56,7 +56,9 @@ export class ApiClusters {
                 res.status(200).json(result);
             } catch (error) {
                 console.error('Error processing rank request:', error);
-                res.status(500).send();
+                res.status(500).json({
+                    error: "Internal Server Error"
+                });
                 console.log(result);
                 result.forEach(element => {
                     console.log(element);
@@ -143,14 +145,16 @@ export class ApiClusters {
 
             const cluster = inst.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
-                res.status(404).send(); // 集群不存在
+                res.status(404).json({
+                    error: "Cluster not found"
+                }); // 集群不存在
                 return;
             }
 
             if (clusterName) cluster.clusterName = clusterName;
             if (bandwidth) {
                 if (bandwidth < 10 || bandwidth > 500) {
-                    res.status(400).send({
+                    res.status(400).json({
                         message: "Bandwidth must be between 10 and 500"
                     });
                     return;
@@ -209,7 +213,9 @@ export class ApiClusters {
             if (!Utilities.verifyAdmin(req, res, inst.db)) return;
             const cluster = inst.clusters.find(c => c.clusterId === req.params.id);
             if (!cluster) {
-                res.status(404).send(); // 集群不存在
+                res.status(404).json({
+                    error: "Cluster not found"
+                }); // 集群不存在
                 return;
             }
             res.status(200).json({ shards: cluster.shards });
@@ -218,18 +224,20 @@ export class ApiClusters {
             if (!Utilities.verifyAdmin(req, res, inst.db)) return;
             const cluster = inst.clusters.find(c => c.clusterId === req.params.id);
             if (!cluster) {
-                res.status(404).send(); // 集群不存在
+                res.status(404).json({
+                    error: "Cluster not found"
+                }); // 集群不存在
                 return;
             }
             // 判断 shards 是不是在 int 范围内
             const shards = Number(req.body.shards);
             if (Number.isNaN(shards)) {
-                res.status(400).send({
+                res.status(400).json({
                     message: "Not a Number"
                 });
             }
             if (shards < 0 || shards > 1000) {
-                res.status(400).send({
+                res.status(400).json({
                     message: "Shards must be between 0 and 1000"
                 });
                 return;

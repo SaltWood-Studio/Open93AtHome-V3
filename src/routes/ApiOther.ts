@@ -20,7 +20,7 @@ export class ApiOther {
                 default:
                     res.status(400).json({
                         error: "Bad request"
-                    }).send();
+                    });
                     break;
             }
         });

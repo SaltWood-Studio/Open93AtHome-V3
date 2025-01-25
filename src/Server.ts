@@ -259,7 +259,9 @@ export class Server {
 
         // 废弃提示
         this.app.use("/93AtHome", (req: Request, res: Response) => {
-            res.status(410).send("This API is deprecated and removed. Please use APIv2 instead.");
+            res.status(410).json({
+                error: "This API is deprecated and removed. Please use APIv2 instead."
+            });
         });
 
         const factory = new ApiFactory(this, this.fileList, this.db, this.dns, this.acme, this.app);
@@ -273,11 +275,15 @@ export class Server {
             if (this.clusters.some(c => c.clusterId === clusterId)) {
                 const cluster = this.clusters.find(c => c.clusterId === clusterId);
                 if (!cluster) {
-                    res.status(404).send();
+                    res.status(404).json({
+                        error: "Cluster not found."
+                    });
                     return;
                 }
                 if (cluster.isBanned) {
-                    res.status(403).send();
+                    res.status(403).json({
+                        error: "Cluster is banned."
+                    });
                     return;
                 }
                 const token = JwtHelper.instance.issueToken({
@@ -286,7 +292,9 @@ export class Server {
 
                 res.status(200).json({ challenge: token });
             } else {
-                res.status(404).send();
+                res.status(404).json({
+                    error: "Cluster not found."
+                });
             }
         });
         this.app.post('/openbmclapi-agent/token', (req: Request, res: Response) => {
@@ -332,25 +340,35 @@ export class Server {
                         ttl: 1000 * 60 * 60 * 24 // TTL：24小时
                     });
                 } else {
-                    res.status(403).send(); // 禁止访问
+                    res.status(403).json({
+                        error: "Invalid signature or challenge."
+                    }); // 禁止访问
                 }
             } else {
-                res.status(404).send(); // 未找到
+                res.status(404).json({
+                    error: "Cluster not found."
+                }); // 未找到
             }
         });
         this.app.get('/openbmclapi/files', async (req: Request, res: Response) => {
             if (this.isUpdating) {
-                res.status(503).send('File list update in progress');
+                res.status(503).send({
+                    error: 'File list update in progress'
+                });
                 return;
             }
             if (!Utilities.verifyClusterRequest(req)) {
-                res.status(403).send(); // 禁止访问
+                res.status(403).json({
+                    error: "Forbidden."
+                }); // 禁止访问
                 return;
             }
             const clusterId = Utilities.tryGetRequestCluster<{ clusterId: string }>(req)?.clusterId || "";
             const cluster = this.clusters.find(c => c.clusterId === clusterId);
             if (!cluster) {
-                res.status(401).send();
+                res.status(401).json({
+                    error: "Unauthorized."
+                });
                 return;
             }
             res.setHeader('Content-Disposition', 'attachment; filename="files.avro"');
@@ -373,7 +391,9 @@ export class Server {
         });
         this.app.get('/openbmclapi/configuration', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
-                res.status(403).send(); // 禁止访问
+                res.status(403).json({
+                    error: "Forbidden."
+                }); // 禁止访问
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
@@ -381,11 +401,15 @@ export class Server {
         });
         this.app.get('/openbmclapi/download/:hash([0-9a-fA-F]*)', (req: Request, res: Response) => {
             if (!Utilities.verifyClusterRequest(req)) {
-                res.status(403).send(); // 禁止访问
+                res.status(403).json({
+                    error: "Forbidden."
+                }); // 禁止访问
                 return;
             }
             if (this.isUpdating) {
-                res.status(503).send('File list update in progress');
+                res.status(503).json({
+                    error: 'File list update in progress'
+                });
                 return;
             }
             const hash = req.params.hash.toLowerCase();
@@ -394,7 +418,9 @@ export class Server {
                 this.sendFile(req, res, file);
                 return;
             } else {
-                res.status(404).send();
+                res.status(404).json({
+                    error: "File not found."
+                });
             }
         });
         this.app.post('/openbmclapi/report', (req: Request, res: Response) => {
@@ -402,12 +428,16 @@ export class Server {
                 urls: string[],
                 error: string
             };
-            res.status(200).send();
+            res.status(200).json({
+                error: "Default report method called."
+            });
         });
         this.app.get('/files/*', async (req: Request, res: Response) => {
             try {
                 if (this.isUpdating) {
-                    res.status(503).send('File list update in progress');
+                    res.status(503).json({
+                        error: 'File list update in progress'
+                    });
                     return;
                 }
                 const p = decodeURI(req.path);
@@ -434,7 +464,9 @@ export class Server {
                         cluster.pendingBytes += file.size;
                     }
                 } else {
-                    res.status(404).send();
+                    res.status(404).json({
+                        error: "File not found."
+                    });
                 }
             } catch (error) {
                 console.error(error);

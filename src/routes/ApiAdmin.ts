@@ -19,17 +19,21 @@ export class ApiAdmin {
         inst.app.post("/api/admin/sudo", async (req, res) => {
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(req.cookies.adminToken, 'admin') as { userId: number }).userId);
             if (!user) {
-                res.status(401).send();
+                res.status(401).json({
+                    error: "Unauthorized"
+                });
                 return;
             }
             const id = Number(req.body.id)
             const targetUser = inst.db.getEntity<UserEntity>(UserEntity, id);
             if (!targetUser) {
-                res.status(404).send();
+                res.status(404).json({
+                    error: "User not found"
+                });
                 return;
             }
             if ((user.isSuperUser <= targetUser.isSuperUser) && user.id !== targetUser.id) {
-                res.status(403).send({
+                res.status(403).json({
                     message: `Permission denied: Your permission level is not high enough to perform this action.`
                 });
                 return;
@@ -63,7 +67,7 @@ export class ApiAdmin {
 
         inst.app.post("/api/admin/update", async (req, res) => {
             if (inst.server.isUpdating) {
-                res.status(409).send({
+                res.status(409).json({
                     success: false,
                     message: "Files are currently updating, please try again later."
                 });

@@ -12,7 +12,7 @@ export class ApiUser {
             const token = req.cookies.token;
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send({ message: 'User not found' });
+                res.status(404).json({ message: 'User not found' });
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
@@ -29,22 +29,22 @@ export class ApiUser {
             const token = req.cookies.token;
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send({ message: 'User not found' });
+                res.status(404).json({ message: 'User not found' });
                 return;
             }
             const body = req.body as { clusterId: string, clusterSecret: string };
             res.setHeader('Content-Type', 'application/json');
             const cluster = inst.clusters.find(c => c.clusterId === body.clusterId);
             if (!cluster) {
-                res.status(404).send({ message: 'Cluster not found' })
+                res.status(404).json({ message: 'Cluster not found' })
                 return;
             }
             if (cluster.owner!== 0) {
-                res.status(403).send({ message: 'Cluster already bound' });
+                res.status(403).json({ message: 'Cluster already bound' });
                 return;
             }
             if (cluster.clusterSecret !== body.clusterSecret) {
-                res.status(403).send({ message: 'Invalid cluster secret' });
+                res.status(403).json({ message: 'Invalid cluster secret' });
                 return;
             }
             cluster.owner = user.id;
@@ -57,17 +57,17 @@ export class ApiUser {
             const token = req.cookies.token;
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send({ message: 'User not found' });
+                res.status(404).json({ message: 'User not found' });
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
             const cluster = inst.clusters.find(c => c.clusterId === req.params.id);
             if (!cluster) {
-                res.status(404).send({ message: 'Cluster not found' });
+                res.status(404).json({ message: 'Cluster not found' });
                 return;
             }
             if (cluster.owner !== user.id) {
-                res.status(403).send({ message: 'That\'s not your cluster!' });
+                res.status(403).json({ message: 'That\'s not your cluster!' });
                 return;
             }
             cluster.owner = 0;
@@ -80,7 +80,9 @@ export class ApiUser {
             const token = req.cookies.token;
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send("User not found.");
+                res.status(404).json({
+                    error: "User not found."
+                });
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
@@ -94,13 +96,17 @@ export class ApiUser {
             const token = req.cookies.token;
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send("User not found.");
+                res.status(404).json({
+                    error: "User not found."
+                });
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
             const cluster = inst.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
             if (!cluster) {
-                res.status(404).send(); // 集群不存在
+                res.status(404).json({
+                    error: "Cluster not found."
+                }); // 集群不存在
                 return;
             }
             res.status(200).json(cluster.getJson(true, false));
@@ -111,13 +117,17 @@ export class ApiUser {
             const token = req.cookies.token;
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send("User not found.");
+                res.status(404).json({
+                    error: "User not found."
+                });
                 return;
             }
             const clusterId = req.params.id;
             const cluster = inst.clusters.find(c => c.clusterId === clusterId && c.owner === user.id);
             if (!cluster) {
-                res.status(404).send(); // 集群不存在
+                res.status(404).json({
+                    error: "Cluster not found."
+                }); // 集群不存在
                 return;
             }
             const name = req.body.name as string || null;
@@ -132,7 +142,7 @@ export class ApiUser {
             }
 
             if (bandwidth !== null && (Number.isNaN(bandwidth) || bandwidth < 10 || bandwidth > 500)) {
-                res.status(400).send({ message: 'Invalid bandwidth' });
+                res.status(400).json({ message: 'Invalid bandwidth' });
                 return;
             }
 
@@ -149,18 +159,24 @@ export class ApiUser {
         inst.app.post("/api/user/clusters/:id/reset_secret", async (req, res) => {
             const token = req.cookies.token;
             if (!token) {
-                res.status(401).send(); // 未登录
+                res.status(401).json({
+                    error: "Unauthorized."
+                }); // 未登录
                 return;
             }
             const user = inst.db.getEntity<UserEntity>(UserEntity, (JwtHelper.instance.verifyToken(token, 'user') as { userId: number }).userId);
             if (!user) {
-                res.status(404).send(); // 用户不存在
+                res.status(404).json({
+                    error: "User not found."
+                }); // 用户不存在
                 return;
             }
             res.setHeader('Content-Type', 'application/json');
             const cluster = inst.clusters.find(c => c.clusterId === req.params.id && c.owner === user.id);
             if (!cluster) {
-                res.status(404).send(); // 集群不存在
+                res.status(404).json({
+                    error: "Cluster not found."
+                }); // 集群不存在
                 return;
             }
             const secret = Utilities.generateRandomString(32);
