@@ -257,7 +257,7 @@ export class ApiClusters {
                 return;
             }
             cluster.clusterSecret = Utilities.generateRandomString(32);
-            await inst.db.update<ClusterEntity>(cluster);
+            inst.db.update<ClusterEntity>(cluster);
             res.json({
                 clusterSecret: cluster.clusterSecret
             });
