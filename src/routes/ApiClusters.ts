@@ -247,5 +247,20 @@ export class ApiClusters {
             res.setHeader('Content-Type', 'application/json');
             res.status(200).json(cluster.getJson(true, false));
         });
+        inst.app.patch("/api/clusters/:id/secret", async (req, res) => {
+            if (!Utilities.verifyAdmin(req, res, inst.db)) return;
+            const cluster = inst.clusters.find(c => c.clusterId === req.params.id);
+            if (!cluster) {
+                res.status(404).json({
+                    error: "Cluster not found"
+                }); // 集群不存在
+                return;
+            }
+            cluster.clusterSecret = Utilities.generateRandomString(32);
+            await inst.db.update<ClusterEntity>(cluster);
+            res.json({
+                clusterSecret: cluster.clusterSecret
+            });
+        });
     }
 }
