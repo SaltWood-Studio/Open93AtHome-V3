@@ -21,7 +21,7 @@
     "better-sqlite3": "^11.3.0",
     "cookie-parser": "^1.4.7",
     "crc-32": "^1.2.2",
-    "cron": "^3.1.7",
+    "cron": "^4.0.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
