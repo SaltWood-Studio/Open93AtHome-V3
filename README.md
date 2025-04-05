@@ -1,5 +1,8 @@
 # Open93AtHome-V3
 
+> [!WARNING]
+> V3 太狗屎，准备重构 V4，遥遥无期.png
+
 ## 简介
 
 这是一个类似于 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) **主控端**的分发文件项目，经过三次重构，现已可以完美兼容 **Node、Python、C#、PHP** 端
